@@ -20,12 +20,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## @class
-# The SessionHandler class provides cookie-based session facilities for 
-# maintaining user state over http transactions. This code depends on 
+# The SessionHandler class provides cookie-based session facilities for
+# maintaining user state over http transactions. This code depends on
 # integration with a phpBB3 database: a number of custom tables are needed
 # (see config docs), but user handling is tied to phpBB3 user tables, and
-# a number of joins between custom tables and phpBB3 ones require the two 
-# to share database space. This code provides session verification, and 
+# a number of joins between custom tables and phpBB3 ones require the two
+# to share database space. This code provides session verification, and
 # takes some steps towards ensuring security against cookie hijacking, but
 # as with any cookie based auth system there is the potential for security
 # issues.
@@ -47,7 +47,6 @@ use MIME::Base64;
 use Data::Dumper;
 
 # Custom module imports
-use phpBB3;
 use Logging qw(die_log);
 
 # Globals...
@@ -72,7 +71,7 @@ sub new {
     my $self     = {
         cgi       => undef,
         dbh       => undef,
-        phpbb     => undef,
+        auth      => undef,
         template  => undef,
         settings  => undef,
         @_,
@@ -81,7 +80,7 @@ sub new {
     # Ensure that we have objects that we need
     return set_error("cgi object not set") unless($self -> {"cgi"});
     return set_error("dbh object not set") unless($self -> {"dbh"});
-    return set_error("phpbb object not set") unless($self -> {"phpbb"});
+    return set_error("auth object not set") unless($self -> {"auth"});
     return set_error("template object not set") unless($self -> {"template"});
     return set_error("settings object not set") unless($self -> {"settings"});
 
@@ -98,12 +97,12 @@ sub new {
 
     # Now try to obtain a session id - start by looking at the cookies
     $self -> {"sessid"}   = $self -> {"cgi"} -> cookie($cookiebase."_sid"); # The session id cookie itself
-    $self -> {"sessuser"} = $self -> {"cgi"} -> cookie($cookiebase."_u");   # Which user does this session claim to be for? 
+    $self -> {"sessuser"} = $self -> {"cgi"} -> cookie($cookiebase."_u");   # Which user does this session claim to be for?
     $self -> {"autokey"}  = $self -> {"cgi"} -> cookie($cookiebase."_k");   # Do we have an autologin key for the user?
 
     # If we don't have a session id now, try to pull it from the query string
     $self -> {"sessid"} = $self -> {"cgi"} -> param("sid") if(!$self -> {"sessid"});
-     
+
     # If we have a session id, we need to check it
     if($self -> {"sessid"}) {
         # Try to get the session...
@@ -119,9 +118,9 @@ sub new {
                 if(!$self -> session_expired($session)) {
                     # The session is valid, and can be touched.
                     $self -> touch_session($session);
- 
+
                     return $self;
-                } # if(!$self -> session_expired($session)) { 
+                } # if(!$self -> session_expired($session)) {
             } # if($self -> ip_check($ENV{"REMOTE_ADDR"}, $session -> {"session_ip"})) {
         } # if($session) {
     } # if($sessid) {
@@ -133,7 +132,7 @@ sub new {
 
 ## @method $ create_session($user, $persist)
 # Create a new session. If the user is not specified, this creates an anonymous session,
-# otherwise the session is attached to the user. 
+# otherwise the session is attached to the user.
 #
 # @param user    Optional user ID to associate with the session.
 # @param persist If true, and autologins are permitted, an autologin key is generated for
@@ -147,27 +146,27 @@ sub create_session {
 
     # nuke the cookies, it's the only way to be sure
     delete($self -> {"cookies"}) if($self -> {"cookies"});
-    
+
     # get the current time...
     my $now = time();
 
     # If persistent logins are not permitted, disable them
-    $self -> {"autokey"} = $persist = '' if(!$self -> {"phpbb"} -> get_config("allow_autologin"));
+    $self -> {"autokey"} = $persist = '' if(!$self -> {"auth"} -> get_config("allow_autologin"));
 
     # Set a default last visit, might be updated later
     $self -> {"last_visit"} = $now;
 
     # If we have a key, and a user in the cookies, try to get it
-    if($self -> {"autokey"} && $self -> {"sessuser"} && $self -> {"sessuser"} != $phpBB3::ANONYMOUS) {
+    if($self -> {"autokey"} && $self -> {"sessuser"} && $self -> {"sessuser"} != $self -> {"auth"} -> {"ANONYMOUS"}) {
         my $autocheck = $self -> {"dbh"} -> prepare("SELECT u.* FROM ".
-                                                    $self -> {"phpbb"} -> {"prefix"}."users AS u, ".
+                                                    $self -> {"auth"} -> {"prefix"}."users AS u, ".
                                                     $self -> {"settings"} -> {"database"} -> {"keys"}." AS k
-                                                    WHERE u.user_id = ? 
+                                                    WHERE u.user_id = ?
                                                     AND u.user_type IN (0, 3)
                                                     AND k.user_id = u.user_id
                                                     AND k.key_id = ?");
         $autocheck -> execute($self -> {"sessuser"}, md5_hex($self -> {"autokey"}))
-            or return set_error("Unable to peform user lookup query\nError was: ".$self -> {"dbh"} -> errstr);            
+            or return set_error("Unable to peform user lookup query\nError was: ".$self -> {"dbh"} -> errstr);
 
         $userdata = $autocheck -> fetchrow_hashref;
 
@@ -176,11 +175,11 @@ sub create_session {
         $self -> {"autokey"} = '';
         $self -> {"sessuser"} = $user;
 
-        my $userh = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"phpbb"} -> {"prefix"}."users 
+        my $userh = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"auth"} -> {"prefix"}."users
                                                  WHERE user_id = ?
                                                  AND user_type IN (0, 3)");
         $userh -> execute($self -> {"sessuser"})
-            or return set_error("Unable to peform user lookup query\nError was: ".$self -> {"dbh"} -> errstr);            
+            or return set_error("Unable to peform user lookup query\nError was: ".$self -> {"dbh"} -> errstr);
 
         $userdata = $userh -> fetchrow_hashref;
     }
@@ -189,12 +188,12 @@ sub create_session {
     # the user doesn't exist, is inactive, or is a bot. Just get the anonymous user
     if(!$userdata) {
         $self -> {"autokey"} = '';
-        $self -> {"sessuser"} = $phpBB3::ANONYMOUS;
+        $self -> {"sessuser"} = $self -> {"auth"} -> {"ANONYMOUS"};
 
-         my $userh = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"phpbb"} -> {"prefix"}."users 
+         my $userh = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"auth"} -> {"prefix"}."users
                                                  WHERE user_id = ?");
         $userh -> execute($self -> {"sessuser"})
-            or return set_error("Unable to peform user lookup query\nError was: ".$self -> {"dbh"} -> errstr);            
+            or return set_error("Unable to peform user lookup query\nError was: ".$self -> {"dbh"} -> errstr);
 
         $userdata = $userh -> fetchrow_hashref;
 
@@ -209,22 +208,22 @@ sub create_session {
 
         # Fall back on now if we have no last visit time
         $self -> {"last_visit"} = $visitr -> [0] if($visitr);
-    } 
-    
+    }
+
     # Determine whether the session can be made persistent (requires the user to be registered, and normal)
-    my $is_registered = ($userdata -> {"user_id"} && $userdata -> {"user_id"} != $phpBB3::ANONYMOUS && ($userdata -> {"user_type"} == 0 || $userdata -> {"user_type"} == 3));
+    my $is_registered = ($userdata -> {"user_id"} && $userdata -> {"user_id"} != $self -> {"auth"} -> {"ANONYMOUS"} && ($userdata -> {"user_type"} == 0 || $userdata -> {"user_type"} == 3));
     $persist = (($self -> {"autokey"} || $persist) && $is_registered) ? 1 : 0;
 
     # Do we already have a session id? If we do, and it's an anonymous session, we want to nuke it
     if($self -> {"sessid"}) {
         my $killsess = $self -> {"dbh"} -> prepare("DELETE FROM ".$self -> {"settings"} -> {"database"} -> {"sessions"}.
                                                    " WHERE session_id = ? AND session_user_id = ?");
-        $killsess -> execute($self -> {"sessid"}, $phpBB3::ANONYMOUS)
+        $killsess -> execute($self -> {"sessid"}, $self -> {"auth"} -> {"ANONYMOUS"})
             or return set_error("Unable to remove anonymous session\nError was: ".$self -> {"dbh"} -> errstr);
     }
-    
+
     # generate a new session id. The md5 of a unique ID should be unique enough...
-    $self -> {"sessid"} = md5_hex($self -> {"phpbb"} -> unique_id());
+    $self -> {"sessid"} = md5_hex($self -> {"auth"} -> unique_id());
 
     # store the time
     $self -> {"session_time"} = $now;
@@ -239,7 +238,7 @@ sub create_session {
                       $ENV{"REMOTE_ADDR"},
                       $persist)
             or return set_error("Unable to peform session creation\nError was: ".$self -> {"dbh"} -> errstr);
-    
+
     $self -> set_login_key($self -> {"sessuser"}, $ENV{"REMOTE_ADDR"}) if($persist);
 
     return $self;
@@ -261,8 +260,8 @@ sub delete_session {
 
     # If we're not dealing with anonymous, we need to store the visit time,
     # and nuke any autologin key for the now defunct session
-    if($self -> {"sessuser"} != $phpBB3::ANONYMOUS) {
-        
+    if($self -> {"sessuser"} != $self -> {"auth"} -> {"ANONYMOUS"}) {
+
         # If we don't have a session time for some reason, make it now
         $self -> {"session_time"} = time() if(!$self -> {"session_time"});
 
@@ -281,7 +280,7 @@ sub delete_session {
                                                        " WHERE key_id = ? AND user_id = ?");
             $nukekeys -> execute(md5_hex($self -> {"autokey"}), $self -> {"sessuser"})
                 or return set_error("Unable to remove session key\nError was: ".$self -> {"dbh"} -> errstr);
-        }            
+        }
     }
 
     # clear all the session settings internally for safety
@@ -318,7 +317,7 @@ sub encode_querystring {
 sub decode_querystring {
     my $self   = shift;
     my $query  = shift;
-    
+
     # Bomb if we don't have a query, or it is not valid base64
     return "" if(!$query || $query =~ m{[^A-Za-z0-9+/=]});
 
@@ -337,11 +336,11 @@ sub session_cookies {
     # removed before any changes are made... but this shouldn't really be called before
     # create_session in reality anyway.
     if(!$self -> {"cookies"}) {
-        my $expires = "+".($self -> {"phpbb"} -> get_config("max_autologin_time") || 365)."d";
+        my $expires = "+".($self -> {"auth"} -> get_config("max_autologin_time") || 365)."d";
         my $sesscookie = $self -> create_cookie($self -> {"settings"} -> {"config"} -> {"cookie_name"}.'_sid', $self -> {"sessid"}, $expires);
         my $sessuser   = $self -> create_cookie($self -> {"settings"} -> {"config"} -> {"cookie_name"}.'_u', $self -> {"sessuser"}, $expires);
         my $sesskey;
-        if($self -> {"sessuser"} != $phpBB3::ANONYMOUS) {
+        if($self -> {"sessuser"} != $self -> {"auth"} -> {"ANONYMOUS"}) {
             if($self -> {"autokey"}) {
                 $sesskey = $self -> create_cookie($self -> {"settings"} -> {"config"} -> {"cookie_name"}.'_k', $self -> {"autokey"}, $expires);
             }
@@ -363,7 +362,7 @@ sub session_cookies {
 ## @method ip_check($userip, $sessip)
 # Checks whether the specified IPs match. The degree of match required depends
 # on the ip_check setting in the SessionHandler object this is called on: 0 means
-# that no checking is done, number between 1 and 4 indicate sections of the 
+# that no checking is done, number between 1 and 4 indicate sections of the
 # dotted decimal IPs are checked (1 = 127., 2 = 127.0, 3 = 127.0.0., etc)
 #
 # @param userip The IP the user is connecting from.
@@ -375,7 +374,7 @@ sub ip_check {
     my $sessip = shift;
 
     # How may IP address segments should be compared?
-    my $iplen = $self -> {"phpbb"} -> get_config('ip_check');
+    my $iplen = $self -> {"auth"} -> get_config('ip_check');
 
     # bomb immediately if we aren't checking IPs
     return 1 if($iplen == 0);
@@ -399,10 +398,10 @@ sub session_cleanup {
     my $self = shift;
 
     my $now = time();
-    my $timelimit = $now - $self -> {"phpbb"} -> get_config("session_length");
+    my $timelimit = $now - $self -> {"auth"} -> get_config("session_length");
 
     # We only want to run the garbage collect occasionally
-    if($self -> {"settings"} -> {"config"} -> {"lastgc"} < $now - $self -> {"phpbb"} -> get_config("session_gc")) {
+    if($self -> {"settings"} -> {"config"} -> {"lastgc"} < $now - $self -> {"auth"} -> get_config("session_gc")) {
         # Okay, we're due a garbage collect, update the config to reflect that we're doing it
         $self -> {"settings"} -> set_db_config($self -> {"dbh"}, $self -> {"settings"} -> {"database"} -> {"settings"}, "lastgc", $now);
 
@@ -410,9 +409,9 @@ sub session_cleanup {
         my $nukesess = $self -> {"dbh"} -> prepare("DELETE FROM ".$self -> {"settings"} -> {"database"} -> {"sessions"}.
                                                    " WHERE session_user_id = ?
                                                      AND session_time < ?");
-        $nukesess -> execute($phpBB3::ANONYMOUS, $timelimit)
+        $nukesess -> execute($self -> {"auth"} -> {"ANONYMOUS"}, $timelimit)
             or return set_error("Unable to remove expired guest sessions\nError was: ".$self -> {"dbh"} -> errstr);
-                               
+
         # now get the most recent expired sessions for each user
         my $lastsess = $self -> {"dbh"} -> prepare("SELECT session_user_id,MAX(session_time) FROM ".$self -> {"settings"} -> {"database"} -> {"sessions"}.
                                                    " WHERE session_time < ?
@@ -424,7 +423,7 @@ sub session_cleanup {
         my $updatelast;
         if($self -> {"settings"} -> {"database"} -> {"lastvisit"}) {
             $updatelast = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"lastvisit"}.
-                                                      " SET last_visit = ? 
+                                                      " SET last_visit = ?
                                                        WHERE user_id = ?");
         }
 
@@ -458,13 +457,13 @@ sub session_expired {
 
     # If the session is not an autologin session, and the last update was before the session length, it is expired
     if(!$sessdata -> {"session_autologin"}) {
-        return 1 if($sessdata -> {"session_time"} < time() - ($self -> {"phpbb"} -> get_config("session_length") + 60));
+        return 1 if($sessdata -> {"session_time"} < time() - ($self -> {"auth"} -> get_config("session_length") + 60));
 
     } else {
-        my $max_autologin = $self -> {"phpbb"} -> get_config("max_autologin_time");
+        my $max_autologin = $self -> {"auth"} -> get_config("max_autologin_time");
 
         # If the session is autologin, and it is older than the max autologin time, or autologin is not enabled, it's expired
-        return 1 if(!$self -> {"phpbb"} -> get_config("allow_autologin") || 
+        return 1 if(!$self -> {"auth"} -> get_config("allow_autologin") ||
                     ($max_autologin && $sessdata -> {"session_time"} < time() - ((86400 * $max_autologin) + 60)));
     }
 
@@ -474,7 +473,7 @@ sub session_expired {
 
 
 ## @method $ get_session($sessid)
-# Obtain the data for the session with the specified session ID. If there is no 
+# Obtain the data for the session with the specified session ID. If there is no
 # session with the specified id in the database, this returns undef, otherwise it
 # returns a reference to a hash containing the session data.
 #
@@ -522,7 +521,7 @@ sub set_login_key {
     my $self = shift;
 
     my $key = $self -> {"autokey"};
-    my $key_id = $self -> {"phpbb"} -> unique_id(substr($self -> {"sessid"}, 0, 8));
+    my $key_id = $self -> {"auth"} -> unique_id(substr($self -> {"sessid"}, 0, 8));
 
     # If we don't have a key, we want to create a new key in the table
     if(!$key) {

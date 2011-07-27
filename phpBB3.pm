@@ -25,12 +25,12 @@
 # a perl script low-level access to the data stored in a phpBB3 database,
 # and they should be used with caution. Unlike phpBB3, no security checks
 # are done on, for example, whether the user is supposed to be able to see
-# a topic in a forum: while it would be technically possible to achieve 
+# a topic in a forum: while it would be technically possible to achieve
 # this, it would add a dramatic overhead to the listing and fetching of
 # posts and would involve session shenanigans to ensure users are logged
 # into a phpBB3 account.
 #
-# 
+#
 package phpBB3;
 
 use strict;
@@ -84,7 +84,7 @@ BEGIN {
                  "e" => "%Z",
                  "I" => "",   # UNSUPPORTED: (capital i) Whether or not the date is in daylight saving time 1 if Daylight Saving Time, 0 otherwise.
                  "O" => "%z",
-                 "P" => "",   # UNSUPPORTED: Difference to Greenwich time (GMT) with colon between hours and minutes (added in PHP 5.1.3) 
+                 "P" => "",   # UNSUPPORTED: Difference to Greenwich time (GMT) with colon between hours and minutes (added in PHP 5.1.3)
                  "T" => "%Z",
                  "Z" => "",   # UNSUPPORTED: Timezone offset in seconds. The offset for timezones west of UTC is always negative, and for those east of UTC is always positive.
                  "c" => "%FT%T%z",
@@ -114,7 +114,7 @@ BEGIN {
 # you do not need to provide the username, password, or data_src.
 #
 # @param args A hash of key, value pairs to initialise the object with.
-# @return A new phpBB3 object, or undef if no database connection has been provided or 
+# @return A new phpBB3 object, or undef if no database connection has been provided or
 #         established.
 sub new {
     my $invocant = shift;
@@ -130,6 +130,7 @@ sub new {
         allowanon => 0,
         dbopts    => { RaiseError => 0, AutoCommit => 1 },
         url       => "/",
+        ANONYMOUS => $ANONYMOUS,
         @_,
     };
 
@@ -139,7 +140,7 @@ sub new {
     # try to open the database connection with those credentials.
     if(!$obj -> {"dbh"} && $self -> {"username"} & $obj -> {"password"} && $obj -> {"data_src"}) {
         $obj -> {"dbh"} = DBI -> connect($obj -> {"data_src"},
-                                          $obj -> {"username"}, 
+                                          $obj -> {"username"},
                                           $obj -> {"password"},
                                           $obj -> {"dbopts"})
             or return set_error("Unable to open database connection - ".$DBI::errstr);
@@ -221,10 +222,10 @@ sub register_user {
     my $content = $www -> content();
     return "Unexpected content in response to registration first step accept."
         unless($content =~ /PLEASE DO NOT ATTEMPT TO REGISTER USING THIS FORM/);
- 
+
     $www -> form_id('register')
         or return "Unable to locate the second step registration form.";
-    
+
     # Now we can fill in fields to submit
     $www -> field ('username'        , $args -> {"username"});
     $www -> field ('email'           , $args -> {"email"});
@@ -235,7 +236,7 @@ sub register_user {
     $www -> field ('question2'       , 'chris page');
     $www -> select('lang'            , 'en');
     $www -> select('tz'              , '0');
-    
+
     # And submit that
     $www -> click('submit');
     return "Failed when posting registration second step. Response was: ".$www -> res -> message if(!$www -> success());
@@ -334,7 +335,7 @@ sub get_group {
 # group_id  - the id of the group to check in.
 # If user_id is specified, username is ignored if it is also provided. If user_id
 # is not provided, username must be (ie: you must specify at least one of username
-# or user_id, and user_id takes precedence) Similarly, you must specify at least 
+# or user_id, and user_id takes precedence) Similarly, you must specify at least
 # one of group or group_id, and group_id takes precedence over group.
 #
 # @param args A hash of arguments.
@@ -356,38 +357,38 @@ sub user_in_group {
 
     # If we don't have a user_id, we need to look it up
     if(!$args{"user_id"}) {
-        my $user = $self -> get_user($args{'username'}) 
+        my $user = $self -> get_user($args{'username'})
             or return set_error("Unable to find user $args{'username'}");
         $args{"user_id"} = $user -> {"user_id"};
     }
 
     # If we don't have a group_id, we need to look it up
     if(!$args{"group_id"}) {
-        my $group = $self -> get_group($args{'group'}) 
+        my $group = $self -> get_group($args{'group'})
             or return set_error("Unable to find user $args{'group'}");
         $args{"group_id"} = $group -> {"group_id"};
     }
-    
+
 
     # Now we should have a user id and group id, so we can go look in the user_group table
     my $ugh = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"prefix"}."user_group
                                            WHERE group_id = ? AND user_id = ?");
     $ugh -> execute($args{"group_id"}, $args{"user_id"})
         or die "phpBB3::user_in_group(): Unable to execute user_group lookup query.\nError was: ".$self -> {"dbh"} -> errstr."\n";
-    
+
     # Do we have one or more rows?
     my $ugr = $ugh -> fetchrow_arrayref();
-    
+
     return defined($ugr);
 }
-    
+
 
 ## @method $ valid_user($username, $password)
 # Attempt to confirm whether the provided user credentials are valid. This will check
 # whether the specified username corresponds to a valid user, and if it does it will
 # check that the hash of the provided password matches. If the password matches, this
 # returns a reference to a hash containing the user's entry in the users table.
-# 
+#
 # @param username The username of the user to check.
 # @param password The password to check against this user.
 # @return A reference to a hash containing the user's data, or undef if an error
@@ -422,8 +423,8 @@ sub get_profile_url {
 
 
 ## @method $ email_in_use($email)
-# Determine whether the specified email address is already in use within the 
-# system. 
+# Determine whether the specified email address is already in use within the
+# system.
 #
 # @param email    The email address to check.
 # @return true if the email address already exists within the database, false
@@ -432,7 +433,7 @@ sub email_in_use {
     my $self  = shift;
     my $email = shift;
 
-    my $emailh = $self -> {'dbh'} -> prepare("SELECT user_id FROM ".$self -> {"prefix"}."users 
+    my $emailh = $self -> {'dbh'} -> prepare("SELECT user_id FROM ".$self -> {"prefix"}."users
                                               WHERE user_email LIKE ?");
     $emailh -> execute($email)
         or die "phpBB3::email_in_use(): Unable to execute email lookup query.\nError was: ".$self -> {"dbh"} -> errstr."\n";
@@ -485,16 +486,16 @@ sub is_valid_password {
 # Session handling
 
 ## @method @ get_session(void)
-# Attempt to obtain the userid and username of the current session user. This 
-# attempts to determine whether the session in the user's cookies is a valid 
-# phpBB3 session, and if it is it returns a reference to a hash containing user 
+# Attempt to obtain the userid and username of the current session user. This
+# attempts to determine whether the session in the user's cookies is a valid
+# phpBB3 session, and if it is it returns a reference to a hash containing user
 # and session data. This will update the timestamp on the session, if needed.
 #
 # @return A reference to a hash containing user and session data if the session
 #         is valid, undef otherwise.
 #
-# @todo This does not currently support forwarded_for checks, referer checks, 
-#       or load limiting. It also does not support 'alternative' auth methods: 
+# @todo This does not currently support forwarded_for checks, referer checks,
+#       or load limiting. It also does not support 'alternative' auth methods:
 #       only database auth is supported.
 sub get_session {
     my $self = shift;
@@ -505,7 +506,7 @@ sub get_session {
 
     # First, try to obtain a session id - start by looking at the cookies
     my $sessid   = $self -> {"cgi"} -> cookie($cookiebase."_sid");
-    my $sessuser = $self -> {"cgi"} -> cookie($cookiebase."_u");   # Which users does this session claim to be? 
+    my $sessuser = $self -> {"cgi"} -> cookie($cookiebase."_u");   # Which users does this session claim to be?
     my $autokey  = $self -> {"cgi"} -> cookie($cookiebase."_k");   # Do we have an autologin key for the user?
 
     # If we don't have a session id now, try to pull it from the query string
@@ -515,13 +516,13 @@ sub get_session {
     return set_error("Unable to obtain a session id for user.") if(!$sessid);
 
     # Obtain the session and user record from the database
-    my $sessh = $self -> {"dbh"} -> prepare("SELECT u.*,s.* 
+    my $sessh = $self -> {"dbh"} -> prepare("SELECT u.*,s.*
                                              FROM ".$self -> {"prefix"}."users AS u, ".$self -> {"prefix"}."sessions AS s
                                              WHERE s.session_id = ? AND u.user_id = s.session_user_id");
     $sessh -> execute($sessid)
         or die "phpBB3::get_session(): Unable to obtain session and user data from database.\nError was: ".$self -> {"dbh"} -> errstr."\n";
     my $sessdata = $sessh -> fetchrow_hashref();
-    
+
     # if we have a session, we need to validate it
     if($sessdata) {
         # If we have anonymous disabled, at this is the anon user, exit immediately
@@ -546,7 +547,7 @@ sub get_session {
         if($self -> get_config("browser_check")) {
             $valid_ua = substr(lc($sessdata -> {"session_browser"}), 0, 150) eq
                         substr(lc($self -> {"cgi"} -> user_agent()), 0, 150);
-        }    
+        }
 
         # If the ip and browser checks are okay, continue with the validation
         # TODO: add referer and forwarded_for checks here?
@@ -560,17 +561,17 @@ sub get_session {
             # If the session claims to be autologin, but the server doesn't support it, expire the session
             } elsif(!$self -> get_config("allow_autologin")) {
                 $expired = 1;
-              
+
             # Otherwise, if check whether a maximum autologin time limit has been set, and that the session is within it
             } else {
                 my $max_autologin = $self -> get_config("max_autologin_time");
                 $expired = ($max_autologin && $sessdata -> {"session_time"} < (time() - ($max_autologin + 60)));
             }
-                   
+
             # If the session has not expired, we want to touch it
             if(!$expired) {
                 if(time() - $sessdata -> {"session_time"} > 60) {
-                    my $touch = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"prefix"}."sessions 
+                    my $touch = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"prefix"}."sessions
                                                              SET session_time = ?
                                                              WHERE session_id = ?");
                     $touch -> execute(time(), $sessdata -> {"session_id"})
@@ -602,9 +603,9 @@ sub get_session {
 #
 # @note <b>This function does no permissions checking whatsoever.</b> It is up
 #       to the caller to determine whether or not the forum should be visible.
-#       If you expose private forums with this function, you have nobody to 
+#       If you expose private forums with this function, you have nobody to
 #       blame but yourself. You have been warned.
-# 
+#
 # @param forumid The id of the forum to obtain data on.
 # @return A reference to a hash containing the forum data, or undef if the
 #         forum does not exist in the database.
@@ -629,21 +630,21 @@ sub get_forum {
 # Given a forum id, a topic count, and an offset, obtain a list of topic IDs
 # for topics in the forum. This follows the same treatement of posts as the forum
 # view in phpBB3: announcements always appear at the start of the list, regardles
-# of the offset. The remaining posts are sorted so that sticky topics will 
+# of the offset. The remaining posts are sorted so that sticky topics will
 # appear before normal topics, but are otherwise treated normally.
 #
 # @note <b>This function does no permissions checking whatsoever.</b> It is up
 #       to the caller to determine whether or not the forum should be visible.
-#       If you expose private forums with this function, you have nobody to 
+#       If you expose private forums with this function, you have nobody to
 #       blame but yourself. You have been warned.
 #
 # @param forum        The ID of the forum to obtain a topic list for.
-# @param count        The number of topics ids to return, if not specified defaults to 10. 
+# @param count        The number of topics ids to return, if not specified defaults to 10.
 #                     if set to 0, all post ids are returned.
 # @param offset       The number of posts to skip, if not specified defaults to 0. This is
 #                     ignored if count is set to 0.
 # @param sort_by_last If true, posts are sorted by the last reply time rather
-#                     than the default creation time order (note that this must 
+#                     than the default creation time order (note that this must
 #                     be true to generate the same listing phpBB3 shows)
 # @return A reference to an array of topic ids, or undef if no topics are available
 #         or an error ocurred.
@@ -677,7 +678,7 @@ sub get_topic_ids {
     # always having announcements at the front.
     my $announceh = $self -> {"dbh"} -> prepare("SELECT topic_id FROM ".$self -> {"prefix"}."topics
                                                  WHERE forum_id = ? AND topic_type = 2
-                                                 $order 
+                                                 $order
                                                 ".($fetchall ? "" : "LIMIT $count"));
     $announceh -> execute($forum)
         or die "phpBB3::get_topic_ids(): Unable to obtain announcement topic list.\nError was: ".$self -> {"dbh"} -> errstr."\n";
@@ -707,7 +708,7 @@ sub get_topic_ids {
         }
 
     } # if($count) {
-    
+
     # And we're done. Return a reference to the topics array if it has any contents,
     # undef if it does not.
     return scalar(@topics) ? \@topics : set_error("");
@@ -717,7 +718,7 @@ sub get_topic_ids {
 ## @method $ get_topic($topicid)
 # Obtain the data for the topic identified by the specified topicid. This will attempt
 # to locate a topic entry with the specified topicid and return a reference to a hash
-# containing the topic information. 
+# containing the topic information.
 #
 # @param topicid The id of the topic to look up.
 # @return A reference to a hash containing the topic data, undef if the topic could
@@ -754,7 +755,7 @@ sub get_topic_firstpost {
         or return set_error("Unable to locate topic $topicid in the database");
 
     # Now we can obtain the first post and user details
-    my $posth = $self -> {"dbh"} -> prepare("SELECT p.*, u.* 
+    my $posth = $self -> {"dbh"} -> prepare("SELECT p.*, u.*
                                              FROM ".$self -> {"prefix"}."posts AS p, ".$self -> {"prefix"}."users AS u
                                              WHERE p.post_id = ? AND u.user_id = p.poster_id");
     $posth -> execute($topic -> {"topic_first_post_id"})
@@ -774,15 +775,15 @@ sub get_topic_firstpost {
                       "post_uid"        => $post  -> {"bbcode_uid"},
                       "poster_username" => $post  -> {"username"},
                       "poster_userid"   => $post  -> {"user_id"}};
-                      
-        # If the user has an avatar, we want to record it. Note that this expects phpBB3 
+
+        # If the user has an avatar, we want to record it. Note that this expects phpBB3
         # to have enforced any restrictions on avatar types.
         if($post -> {"user_avatar_type"}) {
             # width and height should be there regardless of type
             $pdata -> {"avatar_width"}  = $post -> {"user_avatar_width"};
             $pdata -> {"avatar_height"} = $post -> {"user_avatar_height"};
 
-            # type 1 is uploaded 
+            # type 1 is uploaded
             if($post -> {"user_avatar_type"} == 1) {
                 $pdata -> {"avatar_url"} = $self -> get_config("server_protocol").
                                            $self -> get_config("server_name").
@@ -792,7 +793,7 @@ sub get_topic_firstpost {
             # type 2 avatars are remote linked, so the url should be usable as-is
             } elsif($post -> {"user_avatar_type"} == 2) {
                 $pdata -> {"avatar_url"} = $post -> {"user_avatar"};
-            
+
             # type 3 avatars are gallery avatars
             } elsif($post -> {"user_avatar_type"} == 3) {
                 $pdata -> {"avatar_url"} = $self -> get_config("server_protocol").
@@ -863,14 +864,14 @@ sub get_smilie_url {
 
 
 ## @method $ get_config($name, $default)
-# Obtain the value for the specified phpBB3 configuration variable. This will 
-# return the value for the specified configuration variable if it is found. If 
-# it is not found, but default is specified, the default is returned, otherwise 
+# Obtain the value for the specified phpBB3 configuration variable. This will
+# return the value for the specified configuration variable if it is found. If
+# it is not found, but default is specified, the default is returned, otherwise
 # this returns undef.
 #
 # @param name    The name of the variable to obtain the value for
 # @param default An optional default value to return if the named variable can not be found
-# @return The value for the named variable, or the default or undef if the 
+# @return The value for the named variable, or the default or undef if the
 #         variable is not present.
 sub get_config {
     my $self    = shift;
@@ -890,7 +891,7 @@ sub get_config {
     # Otherwise, return the default or undef
     return $default;
 }
-        
+
 
 ## @method $ unique_id($extra)
 # Generate a unique ID that can be used with phpBB3 tables.
@@ -915,8 +916,8 @@ sub unique_id {
 # by the php date() function into something that can be passed to strftime to get the same
 # result. Note that the following php date() format options are not supported and will be
 # replaced with the empty string: S, t, L, B, u, I, O, and T. The following options are
-# partially supported but the resulting strings are not identical: n (will generate the 
-# same output as m), g (hour has a leading space instead of zero), and G (hour has a 
+# partially supported but the resulting strings are not identical: n (will generate the
+# same output as m), g (hour has a leading space instead of zero), and G (hour has a
 # leading space instead of zero)
 #
 # @param format The php date() format string to convert.
@@ -960,13 +961,13 @@ sub set_error {
 # Seriously internal stuff
 
 # The following functions have been ported wholesale from the phpBB3 'includes/functions.php'
-# The port has been done with minimal regard for perlification, and it almost certainly 
+# The port has been done with minimal regard for perlification, and it almost certainly
 # could be implemented in a far more efficient and perl-friendly fashion.
 #
 # Beware, voodoo programming follows.
 
 ## @fn $ _hash_encode64($input, $count, $itoa64)
-# Convert a number into an encoded string form. 
+# Convert a number into an encoded string form.
 #
 # @param input  The number to encode.
 # @param count  The number of characters in the number to convert.
@@ -977,13 +978,13 @@ sub _hash_encode64 {
 
     my $output = '';
     my $i = 0;
-    
+
     while($i < $count) {
         my $value = ord(substr($input, $i++, 1));
         $output .= substr($itoa64, $value & 0x3F, 1);
 
         $value |= ord(substr($input, $i, 1)) << 8 if($i < $count);
-        
+
         $output .= substr($itoa64, ($value >> 6) & 0x3F, 1);
         last if($i++ >= $count);
 
@@ -991,7 +992,7 @@ sub _hash_encode64 {
 
         $output .= substr($itoa64, ($value >> 12) & 0x3F, 1);
         last if($i++ >= $count);
-            
+
         $output .= substr($itoa64, ($value >> 18) & 0x3F, 1);
     }
 
@@ -1011,7 +1012,7 @@ sub _hash_crypt_private {
     my ($password, $setting, $itoa64) = @_;
 
     my $output = '*';
-    
+
     return $output if(substr($setting, 0, 3) ne '$H$');
 
     my $count_log2 = index($itoa64, substr($setting, 3, 1));
@@ -1036,9 +1037,9 @@ sub _hash_crypt_private {
 
 ## @fn $ _check_hash($password, $hash)
 # Determine whether the specified password hashes to the same string as the provided hash.
-# This checks whether the plain-text password, and the previously generated hash, are 
+# This checks whether the plain-text password, and the previously generated hash, are
 # actually representing the same string by hashing the plain-text password and comparing
-# it to the specified hash. This function can handle phpBB3 (salted md5 hash) and phpBB2 
+# it to the specified hash. This function can handle phpBB3 (salted md5 hash) and phpBB2
 # (straight md5 hash) hashes and chooses the appropriate algorithm based on the length of
 # the hash string: if it is 34 characters, it is assumed to be a phpBB3 hash, otherwise it
 # is assumed to be a hex encoded 32 character string.
