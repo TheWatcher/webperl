@@ -282,20 +282,24 @@ sub get_user {
 }
 
 
-## @method $ get_user_byid($userid)
+## @method $ get_user_byid($userid, $onlyreal)
 # Search for a user with the specified id in the database. This will attempt
 # to obtain a user record for a user with the specified id in the phpBB3
 # database, and return a reference to a hash containing the data if successful.
 #
-# @param userid The id of the user to locate.
+# @param userid   The id of the user to locate.
+# @param onlyreal If set, the userid must correspond to a 'real' user: if the id
+#                 is a bot or inactive account, this returns undef.
 # @return A reference to the user's data, or undef if the user could not be located
 #         or an error occurred.
 sub get_user_byid {
-    my $self   = shift;
-    my $userid = shift;
+    my $self     = shift;
+    my $userid   = shift;
+    my $onlyreal = shift;
 
     my $userh = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"prefix"}."users
-                                             WHERE user_id = ?");
+                                             WHERE user_id = ?".
+                                            ($onlyreal ? " AND user_type IN (0,3)" : ""));
     $userh -> execute($userid)
         or die "phpBB3::get_user_byid(): Unable to execute user lookup query.\nError was: ".$self -> {"dbh"} -> errstr."\n";
 
