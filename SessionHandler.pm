@@ -189,7 +189,7 @@ sub create_session {
         $autocheck -> execute(md5_hex($self -> {"autokey"}))
             or return set_error("Unable to peform key lookup query\nError was: ".$self -> {"dbh"} -> errstr);
 
-        $keyid = $autocheck -> fetchrow_hashref;
+        my $keyid = $autocheck -> fetchrow_hashref;
 
         # Do the key and user match? If so, fetch the user's data.
         $userdata = $self -> {"auth"} -> get_user_byid($self -> {"sessuser"}, 1)
