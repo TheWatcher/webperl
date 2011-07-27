@@ -1,10 +1,10 @@
 ## @file
-# This file contains the implementation of the perl phpBB3 interaction class.
+# This file contains the implementation of the perl sesion class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 0.5
-# @date    23 Sep 2009
-# @copy    2009, Chris Page &lt;chris@starforge.co.uk&gt;
+# @version 1.0
+# @date    27 July 2011
+# @copy    2011, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,14 +21,10 @@
 
 ## @class
 # The SessionHandler class provides cookie-based session facilities for
-# maintaining user state over http transactions. This code depends on
-# integration with a phpBB3 database: a number of custom tables are needed
-# (see config docs), but user handling is tied to phpBB3 user tables, and
-# a number of joins between custom tables and phpBB3 ones require the two
-# to share database space. This code provides session verification, and
-# takes some steps towards ensuring security against cookie hijacking, but
-# as with any cookie based auth system there is the potential for security
-# issues.
+# maintaining user state over http transactions. This code provides session
+# verification, and takes some steps towards ensuring security against
+# cookie hijacking, but as with any cookie based auth system there is
+# the potential for security issues.
 #
 # This code is heavily based around the session code used by phpBB3, with
 # features removed or added to fit the different requirements of the ORB,

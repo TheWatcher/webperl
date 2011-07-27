@@ -2,9 +2,9 @@
 # This file contains the implementation of the perl phpBB3 interaction class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 0.6
-# @date    24 Apr 2009
-# @copy    2009, Chris Page &lt;chris@starforge.co.uk&gt;
+# @version 0.7
+# @date    27 July 2011
+# @copy    2011, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
