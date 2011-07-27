@@ -29,6 +29,36 @@
 # This code is heavily based around the session code used by phpBB3, with
 # features removed or added to fit the different requirements of the ORB,
 # starforge site, etc
+#
+# When creating a new SessionHandler, you must provide an authenticator
+# object, this object needs to expose a number of functions and values:
+#
+# $auth -> {"ANONYMOUS"} - should contain the ID of the anonymous (not logged in)
+#                          user.
+#
+# $ get_config($name) - should return a string, the value of which depends on the
+#                       value set for the specified configuration variable. The
+#                       used variables are:
+#      allow_autologin: Should be set to 1 to allow automatic logins, 0 or missing to disable them.
+#   max_autologin_time: How long should autologins last, should be something like '30d'. Defaults to 356d.
+#             ip_check: How may pieces of IP should be checked to verify user sessions. 0 = none, 4 = all four IP parts.
+#       session_length: How long should sessions last, in seconds.
+#           session_gc: How frequently should sessions be garbage collected, in seconds.
+#
+# $ get_user_byid($userid, $onlyreal) - should return a reference to a hash of user
+#                       data corresponding to the specified userid, or undef if the
+#                       userid does not correspond to a valid user. If the onlyreal
+#                       argument is set, the userid must correspond to 'real' user -
+#                       bots or inactive users should not be returned. The hash must
+#                       contain at least:
+#
+#                       user_id   - the user's unique id
+#                       user_type - 0 = normal user, 1 = inactive, 2 = bot/anonymous, 3 = admin
+#
+# $ unique_id($extra) - should return a unique id number. 'Uniqueness' is only important from the point
+#                       of view of using the id as part of session id calculation. The extra argument
+#                       allows the addition of an arbitrary string to the seed used to create the
+#                       id.
 package SessionHandler;
 
 require 5.005;
@@ -154,30 +184,23 @@ sub create_session {
 
     # If we have a key, and a user in the cookies, try to get it
     if($self -> {"autokey"} && $self -> {"sessuser"} && $self -> {"sessuser"} != $self -> {"auth"} -> {"ANONYMOUS"}) {
-        my $autocheck = $self -> {"dbh"} -> prepare("SELECT u.* FROM ".
-                                                    $self -> {"auth"} -> {"prefix"}."users AS u, ".
-                                                    $self -> {"settings"} -> {"database"} -> {"keys"}." AS k
-                                                    WHERE u.user_id = ?
-                                                    AND u.user_type IN (0, 3)
-                                                    AND k.user_id = u.user_id
-                                                    AND k.key_id = ?");
-        $autocheck -> execute($self -> {"sessuser"}, md5_hex($self -> {"autokey"}))
-            or return set_error("Unable to peform user lookup query\nError was: ".$self -> {"dbh"} -> errstr);
+        my $autocheck = $self -> {"dbh"} -> prepare("SELECT user_id FROM ".$self -> {"settings"} -> {"database"} -> {"keys"}." AS k
+                                                    WHERE k.key_id = ?");
+        $autocheck -> execute(md5_hex($self -> {"autokey"}))
+            or return set_error("Unable to peform key lookup query\nError was: ".$self -> {"dbh"} -> errstr);
 
-        $userdata = $autocheck -> fetchrow_hashref;
+        $keyid = $autocheck -> fetchrow_hashref;
+
+        # Do the key and user match? If so, fetch the user's data.
+        $userdata = $self -> {"auth"} -> get_user_byid($self -> {"sessuser"}, 1)
+            if($keyid -> {"user_id"} == $self -> {"sessuser"});
 
     # If we don't have a key and user in the cookies, do we have a user specified?
     } elsif($user) {
         $self -> {"autokey"} = '';
         $self -> {"sessuser"} = $user;
 
-        my $userh = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"auth"} -> {"prefix"}."users
-                                                 WHERE user_id = ?
-                                                 AND user_type IN (0, 3)");
-        $userh -> execute($self -> {"sessuser"})
-            or return set_error("Unable to peform user lookup query\nError was: ".$self -> {"dbh"} -> errstr);
-
-        $userdata = $userh -> fetchrow_hashref;
+        $userdata = $self -> {"auth"} -> get_user_byid($user, 1);
     }
 
     # If we don't have any user data then either the key didn't match in the database,
@@ -186,12 +209,7 @@ sub create_session {
         $self -> {"autokey"} = '';
         $self -> {"sessuser"} = $self -> {"auth"} -> {"ANONYMOUS"};
 
-         my $userh = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"auth"} -> {"prefix"}."users
-                                                 WHERE user_id = ?");
-        $userh -> execute($self -> {"sessuser"})
-            or return set_error("Unable to peform user lookup query\nError was: ".$self -> {"dbh"} -> errstr);
-
-        $userdata = $userh -> fetchrow_hashref;
+        $userdata = $self -> {"auth"} -> get_user_byid($self -> {"sessuser"});
 
     # If we have user data, we also want their last login time if possible
     } elsif($self -> {"settings"} -> {"detabase"} -> {"lastvisit"}) {
