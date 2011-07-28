@@ -408,7 +408,7 @@ sub ip_check {
 # sessions and session keys, but in the process it may need to update user
 # last visit information.
 #
-# @return true oin successful cleanup (or cleanup not needed), false on error.
+# @return true on successful cleanup (or cleanup not needed), false on error.
 sub session_cleanup {
     my $self = shift;
 
