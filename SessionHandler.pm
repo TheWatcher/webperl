@@ -1,5 +1,5 @@
 ## @file
-# This file contains the implementation of the perl sesion class.
+# This file contains the implementation of the perl session class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
 # @version 1.0
@@ -31,7 +31,8 @@
 # starforge site, etc
 #
 # When creating a new SessionHandler, you must provide an authenticator
-# object, this object needs to expose a number of functions and values:
+# object. The authenticator object should encapsulate interaction with the
+# user table, and must provide at least the following functions and values:
 #
 # $auth -> {"ANONYMOUS"} - should contain the ID of the anonymous (not logged in)
 #                          user.
