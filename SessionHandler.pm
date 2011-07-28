@@ -60,6 +60,33 @@
 #                       of view of using the id as part of session id calculation. The extra argument
 #                       allows the addition of an arbitrary string to the seed used to create the
 #                       id.
+#
+# This class requires two database tables: one for sessions, one for session keys (used
+# for autologin). The tables should be as follows:
+#
+# A session table, the name of which is stored in the configuration as {"database"} -> {"sessions"}:
+# CREATE TABLE `sessions` (
+#  `session_id` char(32) NOT NULL,
+#  `session_user_id` mediumint(9) unsigned NOT NULL,
+#  `session_start` int(11) unsigned NOT NULL,
+#  `session_time` int(11) unsigned NOT NULL,
+#  `session_ip` varchar(40) NOT NULL,
+#  `session_autologin` tinyint(1) unsigned NOT NULL,
+#  PRIMARY KEY (`session_id`),
+#  KEY `session_time` (`session_time`),
+#  KEY `session_user_id` (`session_user_id`)
+# ) DEFAULT CHARSET=utf8 COMMENT='Website sessions';
+#
+# A session key table, the name of which is in {"database"} -> {"keys"}
+# CREATE TABLE `session_keys` (
+#  `key_id` char(32) COLLATE utf8_bin NOT NULL DEFAULT '',
+#  `user_id` mediumint(8) unsigned NOT NULL DEFAULT '0',
+#  `last_ip` varchar(40) COLLATE utf8_bin NOT NULL DEFAULT '',
+#  `last_login` int(11) unsigned NOT NULL DEFAULT '0',
+#  PRIMARY KEY (`key_id`,`user_id`),
+#  KEY `last_login` (`last_login`)
+# ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Autologin keys';
+#
 package SessionHandler;
 
 require 5.005;
