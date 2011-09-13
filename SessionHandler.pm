@@ -62,7 +62,8 @@
 #                       id.
 #
 # This class requires two database tables: one for sessions, one for session keys (used
-# for autologin). The tables should be as follows:
+# for autologin). If autologins are permanently disabled (get_config('allow_autologin') always returns
+# false) then the session_keys table may be omitted. The tables should be as follows:
 #
 # A session table, the name of which is stored in the configuration as {"database"} -> {"sessions"}:
 # CREATE TABLE `sessions` (
