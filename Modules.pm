@@ -192,7 +192,7 @@ sub _new_module_internal {
                  "module"   => $self,
     };
     foreach my $key (%{$self}) {
-        $args{$key} = $self -> {$key};
+        $args{$key} = $self -> {$key} if(!defined($args{$key}));
     }
 
     my $modobj = $name -> new(%args)
