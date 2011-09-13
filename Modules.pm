@@ -36,7 +36,7 @@ BEGIN {
     $VERSION   = 0.1;
     $errstr    = '';
 }
-    
+
 # ==============================================================================
 # Creation
 
@@ -45,7 +45,6 @@ BEGIN {
 # to create block modules on the fly.
 # cgi       - The CGI object to access parameters and cookies through.
 # dbh       - The database handle to use for queries.
-# phpbb     - An object through which to talk to a phpBB3 database
 # settings  - The system settings object
 # template  - The system template object
 # session   - The session object
@@ -76,7 +75,7 @@ sub new {
     return set_error("No settings object available.") if(!$self -> {"settings"});
 
     # ... finally, template
-    return set_error("No settings template available.") if(!$self -> {"template"});
+    return set_error("No template object available.") if(!$self -> {"template"});
 
     # update @INC if needed
     unshift(@INC, $self -> {"blockdir"}) if($self -> {"blockdir"});
@@ -114,17 +113,17 @@ sub new_module_byblockid {
     my $modrow = $sth -> fetchrow_hashref();
 
     # If we have a block row, return an instance of the module for it
-    return $self -> new_module_byid($modrow -> {"module_id"}, 
-                                    $modrow -> {"args"}) 
+    return $self -> new_module_byid($modrow -> {"module_id"},
+                                    $modrow -> {"args"})
         if($modrow);
 
     return undef;
 }
 
 
-## @method $ new_module_byname($modname, $argument)        
+## @method $ new_module_byname($modname, $argument)
 # Load a module based on its name, checking against the database to obtain the real
-# module name, and whether the module is active. Returns a new object of the module 
+# module name, and whether the module is active. Returns a new object of the module
 # on success, undef if the module is disabled or if there's a problem.
 #
 # @param modname  The name of the module to load.
@@ -139,11 +138,11 @@ sub new_module_byname {
                                          $modname,
                                          $argument);
 }
-    
 
-## @method $ new_module_byid($modid, $argument)        
+
+## @method $ new_module_byid($modid, $argument)
 # Load a module based on its id, checking against the database to obtain the real
-# module name, and whether the module is active. Returns a new object of the module 
+# module name, and whether the module is active. Returns a new object of the module
 # on success, undef if the module is disabled or if there's a problem.
 #
 # @param modid    The id of the module to load.
@@ -155,7 +154,7 @@ sub new_module_byid {
     my $argument = shift;
 
     return $self -> _new_module_internal("WHERE module_id = ?",
-                                         $modid, 
+                                         $modid,
                                          $argument);
 }
 
@@ -175,9 +174,9 @@ sub _new_module_internal {
     my $modarg   = shift;
 
     my $modh = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"settings"} -> {"database"} -> {"modules"}." $where");
-    $modh -> execute($argument) 
+    $modh -> execute($argument)
         or die_log($self -> {"cgi"} -> remote_host(), "Unable to execute module resolve query: ".$self -> {"dbh"} -> errstr);
-    
+
     my $modrow = $modh -> fetchrow_hashref();
 
     # bomb if the mofule record is not found, or the module is inactive
@@ -186,15 +185,17 @@ sub _new_module_internal {
     my $name = $modrow -> {"perl_module"};
     no strict "refs"; # must disable strict references to allow named module loading.
     require "$name.pm";
-    my $modobj = $name -> new($modrow -> {"id"}, 
-                              $modarg, 
-                              $self -> {"cgi"}, 
-                              $self -> {"dbh"}, 
-                              $self -> {"phpbb"}, 
-                              $self -> {"template"},
-                              $self -> {"settings"},
-                              $self -> {"session"},
-                              $self)
+
+    # Set up the module argument hash...
+    my %args = { "modid"    => $modrow -> {"id"},
+                 "args"     => $modarg,
+                 "module"   => $self,
+    };
+    foreach my $key (%{$self}) {
+        $args{$key} = $self -> {$key};
+    }
+
+    my $modobj = $name -> new(%args)
         or set_error("Unable to load module: ".$Block::errstr);
     use strict;
 
@@ -234,7 +235,7 @@ sub build_sidebar {
     my $result = "";
     while(my $row = $sth -> fetchrow_hashref()) {
         # Load the block module
-        my $headerobj = $self -> new_module_byid($row -> {"module_id"}, 
+        my $headerobj = $self -> new_module_byid($row -> {"module_id"},
                                                  $row -> {"args"});
 
         # If we have an object, ask it do generate its block display.
