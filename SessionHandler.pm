@@ -2,8 +2,8 @@
 # This file contains the implementation of the perl session class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 1.0
-# @date    27 July 2011
+# @version 1.1
+# @date    13 Sept 2011
 # @copy    2011, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
