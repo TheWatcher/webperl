@@ -187,10 +187,10 @@ sub _new_module_internal {
     require "$name.pm";
 
     # Set up the module argument hash...
-    my %args = { "modid"    => $modrow -> {"id"},
+    my %args = ( "modid"    => $modrow -> {"id"},
                  "args"     => $modarg,
                  "module"   => $self,
-    };
+    );
     foreach my $key (%{$self}) {
         $args{$key} = $self -> {$key} if(!defined($args{$key}));
     }
