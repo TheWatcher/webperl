@@ -22,16 +22,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## @mainpage
-# 
+#
 # @section Introduction
-# 
-# The perl modules described here are the support modules used widely 
+#
+# The perl modules described here are the support modules used widely
 # throughout my web applications. They are generally used in a very specific
 # framework, but they provide features that may be useful in a standalone
-# environment. 
+# environment.
 #
 # @todo The documentation for the modules is still a work in progress: some
-#       areas need to be fleshed out substantially, and the addition of 
+#       areas need to be fleshed out substantially, and the addition of
 #       examples or test cases would be very helpful.
 
 ## @class
@@ -45,14 +45,14 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join superchomp is_defined_numeric rfc822_date title_case sentence_case get_proc_size);
+our @EXPORT_OK = qw(path_join superchomp is_defined_numeric rfc822_date title_case sentence_case get_proc_size blind_untaint);
 
 our $VERSION   = 1.0;
 
 
 ## @fn $ path_join(@fragments)
-# Take an array of path fragments and concatenate them together. This will 
-# concatenate the list of path fragments provided using '/' as the path 
+# Take an array of path fragments and concatenate them together. This will
+# concatenate the list of path fragments provided using '/' as the path
 # delimiter (this is not as platform specific as might be imagined: windows
 # will accept / delimited paths). The resuling string is trimmed so that it
 # <b>does not</b> end in /, but nothing is done to ensure that the string
@@ -82,7 +82,7 @@ sub path_join {
 
 ## @fn void superchomp($line)
 # Remove any white space or newlines from the end of the specified line. This
-# performs a similar task to chomp(), except that it will remove <i>any</i> OS 
+# performs a similar task to chomp(), except that it will remove <i>any</i> OS
 # newline from the line (unix, dos, or mac newlines) regardless of the OS it
 # is running on. It does not remove unicode newlines (U0085, U2028, U2029 etc)
 # because they are made of spiders.
@@ -122,15 +122,15 @@ sub is_defined_numeric {
 # @return The rfc822 time string
 sub rfc822_date {
     my $timestamp = shift;
-    
+
     # set up constants we'll need
     my @days = ("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat");
     my @mons = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
 
     my @ts = localtime($timestamp);
 
-    return sprintf("%s, %02d %s %4d %02d:%02d:%02d %s", 
-                   $days[$ts[6]], $ts[3], $mons[$ts[4]], $ts[5] + 1900, 
+    return sprintf("%s, %02d %s %4d %02d:%02d:%02d %s",
+                   $days[$ts[6]], $ts[3], $mons[$ts[4]], $ts[5] + 1900,
                    $ts[2], $ts[1], $ts[0],
                    strftime("%Z", @ts));
 }
@@ -162,8 +162,8 @@ sub title_case(\$$) {
 
 ## @fn void sentence_case($strref)
 # Convert the words in the provided string to sentence case. This will process all the
-# words in the string referred to by the argument to convert the string to sentence case, 
-# to avoid situations where allcaps/alllower input has been provided for a string that 
+# words in the string referred to by the argument to convert the string to sentence case,
+# to avoid situations where allcaps/alllower input has been provided for a string that
 # does not look good that way.
 #
 # @param strref A reference to the string to convert.
@@ -196,6 +196,21 @@ sub get_proc_size {
     my ($vsize) = $stat =~ /^[-\d]+ \(.*?\) \w+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ [-\d]+ ([-\d]+)/;
 
     return $vsize || -1;
+}
+
+
+## @fn $ blind_untaint($str)
+# Untaint the specified string blindly. This should generally only be used in
+# situations where the string is guaranteed to be safe, it just needs to be
+# untainted.
+#
+# @param str The string to untaint
+# @return The untainted string
+sub blind_untaint {
+    my $str = shift;
+
+    my ($untainted) = $str =~ /^(.*)$/;
+    return $untainted;
 }
 
 1;
