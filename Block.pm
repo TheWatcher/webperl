@@ -148,7 +148,7 @@ sub validate_string {
     $text = encode_entities($text);
 
     # Convert horrible smart quote crap from windows
-    foreach my $char (keys(%$self -> {"template"} ->{"entities")) {
+    foreach my $char (keys(%$self -> {"template"} ->{"entities"})) {
         $text =~ s/$char/$self->{template}->{entities}->{$char}/g;
     }
 
