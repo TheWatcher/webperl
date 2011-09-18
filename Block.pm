@@ -147,6 +147,11 @@ sub validate_string {
     # Convert all characters in the string to safe versions
     $text = encode_entities($text);
 
+    # Convert horrible smart quote crap from windows
+    foreach my $char (keys(%$self -> {"template"} ->{"entities")) {
+        $text =~ s/$char/$self->{template}->{entities}->{$char}/g;
+    }
+
     # Now trim spaces
     $text =~ s/^\s+//;
     $text =~ s/\s+$//;
