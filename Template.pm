@@ -36,7 +36,7 @@ our ($VERSION, $errstr, $utfentities, $entities);
 BEGIN {
 	$VERSION = 1.0;
 	$errstr = '';
-    
+
     $utfentities = { '\xC2\xA3'     => '&pound;',
                      '\xE2\x80\x98' => '&lsquo;',
                      '\xE2\x80\x99' => '&rsquo;',
@@ -64,7 +64,7 @@ BEGIN {
 # Create a new Template object. This will create a new Template object that will
 # allow templates to be loaded into strings, or printed to stdout. Meaningful
 # arguments to this constructor are:
-# basedir  - The directory containing template themes. Defaults to "templates". 
+# basedir  - The directory containing template themes. Defaults to "templates".
 # langdir  - The directory containing language files. Defaults to "lang".
 # lang     - The language file to use. Defaults to "en"
 # theme    - The theme to use. Defaults to "default"
@@ -74,13 +74,15 @@ sub new {
     my $class    = ref($invocant) || $invocant;
 
     # Object constructors don't get much more minimal than this...
-    my $self = { "basedir" => "templates",
-                 "langdir" => "lang",
-                 "lang"    => "en",
-                 "theme"   => "default",
-                 "timefmt" => '%a, %d %b %Y %H:%M:%S',
-                 "mailfmt" => '%a, %d %b %Y %H:%M:%S %z',
-                 "mailcmd" => '/usr/sbin/sendmail -t -f chris@starforge.co.uk',#pevesupport@cs.man.ac.uk', # Change -f as needed!
+    my $self = { "basedir"     => "templates",
+                 "langdir"     => "lang",
+                 "lang"        => "en",
+                 "theme"       => "default",
+                 "timefmt"     => '%a, %d %b %Y %H:%M:%S',
+                 "mailfmt"     => '%a, %d %b %Y %H:%M:%S %z',
+                 "mailcmd"     => '/usr/sbin/sendmail -t -f chris@starforge.co.uk',#pevesupport@cs.man.ac.uk', # Change -f as needed!
+                 "entities"    => $entities,
+                 "utfentities" => $utfentities,
                  @_,
     };
 
@@ -110,7 +112,7 @@ sub DESTROY {
 # @param modules A reference to the system module handler object.
 sub set_module_obj {
     my $self = shift;
-    
+
     $self -> {"modules"} = shift;
 }
 
@@ -135,7 +137,7 @@ sub load_language {
     while(my $name = readdir(LANG)) {
         # Skip anything that doesn't identify itself as a .lang file
         next unless($name =~ /\.lang$/);
-    
+
         my $filename = path_join($langdir, $name);
 
         # Attempt to open and parse the lang file
@@ -146,10 +148,10 @@ sub load_language {
                 # skip comments
                 next if($line =~ /^\s*#/);
 
-                # Pull out the key and value, and 
+                # Pull out the key and value, and
                 my ($key, $value) = $line =~ /^\s*(\w+)\s*=\s*(.*)$/;
                 next unless(defined($key) && defined($value));
-                
+
                 # Unslash any \"s
                 $value =~ s/\\\"/\"/go;
 
@@ -158,7 +160,7 @@ sub load_language {
 
                 $self -> {"words"} -> {$key} = $value;
             }
-            
+
             close(WORDFILE);
         }  else {
             warn_log("Unknown", "Unable to open language file $filename: $!");
@@ -189,7 +191,7 @@ sub load_language {
 # @param varhash An optional reference to a hash containing key-value pairs, any
 #                occurance of the key in the text string is replaced with the value.
 # @return The value for the language variable, or the default if the value is not
-#         available. If the default is not available either this returns the 
+#         available. If the default is not available either this returns the
 #         variable name in angled brackets.
 sub replace_langvar {
     my $self    = shift;
@@ -201,7 +203,7 @@ sub replace_langvar {
     # and default was omitted
     if(ref($default) eq "HASH") {
         $varhash = $default;
-        
+
         # Make the default value be the variable name in red to hilight problems
         $default = "<span style=\"color: red\">$varname</span>";
     }
@@ -226,15 +228,15 @@ sub replace_langvar {
         }
 
         return $txtstr;
-    }           
-    
+    }
+
     return $default;
 }
 
 
 ## @method $ replace_blockname($blkname, $default)
 # Replace a block name with the internal ID for the block. This will replace
-# a block name with the equivalent block ID and it can cope with the name 
+# a block name with the equivalent block ID and it can cope with the name
 # being embedded in B_[...] strings.
 #
 # @param blkname The name of the block to replace with a block id.
@@ -293,7 +295,7 @@ sub load_template {
 # provided hashref and replace all occurances of the key in the text with the value
 # set in the hash for that key.
 #
-# @param text    The text to process. If this is a reference, the replacement is 
+# @param text    The text to process. If this is a reference, the replacement is
 #                done in-place, otherwise the modified string is returned.
 # @param varmap  A reference to a hash containing variable names as keys, and the
 #                values to substitute for the keys.
@@ -302,7 +304,7 @@ sub process_template {
     my $self    = shift;
     my $text    = shift;
     my $varmap  = shift;
-    
+
     # If text is a reference already, we can just use it. Otherwise we need
     # to make a reference to the text to simplify the code in the loop below.
     my $textref = ref($text) ? $text : \$text;
@@ -332,7 +334,7 @@ sub process_template {
     foreach my $char (keys(%$entities)) {
         $$textref =~ s/$char/$entities->{$char}/g;
     }
-    
+
     # Return nothing if the text was a reference to begin with, otherwise
     # return the text itself.
     return ref($text) ? undef : $text;
@@ -357,7 +359,7 @@ sub process_template {
 # @return A string containing the message box.
 sub message_box {
     my ($self, $title, $type, $summary, $longdesc, $additional) = @_;
-    
+
     return $self -> load_template("messagebox.tem", { "***title***"      => $title,
                                                       "***icon***"       => $type,
                                                       "***summary***"    => $summary,
@@ -382,7 +384,7 @@ sub message_box {
 # @return A string containing the wizard box.
 sub wizard_box {
     my ($self, $title, $type, $stages, $stage, $longdesc, $additional) = @_;
-    
+
     # Preload the step template
     my $steptem = $self -> load_template("wizardstep.tem");
     chomp($steptem);
@@ -491,13 +493,13 @@ sub get_bbcode_path {
     my $self = shift;
 
     my $filename = path_join($self -> {"basedir"}, $self -> {"theme"});
-    
+
     return (-d $filename) ? $filename : undef;
 }
 
 
 ## @method $ format_time($time)
-# Given a time un unix timestamp format (seconds since the epoc), create a formatted 
+# Given a time un unix timestamp format (seconds since the epoc), create a formatted
 # date string.
 #
 # @param $time The time to format.
@@ -560,8 +562,8 @@ sub bytes_to_human {
 
 
 ## @fn $ humanise_seconds($seconds)
-# Convert a number of seconds to days/hours/minutes/seconds. This will take 
-# the specified number of seconds and output a string containing the number 
+# Convert a number of seconds to days/hours/minutes/seconds. This will take
+# the specified number of seconds and output a string containing the number
 # of days, hours, minutes, and seconds it corresponds to.
 #
 # @param seconds The number of seconds to convert.
@@ -578,7 +580,7 @@ sub humanise_seconds {
     $mins    = ($seconds / 60) % 60;
     $seconds = $seconds % 60;
 
-    if($days) { 
+    if($days) {
         $result .= $days." day".($days  > 1 ? "s" : "");
     }
 
