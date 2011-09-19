@@ -206,6 +206,8 @@ sub replace_langvar {
 
         # Make the default value be the variable name in red to hilight problems
         $default = "<span style=\"color: red\">$varname</span>";
+    } elsif(!defined($default)) {
+        $default = "<span style=\"color: red\">$varname</span>";
     }
 
     # strip the leadin L_ if present
