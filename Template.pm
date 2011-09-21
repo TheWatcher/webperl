@@ -563,16 +563,18 @@ sub bytes_to_human {
 }
 
 
-## @fn $ humanise_seconds($seconds)
+## @fn $ humanise_seconds($seconds, $short)
 # Convert a number of seconds to days/hours/minutes/seconds. This will take
 # the specified number of seconds and output a string containing the number
 # of days, hours, minutes, and seconds it corresponds to.
 #
 # @param seconds The number of seconds to convert.
+# @param short   If set, the generates string uses short forms of 'day', 'hour' etc.
 # @return A string containing the seconds in a human readable form
 sub humanise_seconds {
-    my $self = shift;
+    my $self    = shift;
     my $seconds = shift;
+    my $short   = shift;
     my ($frac, $mins, $hours, $days);
     my $result = "";
 
@@ -583,22 +585,22 @@ sub humanise_seconds {
     $seconds = $seconds % 60;
 
     if($days) {
-        $result .= $days." day".($days  > 1 ? "s" : "");
+        $result .= $days.($short ? "d" : " day").(!$short && $days  > 1 ? "s" : "");
     }
 
     if($hours) {
         $result .= ", " if($result);
-        $result .= $hours." hour".($hours > 1 ? "s" : "");
+        $result .= $hours.($short ? "h" : " hour").(!$short && $hours > 1 ? "s" : "");
     }
 
     if($mins) {
         $result .= ", " if($result);
-        $result .= $mins." minute".($mins  > 1 ? "s" : "");
+        $result .= $mins.($short ? "m" : " minute").(!$short && $mins  > 1 ? "s" : "");
     }
 
     if($seconds) {
         $result .= ", " if($result);
-        $result .= $seconds.($frac ? ".$frac" : "")." seconds".($mins  > 1 ? "s" : "");
+        $result .= $seconds.($frac ? ".$frac" : "").($short ? "s" : " second").(!$short && $mins  > 1 ? "s" : "");
     }
 
     return $result;
