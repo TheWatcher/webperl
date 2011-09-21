@@ -184,7 +184,7 @@ sub _new_module_internal {
 
     my $name = $modrow -> {"perl_module"};
     no strict "refs"; # must disable strict references to allow named module loading.
-    eval "require $name.pm";
+    eval "require $name";
 
     # Set up the module argument hash...
     my %args = ( "modid"    => $modrow -> {"id"},
