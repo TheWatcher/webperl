@@ -184,7 +184,7 @@ sub _new_module_internal {
 
     my $name = $modrow -> {"perl_module"};
     no strict "refs"; # must disable strict references to allow named module loading.
-    require "$name.pm";
+    eval "require $name.pm";
 
     # Set up the module argument hash...
     my %args = ( "modid"    => $modrow -> {"id"},
@@ -192,7 +192,7 @@ sub _new_module_internal {
                  "module"   => $self,
     );
     foreach my $key (keys(%{$self})) {
-        $args{$key} = $self -> {$key} if(!defined($args{$key}));
+        $args{$key} = $self -> {$key} if!(defined($args{$key}));
     }
 
     my $modobj = $name -> new(%args)
