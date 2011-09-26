@@ -450,6 +450,7 @@ sub email_template {
     $email .= "To: ".$args -> {"***to***"}."\n";
     $email .= "Cc: ".$args -> {"***cc***"}."\n" if($args -> {"***cc***"});
     $email .= "Bcc: ".$args -> {"***bcc***"}."\n" if($args -> {"***bcc***"});
+    $email .= "Reply-To: ".$args -> {"***replyto***"}."\n" if($args -> {"***replyto***"});
     $email .= "Subject: ".$args -> {"***subject***"}."\n";
     $email .= "Date: ".strftime($args -> {"***date***"})."\n" if($args -> {"***date***"});
     $email .= "\n";
