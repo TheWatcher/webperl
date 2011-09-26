@@ -442,12 +442,11 @@ sub email_template {
 
     # Check we have required fields
     return "No from field specified in email template arguments."    if(!$args -> {"***from***"});
-    return "No to field specified in email template arguments."      if(!$args -> {"***to***"});
     return "No subject field specified in email template arguments." if(!$args -> {"***subject***"});
 
     # Build the header first...
     $email  = "From: ".$args -> {"***from***"}."\n";
-    $email .= "To: ".$args -> {"***to***"}."\n";
+    $email .= "To: ".$args -> {"***to***"}."\n" if($args -> {"***to***"});
     $email .= "Cc: ".$args -> {"***cc***"}."\n" if($args -> {"***cc***"});
     $email .= "Bcc: ".$args -> {"***bcc***"}."\n" if($args -> {"***bcc***"});
     $email .= "Reply-To: ".$args -> {"***replyto***"}."\n" if($args -> {"***replyto***"});
