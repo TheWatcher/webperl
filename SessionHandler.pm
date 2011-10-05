@@ -228,6 +228,7 @@ sub create_session {
     } elsif($user) {
         $self -> {"autokey"} = '';
         $self -> {"sessuser"} = $user;
+        $self -> {"sessid"}   = undef;
 
         $userdata = $self -> {"auth"} -> get_user_byid($user, 1);
     }
@@ -236,6 +237,7 @@ sub create_session {
     # the user doesn't exist, is inactive, or is a bot. Just get the anonymous user
     if(!$userdata) {
         $self -> {"autokey"} = '';
+        $self -> {"sessid"}   = undef;
         $self -> {"sessuser"} = $self -> {"auth"} -> {"ANONYMOUS"};
 
         $userdata = $self -> {"auth"} -> get_user_byid($self -> {"sessuser"});
