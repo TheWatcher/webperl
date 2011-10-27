@@ -298,7 +298,8 @@ sub validate_htmlarea {
         return ($tidied, undef);
 
     # If the return from check_xhtml is one or more digits, it is an error count
-    } elsif($valid =~ /^\d+$/) {
+    } elsif($valid =~ /^\d+:/) {
+        $valid =~ s/^\d+://;
         return ($tidied, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_CHKERRS", "", {"***field***" => $settings -> {"nicename"},
                                                                                                  "***error***" => $valid}));
 
