@@ -285,7 +285,7 @@ sub load_template {
         close(TEMPLATE);
 
         # Do variable substitution
-        $self -> process_template(\$lines, $varmap);
+        $self -> process_template(\$lines, $varmap, 1);
 
         return $lines;
     } else {
