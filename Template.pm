@@ -258,7 +258,7 @@ sub replace_blockname {
 }
 
 
-## @method $ load_template($name, $varmap)
+## @method $ load_template($name, $varmap, $nocharfix)
 # Load a template from a file and replace the tags in it with the values given
 # in a hashref, return the string containing the filled-in template. The first
 # argument should be the filename of the template, the second should be the
@@ -266,13 +266,15 @@ sub replace_blockname {
 # template to replace, the values should be the text to replace those keys
 # with. Tags can be any format and may contain regexp reserved chracters.
 #
-# @param name   The name of the template to load.
-# @param varmap A reference to a hash containing values to replace in the template.
+# @param name      The name of the template to load.
+# @param varmap    A reference to a hash containing values to replace in the template.
+# @param nocharfix If set, character fixes will not be applied to the templated string.
 # @return The template with replaced variables and language markers.
 sub load_template {
-    my $self   = shift;
-    my $name   = shift;
-    my $varmap = shift;
+    my $self      = shift;
+    my $name      = shift;
+    my $varmap    = shift;
+    my $nocharfix = shift;
 
     my $filename = path_join($self -> {"basedir"}, $self -> {"theme"}, $name);
 
@@ -292,20 +294,22 @@ sub load_template {
 }
 
 
-## @method $ process_template($text, $varmap)
+## @method $ process_template($text, $varmap, $nocharfix)
 # Perform variable substitution on the text. This will go through each key in the
 # provided hashref and replace all occurances of the key in the text with the value
 # set in the hash for that key.
 #
-# @param text    The text to process. If this is a reference, the replacement is
-#                done in-place, otherwise the modified string is returned.
-# @param varmap  A reference to a hash containing variable names as keys, and the
-#                values to substitute for the keys.
+# @param text      The text to process. If this is a reference, the replacement is
+#                  done in-place, otherwise the modified string is returned.
+# @param varmap    A reference to a hash containing variable names as keys, and the
+#                  values to substitute for the keys.
+# @param nocharfix If set, character fixes will not be applied to the templated string.
 # @return undef if text was a reference, otherwise a copy of the modified string.
 sub process_template {
-    my $self    = shift;
-    my $text    = shift;
-    my $varmap  = shift;
+    my $self      = shift;
+    my $text      = shift;
+    my $varmap    = shift;
+    my $nocharfix = shift;
 
     # If text is a reference already, we can just use it. Otherwise we need
     # to make a reference to the text to simplify the code in the loop below.
@@ -327,14 +331,16 @@ sub process_template {
         $$textref =~ s/{B_\[(\w+?)\]}/$self->replace_blockname($1)/ge;
     }
 
-    # Convert some common utf-8 characters
-    foreach my $char (keys(%$utfentities)) {
-        $$textref =~ s/$char/$utfentities->{$char}/g;
-    }
+    unless($nocharfix) {
+        # Convert some common utf-8 characters
+        foreach my $char (keys(%$utfentities)) {
+            $$textref =~ s/$char/$utfentities->{$char}/g;
+        }
 
-    # Convert horrible smart quote crap from windows
-    foreach my $char (keys(%$entities)) {
-        $$textref =~ s/$char/$entities->{$char}/g;
+        # Convert horrible smart quote crap from windows
+        foreach my $char (keys(%$entities)) {
+            $$textref =~ s/$char/$entities->{$char}/g;
+        }
     }
 
     # Return nothing if the text was a reference to begin with, otherwise
@@ -452,10 +458,11 @@ sub email_template {
     $email .= "Reply-To: ".$args -> {"***replyto***"}."\n" if($args -> {"***replyto***"});
     $email .= "Subject: ".$args -> {"***subject***"}."\n";
     $email .= "Date: ".strftime($args -> {"***date***"})."\n" if($args -> {"***date***"});
+    $email .= "Content-Type: text/plain; charset=\"UTF-8\";\n";
     $email .= "\n";
 
     # now load and process the template
-    $email .= $self -> load_template($template, $args);
+    $email .= $self -> load_template($template, $args, 1);
 
     # And send the email
     return $self -> send_email_sendmail($email);

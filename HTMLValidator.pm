@@ -186,7 +186,7 @@ sub tidy_html {
 sub check_xhtml {
     my $xhtml   = shift;
     my $options = shift;
-
+    return 0;
     # Create a validator
     my $validator = WebService::Validator::HTML::W3C -> new(http_timeout  => $options -> {"timeout"},
                                                             validator_uri => $options -> {"uri"});
