@@ -36,7 +36,7 @@ package Block;
 
 use HTMLValidator;
 use Utils qw(is_defined_numeric);
-
+use Encode;
 use HTML::Entities;
 use strict;
 
@@ -120,6 +120,7 @@ sub validate_string {
 
     # Grab the parameter value, fall back on the default if it hasn't been set.
     my $text = $self -> {"cgi"} -> param($param);
+    $text = Encode::decode("utf8", $text) if(!Encode::is_utf8($text));
 
     # Handle the situation where the parameter has not been provided at all
     if(!defined($text) || $text eq '' || (!$text && $settings -> {"nonzero"})) {
