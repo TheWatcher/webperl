@@ -508,17 +508,21 @@ sub get_bbcode_path {
 }
 
 
-## @method $ format_time($time)
+## @method $ format_time($time, $format)
 # Given a time un unix timestamp format (seconds since the epoc), create a formatted
 # date string.
 #
-# @param $time The time to format.
+# @param time   The time to format.
+# @param format Optional format string, if not set the default format is used.
 # @return The string containing the formatted time.
 sub format_time {
-    my $self = shift;
-    my $time = shift;
+    my $self   = shift;
+    my $time   = shift;
+    my $format = shift;
+    # Fall back on the default if the user has not set a format.
+    $format = $self -> {"timefmt"} if(!defined($format));
 
-    return strftime($self -> {"timefmt"}, localtime($time));
+    return strftime($format, localtime($time));
 }
 
 
