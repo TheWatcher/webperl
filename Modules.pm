@@ -188,7 +188,7 @@ sub _new_module_internal {
     die "Unable to load module $name: $@" if($@);
 
     # Set up the module argument hash...
-    my %args = ( "modid"    => $modrow -> {"id"},
+    my %args = ( "modid"    => $modrow -> {"module_id"},
                  "args"     => $modarg,
                  "module"   => $self,
     );
