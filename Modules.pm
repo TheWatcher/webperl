@@ -94,6 +94,45 @@ sub new {
 #  Loading support
 #
 
+## @method $ new_module($arg)
+# Attempt to create an instance of a module identified by the id or block name
+# specified in the argument. Note that the id or name should appear in the
+# blocks table, the name in the module table is not used here!
+#
+# @param arg Either the numeric id or human-readable name for a block to load the module for.
+# @return An instance of the module, or undef on error.
+sub new_module {
+    my $self = shift;
+    my $arg  = shift;
+    my $mode = "bad";
+
+    # Is the arg all numeric? If so, it's an id
+    if($arg =~ /^\d+$/) {
+        $mode = "id = ?";
+
+    # names are just alphanumerics
+    } elsif($arg =~ /^[a-zA-Z0-9]+$/) {
+        $mode = "name LIKE ?";
+    }
+
+    return set_error("Illegal block id or name specified in new_module.") if($mode eq "bad");
+
+    my $sth = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"settings"} -> {"database"} -> {"blocks"}."
+                                           WHERE $mode");
+    $sth -> execute($arg) or
+        die_log($self -> {"cgi"} -> remote_host(), "new_module: Unable to execute query: ". $self -> {"dbh"} -> errstr);
+
+    my $modrow = $sth -> fetchrow_hashref();
+
+    # If we have a block row, return an instance of the module for it
+    return $self -> new_module_byid($modrow -> {"module_id"},
+                                    $modrow -> {"args"})
+        if($modrow);
+
+    return undef;
+}
+
+
 ## @method $ new_module_byblockid($blockid)
 # Given a block id, create an instance of the module that implements that block. This
 # will look in the blocks table to obtain the module id that implements the block, and
@@ -270,8 +309,7 @@ sub get_block_id {
     my $blockr = $blockh -> fetchrow_arrayref();
 
     # If we have the block id return it, otherwise return undef.
-    return $blockr -> [0] if($blockr);
-    return undef;
+    return $blockr ? $blockr -> [0] : undef;
 }
 
 # ============================================================================
