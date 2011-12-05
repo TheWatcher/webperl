@@ -64,11 +64,12 @@ BEGIN {
 # Create a new Template object. This will create a new Template object that will
 # allow templates to be loaded into strings, or printed to stdout. Meaningful
 # arguments to this constructor are:
-# basedir  - The directory containing template themes. Defaults to "templates".
-# langdir  - The directory containing language files. Defaults to "lang".
-# lang     - The language file to use. Defaults to "en"
-# theme    - The theme to use. Defaults to "default"
-# timefmt  - The time format string, strftime(3) format. Defaults to "%a, %d %b %Y %H:%M:%S"
+# basedir   - The directory containing template themes. Defaults to "templates".
+# langdir   - The directory containing language files. Defaults to "lang".
+# lang      - The language file to use. Defaults to "en"
+# theme     - The theme to use. Defaults to "default"
+# timefmt   - The time format string, strftime(3) format. Defaults to "%a, %d %b %Y %H:%M:%S"
+# blockname - If set, allow blocks to be specified by name rather than id.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
@@ -83,6 +84,7 @@ sub new {
                  "mailcmd"     => '/usr/sbin/sendmail -t -f chris@starforge.co.uk',#pevesupport@cs.man.ac.uk', # Change -f as needed!
                  "entities"    => $entities,
                  "utfentities" => $utfentities,
+                 "blockname"   => 0,
                  @_,
     };
 
@@ -252,6 +254,10 @@ sub replace_blockname {
     # Strip the B_[ ] if present
     $blkname =~ s/^B_\[(.*)\]$/$1/;
 
+    # If the system supports named blocks, pass the name back unchanged.
+    return $blkname if($self -> {"blockname"} && $blkname);
+
+    # Otherwise, look up the block id
     my $modid = $self -> {"modules"} -> get_block_id($blkname);
 
     return defined($modid) ? $modid : $default;
