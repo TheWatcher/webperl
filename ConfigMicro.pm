@@ -274,7 +274,7 @@ sub save_db_config {
 # @param name     The name of the variable to update.
 # @param value    The value to change the variable to.
 # @param namecol  Optional name of the table column for the key name, defaults to 'name'
-# @param valuecol Optional name of the table column for the value, defaults to 'value'
+# @param valcol   Optional name of the table column for the value, defaults to 'value'
 # @return true if the config variable was changed, false otherwise.
 sub set_db_config {
     my $self     = shift;
