@@ -256,7 +256,7 @@ sub create_session {
     }
 
     # Determine whether the session can be made persistent (requires the user to be registered, and normal)
-    my $is_registered = ($userdata -> {"user_id"} && $userdata -> {"user_id"} != $self -> {"auth"} -> {"ANONYMOUS"} && ($userdata -> {"user_type"} == 0 || $userdata -> {"user_type"} == 3));
+    my $is_registered = ($userdata && $userdata -> {"user_id"} && $userdata -> {"user_id"} != $self -> {"auth"} -> {"ANONYMOUS"} && ($userdata -> {"user_type"} == 0 || $userdata -> {"user_type"} == 3));
     $persist = (($self -> {"autokey"} || $persist) && $is_registered) ? 1 : 0;
 
     # Do we already have a session id? If we do, and it's an anonymous session, we want to nuke it
