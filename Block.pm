@@ -325,6 +325,7 @@ sub validate_htmlarea {
 # `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY ,
 # `logtime` INT UNSIGNED NOT NULL COMMENT 'The time the logged event happened at',
 # `user_id` INT UNSIGNED NULL DEFAULT NULL COMMENT 'The id of the user who triggered the event, if any',
+# `ipaddr` VARCHAR(16) NULL DEFAULT NULL COMMENT 'The IP address the event was triggered from',
 # `logtype` VARCHAR( 64 ) NOT NULL COMMENT 'The event type',
 # `logdata` VARCHAR( 255 ) NULL DEFAULT NULL COMMENT 'Any data that might be appropriate to log for this event'
 # )
@@ -346,9 +347,9 @@ sub log {
     $userid = undef unless($userid); # force undef, even if userid is 0.
 
     my $eventh = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"logtable"}."
-                                              (logtime, user_id, logtype, logdata)
-                                              VALUES(UNIX_TIMESTAMP(), ?, ?, ?)");
-    $eventh -> execute($userid, $type, $data)
+                                              (logtime, user_id, ipaddr, logtype, logdata)
+                                              VALUES(UNIX_TIMESTAMP(), ?, ?, ?, ?)");
+    $eventh -> execute($userid, $self -> {"cgi"} -> remote_addr(), $type, $data)
         or die_log($self -> {"cgi"} -> remote_host(), "FATAL: Unable to insert log entry for $userid ('$type', '$data')");
 }
 
