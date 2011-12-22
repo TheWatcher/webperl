@@ -65,6 +65,7 @@ BEGIN {
 #  settings The global configuration hashref.
 #  session  A reference to the current session object
 #  module   The module handler object, used to load other blocks on demand.
+#  logtable A string containing the name of the table to use for logging. See the log() function.
 #
 # @param args     A hash containing key/value pairs used to set up the module.
 # @return A newly created Block object.
@@ -73,6 +74,7 @@ sub new {
     my $class    = ref($invocant) || $invocant;
 
     my $self     = {
+        "logtable" => "",
         @_,
     };
 
@@ -309,6 +311,45 @@ sub validate_htmlarea {
         return ($tidied, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_CHKFAIL", "", {"***field***" => $settings -> {"nicename"},
                                                                                                  "***error***" => $valid}));
     }
+}
+
+# ============================================================================
+#  Logging functions
+
+## @method void log($type, $data)
+# Create an entry in the database log table with the specified type and data.
+# This will add an entry to the log table in the database, storing the time,
+# user, and type and data supplied. It expects a table of the following structure
+# @verbatim
+# CREATE TABLE `log` (
+# `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+# `logtime` INT UNSIGNED NOT NULL COMMENT 'The time the logged event happened at',
+# `user_id` INT UNSIGNED NULL DEFAULT NULL COMMENT 'The id of the user who triggered the event, if any',
+# `logtype` VARCHAR( 64 ) NOT NULL COMMENT 'The event type',
+# `logdata` VARCHAR( 255 ) NULL DEFAULT NULL COMMENT 'Any data that might be appropriate to log for this event'
+# )
+# @endverbatim
+# When creating the block, you must set the 'logtable' option to the name of the log table.
+#
+# @param type The log event type, may be any string up to 64 characters long.
+# @param data The event data, may be any string up to 255 characters.
+sub log {
+    my $self = shift;
+    my $type = shift;
+    my $data = shift;
+
+    # Do nothing if there is no log table set.
+    return if(!$self -> {"logtable"});
+
+    # Work out the user
+    my $userid = $self -> {"session"} -> {"sessuser"};
+    $userid = undef unless($userid); # force undef, even if userid is 0.
+
+    my $eventh = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"logtable"}."
+                                              (logtime, user_id, logtype, logdata)
+                                              VALUES(UNIX_TIMESTAMP(), ?, ?, ?)");
+    $eventh -> execute($userid, $type, $data)
+        or die_log($self -> {"cgi"} -> remote_host(), "FATAL: Unable to insert log entry for $userid ('$type', '$data')");
 }
 
 
