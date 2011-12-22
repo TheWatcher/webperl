@@ -31,7 +31,7 @@ use POSIX qw(strftime);
 use Utils qw(path_join superchomp);
 use strict;
 
-our ($VERSION, $errstr, $utfentities, $entities);
+our ($VERSION, $errstr, $utfentities, $entities, $ords);
 
 BEGIN {
 	$VERSION = 1.0;
@@ -54,6 +54,14 @@ BEGIN {
                  '\x97' => '&mdash;',
                  '\x88' => '&hellip;', # 0x88 (133) is an ellisis
     };
+    $ords = {1 => "st",
+             2 => "nd",
+             3 => "rd",
+             21 => 'st',
+             22 => 'nd',
+             23 => 'rd',
+             31 => 'st'
+    };
 }
 
 
@@ -68,7 +76,9 @@ BEGIN {
 # langdir   - The directory containing language files. Defaults to "lang".
 # lang      - The language file to use. Defaults to "en"
 # theme     - The theme to use. Defaults to "default"
-# timefmt   - The time format string, strftime(3) format. Defaults to "%a, %d %b %Y %H:%M:%S"
+# timefmt   - The time format string, strftime(3) format, with the extension %o
+#             to mark the location of an ordinal specifier. %o is ignored if it
+#             does not immediately follow a digit field. Defaults to "%a, %d %b %Y %H:%M:%S"
 # blockname - If set, allow blocks to be specified by name rather than id.
 sub new {
     my $invocant = shift;
@@ -514,9 +524,22 @@ sub get_bbcode_path {
 }
 
 
+## @fn $ ordinal($val)
+# Return the specified value appended with an ordinal suffix.
+#
+# @param val The value to add a suffix to.
+# @return The processed value.
+sub ordinal {
+    my $val = shift;
+
+    return $val.($ords -> {$val} ? $ords -> {$val} : "th");
+}
+
+
 ## @method $ format_time($time, $format)
 # Given a time un unix timestamp format (seconds since the epoc), create a formatted
-# date string.
+# date string. The format string should be in strftime() compatible format, with the
+# extension of %o as an ordinal marker (must follow a digit field).
 #
 # @param time   The time to format.
 # @param format Optional format string, if not set the default format is used.
@@ -528,7 +551,9 @@ sub format_time {
     # Fall back on the default if the user has not set a format.
     $format = $self -> {"timefmt"} if(!defined($format));
 
-    return strftime($format, localtime($time));
+    my $datestr = strftime($format, localtime($time));
+    $datestr =~ s/(\d+)\s*%o/ordinal($1)/ge;
+    return $datestr;
 }
 
 
