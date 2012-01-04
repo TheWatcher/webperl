@@ -85,7 +85,7 @@ sub new {
     if(!defined($self -> {"block"})) {
         my $block = $self -> {"cgi"} -> param("block");
 
-        $self -> {"block"} = if($block && $block =~ /^\w+$/);
+        $self -> {"block"} = $block if($block && $block =~ /^\w+$/);
         $self -> {"block"} = $self -> {"settings"} -> {"config"} -> {"default_block"} if(!$self -> {"block"});
     }
 
