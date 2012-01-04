@@ -79,7 +79,15 @@ sub new {
     };
 
     # Work out which block we're being invoked with
-    $self -> {"block"} = is_defined_numeric($self -> {"cgi"}, "block") || $self -> {"settings"} -> {"config"} -> {"default_block"};
+    $self -> {"block"} = is_defined_numeric($self -> {"cgi"}, "block");
+
+    # block id is not set, check whether the block name is
+    if(!defined($self -> {"block"})) {
+        my $block = $self -> {"cgi"} -> param("block");
+
+        $self -> {"block"} = if($block && $block =~ /^\w+$/);
+        $self -> {"block"} = $self -> {"settings"} -> {"config"} -> {"default_block"} if(!$self -> {"block"});
+    }
 
     return bless $self, $class;
 }
