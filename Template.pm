@@ -98,6 +98,10 @@ sub new {
                  @_,
     };
 
+    # Force date formats to sane values.
+    $self -> {"timefmt"} = '%a, %d %b %Y %H:%M:%S' unless($self -> {"timefmt"});
+    $self -> {"mailfmt"} = '%a, %d %b %Y %H:%M:%S %z' unless($self -> {"mailfmt"});
+
     my $obj = bless $self, $class;
 
     # Load the language definitions
