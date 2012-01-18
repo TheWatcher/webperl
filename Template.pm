@@ -626,7 +626,7 @@ sub humanise_seconds {
     my $result = "";
 
     # Do nothing to non-digit strings.
-    return $seconds unless($seconds =~ /^\d+(\.\d+)?$/);
+    return $seconds unless($seconds && $seconds =~ /^\d+(\.\d+)?$/);
 
     ($frac)  = $seconds =~ /\.(\d+)$/;
     $days    = int($seconds / (24 * 60 * 60));
