@@ -625,6 +625,9 @@ sub humanise_seconds {
     my ($frac, $mins, $hours, $days);
     my $result = "";
 
+    # Do nothing to non-digit strings.
+    return $seconds unless($seconds =~ /^\d+(\.\d+)?$/);
+
     ($frac)  = $seconds =~ /\.(\d+)$/;
     $days    = int($seconds / (24 * 60 * 60));
     $hours   = ($seconds / (60 * 60)) % 24;
