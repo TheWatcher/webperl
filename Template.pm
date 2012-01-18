@@ -650,7 +650,7 @@ sub humanise_seconds {
 
     if($seconds) {
         $result .= ", " if($result);
-        $result .= $seconds.($frac ? ".$frac" : "").($short ? "s" : " second").(!$short && $mins  > 1 ? "s" : "");
+        $result .= $seconds.($frac ? ".$frac" : "").($short ? "s" : " second").(!$short && $seconds > 1 ? "s" : "");
     }
 
     return $result;
