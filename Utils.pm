@@ -45,7 +45,7 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join superchomp is_defined_numeric rfc822_date title_case sentence_case get_proc_size blind_untaint);
+our @EXPORT_OK = qw(path_join superchomp trimspace is_defined_numeric rfc822_date title_case sentence_case get_proc_size blind_untaint);
 
 our $VERSION   = 1.0;
 
@@ -92,6 +92,22 @@ sub superchomp(\$) {
     my $line = shift;
 
     $$line =~ s/(?:[\s\x{0d}\x{0a}\x{0c}]+)$//o;
+}
+
+
+## @fn $ trimspace($data)
+# Remove whitespace from the start and end of the specified string, and
+# return the stripped string.
+#
+# @param data The string to remove leading and trailing whitespace from.
+# @return The stripped string.
+sub trimspace {
+    my $data = shift;
+
+    $data =~ s/^[\s\x{0d}\x{0a}\x{0c}]+//o;
+    $data =~ s/[\s\x{0d}\x{0a}\x{0c}]+$//o;
+
+    return $data;
 }
 
 
