@@ -222,7 +222,7 @@ sub create_session {
 
         # Do the key and user match? If so, fetch the user's data.
         $userdata = $self -> {"auth"} -> get_user_byid($self -> {"sessuser"}, 1)
-            if($keyid -> {"user_id"} == $self -> {"sessuser"});
+            if($keyid && $keyid -> {"user_id"} == $self -> {"sessuser"});
 
     # If we don't have a key and user in the cookies, do we have a user specified?
     } elsif($user) {
@@ -416,7 +416,7 @@ sub session_cookies {
 sub ip_check {
     my $self   = shift;
     my $userip = shift;
-    my $sessip = shift;
+    my $sessip = shift || "";
 
     # How may IP address segments should be compared?
     my $iplen = $self -> {"auth"} -> get_config('ip_check');
