@@ -429,7 +429,7 @@ sub ip_check {
     my ($sesscheck) = $sessip =~ /((?:\d+.?){$iplen})/;
 
     # Do the IPs match?
-    return $usercheck eq $sesscheck;
+    return $sesscheck && ($usercheck eq $sesscheck);
 }
 
 
