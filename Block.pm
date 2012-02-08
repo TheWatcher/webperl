@@ -94,6 +94,47 @@ sub new {
 
 
 # ===========================================================================
+#  Enum field support
+
+## @method $ get_enum_values($table, $column)
+# Obtain an array of enum values for a table column. This will attempt to pull
+# the valid enumeration values out of a table column description and return a
+# reference to an array of values.
+#
+# @return A reference to an array of enum values, or an error message string.
+sub get_enum_values {
+    my $self   = shift;
+    my $table  = shift;
+    my $column = shift;
+
+    my $colh = $self -> {"dbh"} -> prepare("DESCRIBE $table $column");
+    $colh -> execute()
+        or return $self -> {"template"} -> replace_langvar("BLOCK_ERROR_BADENUM", {"***table***"  => $table,
+                                                                                   "***col***"    => $column,
+                                                                                   "***errstr***" => $self -> {"dbh"} -> errstr});
+    my $unitsdata = $colh -> fetchrow_hashref();
+
+    # Check that this really is an enum column
+    return $self -> {"template"} -> replace_langvar("BLOCK_ERROR_NOTENUM", {"***table***" => $table,
+                                                                            "***col***"   => $column})
+        if($unitsdata -> {"Type"} !~ /^enum/i);
+
+    # pull out the middle bit of the string, dropping the 'enum(' and ')'
+    my $units = substr($unitsdata -> {'Type'}, 5, -1);
+
+    # Nuke the 's as they're not needed
+    $units =~ s/','/,/g;
+    $units =~ s/^'(.*)'$/$1/;
+
+    # Split the string into a usable form
+    my @unitlist = split(/,/,$units);
+
+    # Send back a reference to the array
+    return \@unitlist;
+}
+
+
+# ===========================================================================
 #  Parameter validation support functions
 
 ## @method @ validate_string($param, $settings)
