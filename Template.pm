@@ -105,7 +105,8 @@ sub new {
     my $obj = bless $self, $class;
 
     # Load the language definitions
-    $obj -> load_language() or return undef;
+    $obj -> load_language() or return undef
+        if($self -> {"langdir"} && $self -> {"lang"});
 
     return $obj;
 }
