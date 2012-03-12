@@ -189,7 +189,7 @@ sub valid_user {
         my $methodimpl = $self -> {"methods"} -> load_method($authmethod);
 
         # Check whether the user can authenticate if the implementation was found
-        $valid = $methodimpl -> authenticate($username, $password)
+        $valid = $methodimpl -> authenticate($username, $password, $self)
             if($methodimpl);
     }
 
@@ -203,7 +203,7 @@ sub valid_user {
         foreach $authmethod (@{$methods}) {
             my $methodimpl = $self -> {"methods"} -> load_method($authmethod);
 
-            $valid = $methodimpl -> authenticate($username, $password)
+            $valid = $methodimpl -> authenticate($username, $password, $self)
                 if($methodimpl);
 
             # If an auth method says the user is valid, stop immediately
@@ -226,7 +226,6 @@ sub valid_user {
     # Authentication failed.
     return undef;
 }
-
 
 
 # ============================================================================
