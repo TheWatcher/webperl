@@ -62,10 +62,6 @@ sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
     my $self     = {
-        cgi       => undef,
-        dbh       => undef,
-        settings  => undef,
-        system    => undef,
         @_,
     };
 
@@ -198,7 +194,7 @@ sub valid_user {
     # that, if an auth method is removed for some reason, the system will try other auth
     # methods instead.
     if(!$valid && (!$authmethod || !$methodimpl || $self -> {"settings"} -> {"Auth:enable_fallback"})) {
-        my $methods = $self -> {"methods"} -> available_methods();
+        my $methods = $self -> {"methods"} -> available_methods(1);
 
         foreach $authmethod (@{$methods}) {
             my $methodimpl = $self -> {"methods"} -> load_method($authmethod);
