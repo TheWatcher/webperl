@@ -55,7 +55,7 @@ sub new {
     return set_error("cgi object not set") unless($self -> {"cgi"});
     return set_error("dbh object not set") unless($self -> {"dbh"});
     return set_error("settings object not set") unless($self -> {"settings"});
-    return set_error("system object not set") unless($self -> {"system"});
+    return set_error("app object not set") unless($self -> {"app"});
 
     return bless $self, $class;
 }
@@ -133,7 +133,7 @@ sub load_method {
     my %settings = ( cgi      => $self -> {"cgi"},
                      dbh      => $self -> {"dbh"},
                      settings => $self -> {"settings"},
-                     system   => $self -> {"system"}); # Methods shouldn't actually need access to system, but add it anyway in case.
+                     app      => $self -> {"app"}); # Methods shouldn't actually need access to app, but add it anyway in case.
     while(my $param = $paramh -> fetchrow_hashref()) {
         $settings{$param -> {"name"}} = $param -> {"value"};
     }
