@@ -24,7 +24,7 @@
 # with the SessionHandler class, and provides support for user authentication against
 # multiple auth systems in a way that is transparent to the caller. The class works
 # by calling on two other modules to do most of the work: it relies on a subclass of
-# SystemUser for system-specific user management operations, and the AuthMethods
+# AppUser for app-specific user management operations, and the AuthMethods
 # class for authentication plugin loading.
 #
 # This class requires an entry in the settings table with the name 'Auth:unique_id',
@@ -54,7 +54,7 @@ BEGIN {
 # - cgi, a reference to a CGI object.
 # - dbh, a reference to the DBI object to issue database queries through.
 # - settings, a reference to the global settings object.
-# - system, a reference to a SystemUser object to perform user-related db queries through.
+# - app, a reference to a AppUser object to perform user-related db queries through.
 #
 # @param args A hash of key, value pairs to initialise the object with.
 # @return     A reference to a new Auth object on success, undef on failure.
@@ -69,17 +69,17 @@ sub new {
     return set_error("cgi object not set") unless($self -> {"cgi"});
     return set_error("dbh object not set") unless($self -> {"dbh"});
     return set_error("settings object not set") unless($self -> {"settings"});
-    return set_error("system object not set") unless($self -> {"system"});
+    return set_error("app object not set") unless($self -> {"app"});
 
     # Create the authmethods object to handle invocation of individual methods
     $self -> {"methods"} = AuthMethods -> new(cgi      => $self -> {"cgi"},
                                               dbh      => $self -> {"dbh"},
                                               settings => $self -> {"settings"},
-                                              system   => $self -> {"system"})
+                                              app      => $self -> {"app"})
         or return set_error("Unable to create AuthMethods object: ".$Auth::Methods -> errstr);
 
-    $self -> {"ANONYMOUS"} = $self -> {"system"} -> anonymous_user();
-    $self -> {"ADMINTYPE"} = $self -> {"system"} -> adminuser_type();
+    $self -> {"ANONYMOUS"} = $self -> {"app"} -> anonymous_user();
+    $self -> {"ADMINTYPE"} = $self -> {"app"} -> adminuser_type();
 
     return bless $self, $class;
 }
@@ -147,7 +147,7 @@ sub get_user_byid {
     my $userid   = shift;
     my $onlyreal = shift || 0;
 
-    return $self -> {"system"} -> get_user_byid($userid, $onlyreal);
+    return $self -> {"app"} -> get_user_byid($userid, $onlyreal);
 }
 
 
@@ -172,13 +172,13 @@ sub valid_user {
     $self -> {"lasterr"} = "";
 
     # Is the user disabled?
-    if($self -> {"system"} -> user_blocked($username)) {
+    if($self -> {"app"} -> user_disabled($username)) {
         $self -> {"lasterr"} = "This user account has been disabled.";
         return undef;
     }
 
     # Does the user already have an auth method set?
-    my $authmethod = $self -> {"system"} -> get_user_authmethod($username);
+    my $authmethod = $self -> {"app"} -> get_user_authmethod($username);
 
     # Try the user's set authmethod if possible
     if($authmethod) {
@@ -208,13 +208,13 @@ sub valid_user {
     }
 
     # If one of the auth methods succeeded in validating the user, record it
-    # invoke the system standard post-auth for the user, and return the user's
+    # invoke the app standard post-auth for the user, and return the user's
     # database record.
     if($valid) {
-        $self -> {"system"} -> set_user_authmethod($username, $authmethod);
-        $self -> {"lasterr"} = $self -> {"system"} -> post_authenticate($username);
+        $self -> {"lasterr"} = $self -> {"app"} -> post_authenticate($username);
+        $self -> {"app"} -> set_user_authmethod($username, $authmethod);
 
-        return $self -> {"system"} -> get_user($username);
+        return $self -> {"app"} -> get_user($username);
     }
 
     $self -> {"lasterr"} = "Invalid username or password specified.";
