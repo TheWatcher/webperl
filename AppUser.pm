@@ -262,7 +262,7 @@ sub post_authenticate {
 # ============================================================================
 #  Internal functions
 
-## @method private $ _get_user($field, $value, $onlyreal)
+## @method private $ _get_user($field, $value, $onlyreal, $uselike)
 # Internal implementation of the get_user facility. This allows users to be
 # searched for on any given user field, and if the user is found it returns
 # the user's data, undef otherwise. If the onlyreal argument is set, the user
