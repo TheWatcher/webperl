@@ -31,7 +31,8 @@
 # * table     - The name of the database table to authenticate against.
 #               This must be accessible to the system-wide dbh object.
 # * userfield - The name of the column in the table that stores usernames.
-# * passfield - The password column in the table.
+# * passfield - The password column in the table. The field in the table
+#               must be able to store a 59 character hashed password.
 #
 # The following arguments may also be provided to the module constructor:
 #
