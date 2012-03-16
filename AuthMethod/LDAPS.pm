@@ -143,7 +143,7 @@ sub authenticate {
         return $valid;
     }
 
-    $auth -> {"lasterr"} = "LDAP login failed: username and password are required";
+    $auth -> {"lasterr"} .= "LDAP login failed: username and password are required\n";
     return 0;
 }
 
