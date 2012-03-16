@@ -33,12 +33,10 @@
 # * userfield - The name of the column in the table that stores usernames.
 # * passfield - The password column in the table.
 #
-# The module also expects a 'system_salt' value in the configuration
-# table to include in the salting process. The following arguments may
-# also be provided to the module constructor:
+# The following arguments may also be provided to the module constructor:
 #
-# * brypt_cost - the number of iterations of hashing to perform. This
-#                defaults to COST_DEFAULT if not specified.
+# * bcrypt_cost - the number of iterations of hashing to perform. This
+#                 defaults to COST_DEFAULT if not specified.
 package AuthMethod::Database;
 
 use strict;
