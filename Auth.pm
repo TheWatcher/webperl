@@ -168,6 +168,7 @@ sub valid_user {
     my $username   = shift;
     my $password   = shift;
     my $valid      = 0;
+    my $methodimpl;
 
     $self -> {"lasterr"} = "";
 
@@ -182,7 +183,7 @@ sub valid_user {
 
     # Try the user's set authmethod if possible
     if($authmethod) {
-        my $methodimpl = $self -> {"methods"} -> load_method($authmethod);
+        $methodimpl = $self -> {"methods"} -> load_method($authmethod);
 
         # Check whether the user can authenticate if the implementation was found
         $valid = $methodimpl -> authenticate($username, $password, $self)
