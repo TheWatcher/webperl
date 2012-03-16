@@ -113,8 +113,8 @@ sub load_method {
     # Fetch the module name first
     my $moduleh = $self -> {"dbh"} -> prepare("SELECT perl_module, active FROM ".$self -> {"settings"} -> {"database"} -> {"auth_methods"}."
                                                WHERE id = ?");
-    $moduleh -> execute($module_id)
-        or die_log($self -> {"cgi"} -> remote_host(), "Unable to execute auth method list query: ".$self -> {"dbh"} -> errstr);
+    $moduleh -> execute($method_id)
+        or die_log($self -> {"cgi"} -> remote_host(), "Unable to execute auth method lookup query: ".$self -> {"dbh"} -> errstr);
 
     my $module = $moduleh -> fetchrow_hashref();
     return $self -> self_error("Unknown auth method requested in load_method($method_id)") if($module);
@@ -125,7 +125,7 @@ sub load_method {
     # Module is active, fetch its settings
     my $paramh = $self -> {"dbh"} -> prepare("SELECT name, value FROM ".$self -> {"settings"} -> {"database"} -> {"auth_params"}."
                                               WHERE method_id = ?");
-    $paramh -> execute($module_id)
+    $paramh -> execute($method_id)
         or die_log($self -> {"cgi"} -> remote_host(), "Unable to execute auth method parameter query: ".$self -> {"dbh"} -> errstr);
 
     # Build up a settings hash using the standard objects, and settings for the
@@ -137,6 +137,9 @@ sub load_method {
     while(my $param = $paramh -> fetchrow_hashref()) {
         $settings{$param -> {"name"}} = $param -> {"value"};
     }
+
+    # For readability...
+    my $name = $module -> {"perl_module"};
 
     no strict "refs"; # must disable strict references to allow named module loading.
     eval "require $name";
