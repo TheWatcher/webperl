@@ -3,9 +3,6 @@
 # loading and saving class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 2.0
-# @date    22 Feb 2009
-# @copy    2009, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,10 +44,9 @@ require 5.005;
 use DBI;
 use strict;
 
-our ($VERSION, $errstr);
+our $errstr;
 
 BEGIN {
-	$VERSION = 2.0;
 	$errstr = '';
 }
 

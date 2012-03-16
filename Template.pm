@@ -2,9 +2,6 @@
 # This file contains the implementation of the template engine.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 1.0
-# @date    23 November 09
-# @copy    2009, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,10 +28,9 @@ use POSIX qw(strftime);
 use Utils qw(path_join superchomp);
 use strict;
 
-our ($VERSION, $errstr, $utfentities, $entities, $ords);
+our ($errstr, $utfentities, $entities, $ords);
 
 BEGIN {
-	$VERSION = 1.0;
 	$errstr = '';
 
     $utfentities = { '\xC2\xA3'     => '&pound;',

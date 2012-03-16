@@ -4,9 +4,6 @@
 # need for multiple copies around various modules.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 1.0
-# @date    1 March 09
-# @copy    2009, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -46,8 +43,6 @@ use strict;
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
 our @EXPORT_OK = qw(path_join superchomp trimspace is_defined_numeric rfc822_date title_case sentence_case get_proc_size blind_untaint);
-
-our $VERSION   = 1.0;
 
 
 ## @fn $ path_join(@fragments)

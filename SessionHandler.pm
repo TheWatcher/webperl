@@ -2,9 +2,6 @@
 # This file contains the implementation of the perl session class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 1.1
-# @date    13 Sept 2011
-# @copy    2011, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -105,11 +102,10 @@ use Data::Dumper;
 use Logging qw(die_log);
 
 # Globals...
-use vars qw{$VERSION $errstr};
+our $errstr;
 
 BEGIN {
-	$VERSION = 0.2;
-	$errstr  = '';
+    $errstr = '';
 }
 
 # ============================================================================

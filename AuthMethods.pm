@@ -2,9 +2,6 @@
 # This file contains the implementation of the authentication method loader class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 1.0
-# @date    13 March 2012
-# @copy    2012, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

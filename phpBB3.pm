@@ -2,9 +2,6 @@
 # This file contains the implementation of the perl phpBB3 interaction class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 0.7
-# @date    27 July 2011
-# @copy    2011, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -45,11 +42,10 @@ use WWW::Mechanize; # Needed to register via phpBB's registration form
 use Utils qw(path_join);
 
 # Globals...
-use vars qw{$VERSION $ANONYMOUS $errstr %fmt_map};
+our ($ANONYMOUS $errstr %fmt_map);
 
 BEGIN {
     $ANONYMOUS = 1;   # ID of the anonymous user, should be 1 unless you Know What You're Doing.
-    $VERSION   = 0.6; # Package version number
     $errstr    = '';  # Global error string
 
     # Hash to map php date() formats to strftime format codes
@@ -1056,12 +1052,12 @@ sub _check_hash {
     my ($password, $hash) = @_;
 
     # lifted straight from phpBB3, if that changes, this must be changed!
-	my $itoa64 = './0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+    my $itoa64 = './0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 
     return (_hash_crypt_private($password, $hash, $itoa64) eq $hash)
         if (length($hash) == 34);
 
-	return md5_hex($password) eq $hash;
+    return md5_hex($password) eq $hash;
 }
 
 1;

@@ -3,9 +3,6 @@
 # printing facilities for the whole system.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 1.0
-# @date    2 March 2009
-# @copy    2009, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,9 +28,6 @@ use strict;
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw(warn_log die_log);
 our @EXPORT_OK = qw(start_log end_log);
-
-our $VERSION   = 1.0;
-
 
 my $logfile; # If defined, this is handle to the file that entries a written to
 my $logtime; # The time that the log file was opened
@@ -67,7 +61,7 @@ sub warn_log {
 sub die_log {
     my $ip      = shift || "unknown";
     my $message = shift;
-  
+
     print $logfile scalar(localtime)," [$$:$ip]: $message\n"
         if($logfile);
 
@@ -100,7 +94,7 @@ sub start_log {
 
 
 ## @fn void end_log($progname)
-# Stop logging warnings and errors to a file. This will write an indicator 
+# Stop logging warnings and errors to a file. This will write an indicator
 # that logging is stopping to the file and then close it.
 #
 # @param progname A optional program name to show in the log. Defaults to $0

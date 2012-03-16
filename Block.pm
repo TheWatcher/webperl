@@ -2,9 +2,6 @@
 # This file contains the implementation of the base Block class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
-# @version 1.3
-# @date    13 Sept 2011
-# @copy    2011, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,11 +38,10 @@ use HTML::Entities;
 use strict;
 
 # Globals within this and available to subclasses
-use vars qw{$VERSION $errstr};
+our $errstr;
 
 BEGIN {
-	$VERSION = 1.2;
-	$errstr  = '';
+	$errstr = '';
 }
 
 # ============================================================================

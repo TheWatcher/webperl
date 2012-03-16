@@ -2,8 +2,6 @@
 # This file contains the implementation of the SSH authentication class.
 #
 # @author  Chris Page &lt;chris@starforge.co.uk&gt;
-# @date    16 March 2012
-# @copy    2012, Chris Page &lt;chris@starforge.co.uk&gt;
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
