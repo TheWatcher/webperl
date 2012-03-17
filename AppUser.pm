@@ -28,12 +28,12 @@
 # set in the 'users' variable in the 'database' section of the settings, and
 # that the following fields are present in the table:
 #
-# * user_id - unsigned int, unique to each user
-# * user_type - unsigned tinyint, 0 = normal, 1 = disabled, 3 = admin usually
-# * user_auth - unsigned tinyint, the id of the user's auth method, must allow null
-# * username - varchar or text, contains the user's username, must be unique per user
-# * created  - unsigned int, stores the user's creation unix timestamp
-# * last_login - unsigned int, stores the user's last login unix timestamp
+# - user_id - unsigned int, unique to each user
+# - user_type - unsigned tinyint, 0 = normal, 1 = disabled, 3 = admin usually
+# - user_auth - unsigned tinyint, the id of the user's auth method, must allow null
+# - username - varchar or text, contains the user's username, must be unique per user
+# - created  - unsigned int, stores the user's creation unix timestamp
+# - last_login - unsigned int, stores the user's last login unix timestamp
 #
 # In general, most subclasses of this class will only really be concerned with
 # overriding the post_authenticate() function - the other functions will usually
