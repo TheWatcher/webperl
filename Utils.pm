@@ -30,6 +30,10 @@
 # @todo The documentation for the modules is still a work in progress: some
 #       areas need to be fleshed out substantially, and the addition of
 #       examples or test cases would be very helpful.
+#
+# @todo Each webapp using these modules has essentially the same index.cgi
+#       with very little variation. Find some way to make an Application
+#       class that the index can create that wraps all that commonality.
 
 ## @class
 # System-wide utility functions. The functions in this file may be useful at

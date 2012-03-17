@@ -59,14 +59,10 @@ BEGIN {
 
 ## @cmethod AppUser new(%args)
 # Create a new AppUser object. This will create an AppUser object that may be
-# passed to the Auth class to provide application-specific user handling. The
-# following arguments must be provided:
+# passed to the Auth class to provide application-specific user handling.
 #
-# - cgi, a reference to a CGI object.
-# - dbh, a reference to the DBI object to issue database queries through.
-# - settings, a reference to the global settings object.
 # @param args A hash of arguments to initialise the UserApp object with.
-# @return A new AuthMethod object.
+# @return A new AppUser object.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
@@ -74,12 +70,34 @@ sub new {
         @_,
     };
 
-    # Ensure that we have objects that we need
-    return set_error("cgi object not set") unless($self -> {"cgi"});
-    return set_error("dbh object not set") unless($self -> {"dbh"});
-    return set_error("settings object not set") unless($self -> {"settings"});
-
     return bless $self, $class;
+}
+
+
+## @method $ init($cgi, $dbh, $settings)
+# Initialise the AppUser's references to other system objects. This allows the
+# setup of the object to be deferred from construction. If the cgi, dbh, and
+# settings objects have been passed into new(), calling this function is not
+# required to use the object.
+#
+# @param cgi      A reference to the system-wide cgi object.
+# @param dbh      A reference to the system DBI object.
+# @param settings A reference to the global settings.
+# @return undef on success, otherwise an error message
+sub init {
+    my $self = shift;
+
+    $self -> {"cgi"} = shift;
+    $self -> {"dbh"} = shift;
+    $self -> {"settings"} = shift;
+
+    # Check things are set.
+    return "cgi object not set" unless($self -> {"cgi"});
+    return "dbh object not set" unless($self -> {"dbh"});
+    return "settings object not set" unless($self -> {"settings"});
+
+    #  All good, return nothing...
+    return undef;
 }
 
 

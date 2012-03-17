@@ -42,7 +42,7 @@ use WWW::Mechanize; # Needed to register via phpBB's registration form
 use Utils qw(path_join);
 
 # Globals...
-our ($ANONYMOUS $errstr %fmt_map);
+our ($ANONYMOUS, $errstr, %fmt_map);
 
 BEGIN {
     $ANONYMOUS = 1;   # ID of the anonymous user, should be 1 unless you Know What You're Doing.

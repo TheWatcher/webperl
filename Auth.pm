@@ -46,7 +46,7 @@ BEGIN {
 ## @cmethod Auth new(%args)
 # Create a new Auth object. This will create an Auth object that may be (for example)
 # passed to SessionHandler to provide user authentication. The arguments to this
-# constructor must include:
+# constructor may include:
 #
 # - cgi, a reference to a CGI object.
 # - dbh, a reference to the DBI object to issue database queries through.
@@ -62,23 +62,46 @@ sub new {
         @_,
     };
 
+    return bless $self, $class;
+}
+
+
+## @method $ init($cgi, $dbh, $app, $settings)
+# Initialise the Auth's references to other system objects. This allows the
+# setup of the object to be deferred from construction. If the cgi, dbh, app,
+# and settings objects have been passed into new(), calling this function is
+# not required to use the object.
+#
+# @param cgi      A reference to the system-wide cgi object.
+# @param dbh      A reference to the system DBI object.
+# @param app      A reference to an AppUser object.
+# @param settings A reference to the global settings.
+# @return undef on success, otherwise an error message
+sub init {
+    my $self = shift;
+
+    $self -> {"cgi"} = shift;
+    $self -> {"dbh"} = shift;
+    $self -> {"app"} = shift;
+    $self -> {"settings"} = shift;
+
     # Ensure that we have objects that we need
-    return set_error("cgi object not set") unless($self -> {"cgi"});
-    return set_error("dbh object not set") unless($self -> {"dbh"});
-    return set_error("settings object not set") unless($self -> {"settings"});
-    return set_error("app object not set") unless($self -> {"app"});
+    return "cgi object not set" unless($self -> {"cgi"});
+    return "dbh object not set" unless($self -> {"dbh"});
+    return "settings object not set" unless($self -> {"settings"});
+    return "app object not set" unless($self -> {"app"});
 
     # Create the authmethods object to handle invocation of individual methods
     $self -> {"methods"} = AuthMethods -> new(cgi      => $self -> {"cgi"},
                                               dbh      => $self -> {"dbh"},
                                               settings => $self -> {"settings"},
                                               app      => $self -> {"app"})
-        or return set_error("Unable to create AuthMethods object: ".$Auth::Methods -> errstr);
+        or "Unable to create AuthMethods object: ".$Auth::Methods -> errstr;
 
     $self -> {"ANONYMOUS"} = $self -> {"app"} -> anonymous_user();
     $self -> {"ADMINTYPE"} = $self -> {"app"} -> adminuser_type();
 
-    return bless $self, $class;
+    return undef;
 }
 
 
