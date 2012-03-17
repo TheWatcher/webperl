@@ -138,7 +138,7 @@ sub run {
                                            password => $self -> {"settings"} -> {"database"} -> {"phpbb_password"},
                                            codepath => path_join($self -> {"settings"} -> {"config"} -> {"base"}, "templates", "default"),
                                            url      => $self -> {"settings"} -> {"config"} -> {"forumurl"})
-            or die_log($out -> remote_host(), "Unable to create phpbb object: ".$SessionHandler::errstr);
+            or die_log($self -> {"cgi"} -> remote_host(), "Unable to create phpbb object: ".$phpBB3::errstr);
 
         $self -> {"auth"} = $self -> {"phpbb"};
 

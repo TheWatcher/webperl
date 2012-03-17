@@ -96,7 +96,7 @@ sub init {
                                               dbh      => $self -> {"dbh"},
                                               settings => $self -> {"settings"},
                                               app      => $self -> {"app"})
-        or "Unable to create AuthMethods object: ".$Auth::Methods -> errstr;
+        or "Unable to create AuthMethods object: ".$AuthMethods -> errstr;
 
     $self -> {"ANONYMOUS"} = $self -> {"app"} -> anonymous_user();
     $self -> {"ADMINTYPE"} = $self -> {"app"} -> adminuser_type();
