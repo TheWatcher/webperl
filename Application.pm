@@ -200,6 +200,9 @@ sub run {
 
     print Encode::encode_utf8($self -> {"template"} -> process_template($content, {"***debug***" => $debug}));
     $self -> {"template"} -> set_module_obj(undef);
+
+    $self -> {"dbh"} -> disconnect();
+    end_log();
 }
 
 
