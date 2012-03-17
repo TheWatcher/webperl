@@ -24,6 +24,7 @@ package Modules;
 
 #use lib qw(/home/webperl); # modules needed for utils, blocks needed for plugins
 use DBI;
+use Module::Load;
 use Logging qw(die_log);
 use strict;
 
@@ -219,7 +220,7 @@ sub _new_module_internal {
 
     my $name = $modrow -> {"perl_module"};
     no strict "refs"; # must disable strict references to allow named module loading.
-    eval "require $name";
+    eval { load $name };
     die "Unable to load module $name: $@" if($@);
 
     # Set up the module argument hash...

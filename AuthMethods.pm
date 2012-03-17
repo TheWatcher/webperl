@@ -25,6 +25,7 @@
 package AuthMethods;
 
 use strict;
+use Module::Load;
 
 our $errstr;
 
@@ -139,7 +140,7 @@ sub load_method {
     my $name = $module -> {"perl_module"};
 
     no strict "refs"; # must disable strict references to allow named module loading.
-    eval "require $name";
+    eval { load $name };
     die "Unable to load auth module $name: $@" if($@);
 
     my $methodobj = $name -> new(%settings);
