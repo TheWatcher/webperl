@@ -126,7 +126,7 @@ sub run {
                                             timefmt   => $self -> {"settings"} -> {"config"} -> {"timefmt"},
                                             blockname => 1,
                                             mailcmd   => '/usr/sbin/sendmail -t -f '.$self -> {"settings"} -> {"config"} -> {"Core:envelope_address"})
-        or die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create template handling object: ".$self -> {"template"}::errstr);
+        or die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create template handling object: ".$Template::errstr);
 
     # If phpbb mode is enabled, it takes over auth.
     if($self -> {"use_phpbb"}) {
