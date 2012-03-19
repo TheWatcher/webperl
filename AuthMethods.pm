@@ -77,7 +77,7 @@ sub available_methods {
     my $only_active = shift;
 
     my $methodh = $self -> {"dbh"} -> prepare("SELECT id FROM ".$self -> {"settings"} -> {"database"} -> {"auth_methods"}.
-                                              ($only_active ? " WHERE active = 1 " : " ").
+                                              ($only_active ? " WHERE enabled = 1 " : " ").
                                               "ORDER BY priority ASC");
     $methodh -> execute()
         or die_log($self -> {"cgi"} -> remote_host(), "Unable to execute auth method list query: ".$self -> {"dbh"} -> errstr);
@@ -110,7 +110,7 @@ sub load_method {
     $self -> {"errstr"} = "";
 
     # Fetch the module name first
-    my $moduleh = $self -> {"dbh"} -> prepare("SELECT perl_module, active FROM ".$self -> {"settings"} -> {"database"} -> {"auth_methods"}."
+    my $moduleh = $self -> {"dbh"} -> prepare("SELECT perl_module, enabled FROM ".$self -> {"settings"} -> {"database"} -> {"auth_methods"}."
                                                WHERE id = ?");
     $moduleh -> execute($method_id)
         or die_log($self -> {"cgi"} -> remote_host(), "Unable to execute auth method lookup query: ".$self -> {"dbh"} -> errstr);
@@ -119,7 +119,7 @@ sub load_method {
     return $self -> self_error("Unknown auth method requested in load_method($method_id)") if($module);
 
     # Is the module active? If not, do nothing
-    return undef if(!$module -> {"active"});
+    return undef if(!$module -> {"enabled"});
 
     # Module is active, fetch its settings
     my $paramh = $self -> {"dbh"} -> prepare("SELECT name, value FROM ".$self -> {"settings"} -> {"database"} -> {"auth_params"}."
