@@ -217,11 +217,14 @@ sub valid_user {
     # that, if an auth method is removed for some reason, the system will try other auth
     # methods instead.
     if(!$valid && (!$authmethod || !$methodimpl || $self -> {"settings"} -> {"Auth:enable_fallback"})) {
-        foreach $authmethod (@{$methods}) {
-            my $methodimpl = $self -> {"methods"} -> load_method($authmethod)
+        foreach $trymethod (@{$methods}) {
+            my $methodimpl = $self -> {"methods"} -> load_method($trymethod)
                 or die_log($self -> {"cgi"} -> remote_host(), "Auth implementation load failed: ".$self -> {"methods"} -> {"errstr"});
 
             $valid = $methodimpl -> authenticate($username, $password, $self);
+
+            # If this method worked, record it.
+            $authmethod = $trymethod if($valid);
 
             # If an auth method says the user is valid, stop immediately
             last if($valid);
