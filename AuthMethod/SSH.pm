@@ -114,15 +114,9 @@ sub authenticate {
         # Did the user log in?
         } elsif($resp =~ /Welcome/ || $resp =~ /Last\s*login/s) {
             return 1;
-
-        # something broke, just not /hideously/
-        } else {
-            # Fix the simple 'Password:' prompt response...
-            $resp =~ s/^Password:$/Incorrect username or password./;
-
-            $auth -> {"lasterr"} .= "ssh login to ".$self -> {"server"}." failed. Response was: $resp\n";
         }
 
+        # Note that password failures ARE NOT reported - just this auth method fails.
         return 0;
     }
 
