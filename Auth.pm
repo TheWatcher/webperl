@@ -218,10 +218,10 @@ sub valid_user {
         my $methods = $self -> {"methods"} -> available_methods(1);
 
         foreach $authmethod (@{$methods}) {
-            my $methodimpl = $self -> {"methods"} -> load_method($authmethod);
+            my $methodimpl = $self -> {"methods"} -> load_method($authmethod)
+                or die_log($self -> {"cgi"} -> remote_host(), "Auth implementation load failed: ".$self -> {"methods"} -> {"errstr"});
 
-            $valid = $methodimpl -> authenticate($username, $password, $self)
-                if($methodimpl);
+            $valid = $methodimpl -> authenticate($username, $password, $self);
 
             # If an auth method says the user is valid, stop immediately
             last if($valid);
