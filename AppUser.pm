@@ -109,7 +109,7 @@ sub init {
 #
 # @return The ID of the anonymous user account.
 sub anonymous_user {
-    return ANONYMOUS_USER;
+    return ANONYMOUS_ID;
 }
 
 
@@ -223,7 +223,7 @@ sub set_user_authmethod {
     my $result = $seth -> execute($methodid, $username)
         or die_log($self -> {"cgi"} -> remote_host(), "Unable to execute user auth update query. Error was: ".$self -> {"dbh"} -> errstr);
 
-    $self -> {"lasterr"} = "Unable to update user auth method, unkown user selected"
+    $self -> {"lasterr"} .= "Unable to update user auth method, unkown user selected"
         if($result != 1);
 
     return ($result == 1);
