@@ -26,6 +26,7 @@ package AuthMethods;
 
 use strict;
 use Module::Load;
+use Logging qw(die_log);
 
 our $errstr;
 

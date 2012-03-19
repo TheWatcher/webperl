@@ -44,6 +44,7 @@
 package AppUser;
 
 use strict;
+use Logging qw(die_log);
 
 use constant ANONYMOUS_ID => 1; # Default anonymous user id.
 use constant ADMIN_TYPE   => 3; # User type for admin users.
