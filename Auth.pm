@@ -198,6 +198,8 @@ sub valid_user {
         return undef;
     }
 
+    my $methods = $self -> {"methods"} -> available_methods(1);
+
     # Does the user already have an auth method set?
     my $authmethod = $self -> {"app"} -> get_user_authmethod($username);
 
@@ -215,8 +217,6 @@ sub valid_user {
     # that, if an auth method is removed for some reason, the system will try other auth
     # methods instead.
     if(!$valid && (!$authmethod || !$methodimpl || $self -> {"settings"} -> {"Auth:enable_fallback"})) {
-        my $methods = $self -> {"methods"} -> available_methods(1);
-
         foreach $authmethod (@{$methods}) {
             my $methodimpl = $self -> {"methods"} -> load_method($authmethod)
                 or die_log($self -> {"cgi"} -> remote_host(), "Auth implementation load failed: ".$self -> {"methods"} -> {"errstr"});
