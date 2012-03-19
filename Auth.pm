@@ -194,7 +194,7 @@ sub valid_user {
 
     # Is the user disabled?
     if($self -> {"app"} -> user_disabled($username)) {
-        $self -> {"lasterr"} = "This user account has been disabled.";
+        $self -> {"lasterr"} .= "This user account has been disabled.";
         return undef;
     }
 
@@ -241,7 +241,7 @@ sub valid_user {
         return undef;
     }
 
-    $self -> {"lasterr"} = "Invalid username or password specified.";
+    $self -> {"lasterr"} .= "Invalid username or password specified.";
 
     # Authentication failed.
     return undef;
