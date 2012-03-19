@@ -233,7 +233,7 @@ sub set_user_authmethod {
 # ============================================================================
 #  Post-auth functions.
 
-## @method $ post_authenticate($username)
+## @method $ post_authenticate($username, $auth)
 # Perform any system-specific post-authentication tasks on the specified
 # user's data. This function allows each system to tailor post-auth tasks
 # to the requirements of the system.
@@ -245,11 +245,13 @@ sub set_user_authmethod {
 #       desirable, subclasses may wish to override this function completely.
 #
 # @param username The username of the user to update the user_auth field for.
+# @param auth     A reference to the auth object calling this.
 # @return A reference to a hash containing the user's data on success,
 #         otherwise an error message.
 sub post_authenticate {
     my $self     = shift;
     my $username = shift;
+    my $auth     = shift;
 
     # Determine whether the user exists. If not, create the user.
     my $user = $self -> get_user($username);
@@ -264,7 +266,10 @@ sub post_authenticate {
         $user = $self -> get_user($username);
     }
 
-    return "User addition failed" if(!$user);
+    if(!$user) {
+        $auth -> {"lasterr"} .= "User addition failed.";
+        return undef;
+    }
 
     # Touch the user's record...
     my $pokeh = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"users"}."
