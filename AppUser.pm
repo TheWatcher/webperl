@@ -245,7 +245,8 @@ sub set_user_authmethod {
 #       desirable, subclasses may wish to override this function completely.
 #
 # @param username The username of the user to update the user_auth field for.
-# @return An empty string on success, otherwise an error message.
+# @return A reference to a hash containing the user's data on success,
+#         otherwise an error message.
 sub post_authenticate {
     my $self     = shift;
     my $username = shift;
@@ -273,7 +274,7 @@ sub post_authenticate {
         or die_log($self -> {"cgi"} -> remote_host(), "FATAL: Unable to update user record: ".$self -> {"dbh"} -> errstr);
 
     # All done...
-    return '';
+    return $user;
 }
 
 

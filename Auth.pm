@@ -232,7 +232,9 @@ sub valid_user {
     # invoke the app standard post-auth for the user, and return the user's
     # database record.
     if($valid) {
-        $self -> {"lasterr"} = $self -> {"app"} -> post_authenticate($username);
+        my $success = $self -> {"app"} -> post_authenticate($username);
+        $self -> {"lasterr"} = $success if(!ref($success)); # If postauth returned an error, store it.
+
         $self -> {"app"} -> set_user_authmethod($username, $authmethod);
 
         return $self -> {"app"} -> get_user($username);
