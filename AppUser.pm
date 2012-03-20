@@ -232,7 +232,32 @@ sub set_user_authmethod {
 
 
 # ============================================================================
-#  Post-auth functions.
+#  Pre- and Post-auth functions.
+
+## @method $ pre_authenticate($username, $auth)
+# Perform any system-specific pre-authentication tasks on the specified
+# user. This function allows systems to tailor pre-auth tasks to the
+# requirements of the system. For example, this may be used to check the
+# username against a table of authorised users.
+#
+# @note The implementation provided here does no work, and simply returns
+#       true in all cases.
+#
+# @param username The username of the user to perform pre-auth tasks on.
+# @param auth     A reference to the auth object calling this.
+# @return true if the authentication process should continue, false if the
+#         user should not be authenticated or logged in. If this returns
+#         false, an error message will be appended to the specified auth's
+#         lasterr field.
+sub pre_authenticate {
+    my $self     = shift;
+    my $username = shift;
+    my $auth     = shift;
+
+    # Always return true
+    return 1;
+}
+
 
 ## @method $ post_authenticate($username, $auth)
 # Perform any system-specific post-authentication tasks on the specified
@@ -245,10 +270,11 @@ sub set_user_authmethod {
 #       values for all the fields. If this behaviour is not required or
 #       desirable, subclasses may wish to override this function completely.
 #
-# @param username The username of the user to update the user_auth field for.
+# @param username The username of the user to perform post-auth tasks on.
 # @param auth     A reference to the auth object calling this.
 # @return A reference to a hash containing the user's data on success,
-#         otherwise an error message.
+#         undef otherwise. If this returns undef, an error message will be
+#         appended to the specified auth's lasterr field.
 sub post_authenticate {
     my $self     = shift;
     my $username = shift;
