@@ -199,7 +199,7 @@ sub valid_user {
     }
 
     # Is the user allowed to proceed to authentication?
-    return undef unless($self -> {"app"} -> pre_authenticate($username, $self);
+    return undef unless($self -> {"app"} -> pre_authenticate($username, $self));
 
     my $methods = $self -> {"methods"} -> available_methods(1);
 
