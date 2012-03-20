@@ -159,20 +159,33 @@ sub new {
         # Try to get the session...
         my $session = $self -> get_session($self -> {"sessid"});
 
-        $self -> {"session_time"} = $session -> {"session_time"};
-
         # Do we have a valid session?
         if($session) {
-            # Is the user accessing the site from the same(-ish) IP address?
-            if($self -> ip_check($ENV{"REMOTE_ADDR"}, $session -> {"session_ip"})) {
-                # Has the session expired?
-                if(!$self -> session_expired($session)) {
-                    # The session is valid, and can be touched.
-                    $self -> touch_session($session);
+            $self -> {"session_time"} = $session -> {"session_time"};
 
-                    return $self;
-                } # if(!$self -> session_expired($session)) {
-            } # if($self -> ip_check($ENV{"REMOTE_ADDR"}, $session -> {"session_ip"})) {
+            # Does the user in the session match the one in the cookie?
+            if($self -> {"sessuser"} == $session -> {"session_user_id"}) {
+
+                # Does the user exist, and is their account enabled?
+                my $userdata = $self -> {"auth"} -> get_user_byid($self -> {"sessuser"});
+                if($userdata && ($userdata -> {"user_type"} == 0 || $userdata -> {"user_type"} == 3)) {
+
+                    # Is the user accessing the site from the same(-ish) IP address?
+                    if($self -> ip_check($ENV{"REMOTE_ADDR"}, $session -> {"session_ip"})) {
+                        # Has the session expired?
+                        if(!$self -> session_expired($session)) {
+                            # The session is valid, and can be touched.
+                            $self -> touch_session($session);
+
+                            return $self;
+                        } # if(!$self -> session_expired($session)) {
+                    } # if($self -> ip_check($ENV{"REMOTE_ADDR"}, $session -> {"session_ip"})) {
+                } else {
+                    $self -> {"sessuser"} = undef; # bad user id, remove it
+                }
+            } else {
+                $self -> {"sessuser"} = undef; # possible spoofing attempt, kill it
+            } # if($self -> {"sessuser"} == $session -> {"session_user_id"}) {
         } # if($session) {
     } # if($sessid) {
 
