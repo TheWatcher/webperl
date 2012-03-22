@@ -18,19 +18,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## @mainpage
-#
-# @section Introduction
-#
-# The perl modules described here are the support modules used widely
-# throughout my web applications. They are generally used in a very specific
-# framework, but they provide features that may be useful in a standalone
-# environment.
-#
-# @todo The documentation for the modules is still a work in progress: some
-#       areas need to be fleshed out substantially, and the addition of
-#       examples or test cases would be very helpful.
-
 ## @class
 # System-wide utility functions. The functions in this file may be useful at
 # any point throughout the system, so they are collected here to prevent the
