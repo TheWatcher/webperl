@@ -33,6 +33,10 @@
 # problems with fatals. Note that using this module is not required to use
 # the webperl modules - you can load the modules individually and set them
 # up as needed, this just simplifies the process.
+#
+# @todo Web applications created using the Application class use the default
+#       language and template settings - i18n and template selection need to
+#       be added after the session handler has been started.
 package Application;
 
 use strict;
