@@ -23,8 +23,9 @@
 # do is:
 #<pre>
 #    use lib "/path/to/webperl";
+#    use lib "modules";
 #    use Application;
-#    use AppUser::MySystem;
+#    use AppUser::MySystem; # Implemented in modules/AppUser/MySystem.pm
 #
 #    my $app = Application -> new(appuser => AppUser::MySystem -> new());
 #    $app -> run();
@@ -183,7 +184,7 @@ sub run {
 
     # Obtain an instance of the page module
     my $pageobj = $self -> {"modules"} -> new_module($pageblock)
-        or die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to load page module $pageblock: ".$Modules::errstr);
+        or die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to load page module $pageblock: ".$self -> {"modules"} -> {"errstr");
 
     # And call the page generation function of the page module
     my $content = $pageobj -> page_display();
