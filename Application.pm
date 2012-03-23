@@ -214,7 +214,7 @@ sub run {
 # ============================================================================
 #  Internal code
 
-## @method $ load_cgi()
+## @method private $ load_cgi()
 # Dynamically load a module to handle CGI interaction. This will attempt to
 # load the best available module for CGI work: if CGI::Compress::Gzip is installed
 # it will use that, otherwise it will fall back on CGI.
