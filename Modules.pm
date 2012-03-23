@@ -74,10 +74,10 @@ sub new {
     # ... finally, template
     return set_error("No template object available.") if(!$self -> {"template"});
 
-    # update @INC if needed
-    unshift(@INC, $self -> {"blockdir"}) if($self -> {"blockdir"});
-
     my $obj = bless $self, $class;
+
+    # update @INC if needed
+    $obj -> add_load_path($self -> {"blockdir"}) if($self -> {"blockdir"});
 
     # Set the template object's module reference
     $obj -> {"template"} -> set_module_obj($obj);
@@ -90,6 +90,19 @@ sub new {
 # ============================================================================
 #  Loading support
 #
+
+## @method void add_load_path($path)
+# Add a path to the list of paths the Modules object can load modules from.
+# This updates perl's @INC array to include the specified path.
+#
+# @param path The path to add to the module load paths list.
+sub add_load_path {
+    my $self = shift;
+    my $path = shift;
+
+    unshift(@INC, $path);
+}
+
 
 ## @method $ new_module($arg)
 # Attempt to create an instance of a module identified by the id or block name
@@ -112,7 +125,7 @@ sub new_module {
         $mode = "name LIKE ?";
     }
 
-    return set_error("Illegal block id or name specified in new_module.") if($mode eq "bad");
+    return $self -> self_error("Illegal block id or name specified in new_module.") if($mode eq "bad");
 
     my $sth = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"settings"} -> {"database"} -> {"blocks"}."
                                            WHERE $mode");
@@ -216,24 +229,45 @@ sub _new_module_internal {
     my $modrow = $modh -> fetchrow_hashref();
 
     # bomb if the mofule record is not found, or the module is inactive
-    return set_error("Unable to locate module $argument using $where, or module is inactive.") if(!$modrow || !$modrow -> {"active"});
+    return $self -> self_error("Unable to locate module $argument using $where, or module is inactive.") if(!$modrow || !$modrow -> {"active"});
 
     my $name = $modrow -> {"perl_module"};
+
+    return $self -> load_module($name, id => $modrow -> {"module_id"}, args => $modarg);
+}
+
+
+## @method $ load_module($name, %args)
+# Load a module, and initialise it with the specified parameters and the
+# values set in the Modules object. This loads the named class and calls
+# its new() function, passing it a hash containing the id, modarg, any
+# arguments specified in the call to this function, and the values set
+# if the Modules object this is called on.
+#
+# @param name The name of the perl module to load, without trailing .pm
+# @param args A hash of additional arguments to pass to the module
+#               constructor.
+# @return A reference to an instance of the module, or undef. If this
+#         returns undef, inspect $self -> {"errstr"}
+sub load_module {
+    my $self   = shift;
+    my $name   = shift;
+    my %args   = shift;
+
     no strict "refs"; # must disable strict references to allow named module loading.
     eval { load $name };
     die "Unable to load module $name: $@" if($@);
 
-    # Set up the module argument hash...
-    my %args = ( "modid"    => $modrow -> {"module_id"},
-                 "args"     => $modarg,
-                 "module"   => $self,
-    );
+    $args{"module"} = $self; # Allow the created object to invoke the module loader too
+
+    # Copy $self's settings over
     foreach my $key (keys(%{$self})) {
-        $args{$key} = $self -> {$key} if!(defined($args{$key}));
+        $args{$key} = $self -> {$key} if(!defined($args{$key}));
     }
 
+    # Render unto us a new instance of thyself!
     my $modobj = $name -> new(%args)
-        or set_error("Unable to load module: ".$Block::errstr);
+        or $self -> self_error("Unable to load module: ".$Block::errstr);
     use strict;
 
     return $modobj;
@@ -255,7 +289,7 @@ sub build_sidebar {
     my $page = shift || 0;
 
     # Bomb with an error is side is not valid
-    return set_error("build_sidebar called with an illegal value for side: $side")
+    return $self -> self_error("build_sidebar called with an illegal value for side: $side")
         unless($side eq "left" || $side eq "right");
 
     # If a page is specified, we need to filter on it, or zero. OTherwise we'll be filtering on just 0
@@ -314,4 +348,5 @@ sub get_block_id {
 
 sub set_error { $errstr = shift; return undef; }
 
+sub self_error { my $self = shift; $self -> {"errstr"} = shift; return undef; }
 1;
