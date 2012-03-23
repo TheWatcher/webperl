@@ -9,6 +9,10 @@ the same ends. However, the modules provided here emphasise simplicity of use,
 flexibility, and clarity, and allow the construction of fairly powerful
 applications for relatively little effort.
 
+Issue tracking is done via the Flyspray installation at
+
+<http://flyspray.starforge.co.uk/index.php?project=8&do=index>
+
 Documentation
 -------------
 
