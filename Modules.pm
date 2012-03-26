@@ -16,13 +16,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## @class
+## @class Modules
 # A class to simplify runtime loading of plugin modules. This class provides
 # methods to allow the various block plugin modules to be loaded on demand
 # during script execution.
 package Modules;
 
-#use lib qw(/home/webperl); # modules needed for utils, blocks needed for plugins
 use DBI;
 use Module::Load;
 use Logging qw(die_log);
@@ -348,5 +347,9 @@ sub get_block_id {
 
 sub set_error { $errstr = shift; return undef; }
 
-sub self_error { my $self = shift; $self -> {"errstr"} = shift; return undef; }
+sub self_error {
+    my $self = shift;
+    $self -> {"errstr"} = shift;
+    return undef;
+}
 1;

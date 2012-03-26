@@ -161,7 +161,11 @@ sub load_method {
 
 sub set_error { $errstr = shift; return undef; }
 
-sub self_error { my $self = shift; $self -> {"errstr"} = shift; return undef; }
+sub self_error {
+    my $self = shift;
+    $self -> {"errstr"} = shift;
+    return undef;
+}
 
 1;
 
