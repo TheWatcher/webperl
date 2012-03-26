@@ -299,7 +299,7 @@ sub _new_module_internal {
 sub load_module {
     my $self   = shift;
     my $name   = shift;
-    my %args   = shift;
+    my %args   = @_;
 
     no strict "refs"; # must disable strict references to allow named module loading.
     eval { load $name };
