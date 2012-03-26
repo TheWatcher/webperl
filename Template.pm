@@ -21,6 +21,60 @@
 # this class does not cache templates or any fancy stuff like that - it
 # just provides a simple interface to generate content based on
 # replacing markers in files.
+#
+# Replacement markers
+# -------------------
+# When setting up template files, you are free to use whatever value
+# replacement markers you see fit: to date, the author has used `***name***`
+# (replacing `name` with the name of the marker), but any sequence
+# of characters unlikely to appear in normal text will work just as
+# well (for example, `{V_name}` would be fine, too). When calling
+# load_template() or process_template(), you simply pass it a hash
+# of replacment markers and values. eg:
+#
+#     load_template("templatename.tem", { "***name***" => $value,
+#                                         "{V_foo}"    => "bar" });
+#
+# (as you may have gathered, you do not even need to use a single
+# marker style - you're free to set up the replacments as you see fit).
+#
+# I18N and language replacement
+# -----------------------------
+# The template engine also supports language variables and automatic
+# replacement of language markers in template files. These are more
+# rigidly defined: in template files, language markers take the form
+# `{L_varname}` where `{L_` marks the start of the language variable
+# substitution marker, `varname` defines the name of the language
+# variable to use, and `}` closes the marker.
+#
+# Language variables are defined in lang files, any number of which
+# may be stored in the `langdir`/`lang`/ directory defined when
+# creating a new Template object. Each lang file can contain any
+# number of language variable definitions, and definitions are made
+# using the syntax:
+#
+#     VARIABLE_NAME = contents of the variable here
+#
+# Language variable names are usually uppercase, but this is a stylistic
+# issue, and case is not enforced (although it is important to note
+# that the system is case sensitive! Variable_Name and VARIABLE_NAME are
+# NOT the same!) The contents of each language variable may contain
+# HTML formatting, but you are strongly discouraged from using this
+# facility for anything beyond basic character formatting - if you need
+# to do anything involving layout, it should be being done in the
+# templates.
+#
+# @bug See bug #FS70 for issues related to default language variables and
+#      langvar sharing between translations.
+#
+# Block name replacement
+# ----------------------
+# The template engine will recognise and replace `{B_[blockname]}` markers
+# with the appropriate block name or id. The `blockname` specified in
+# the marker corresponds to the value in the `name` field in the `blocks`
+# table. Usually your templates will include content like
+#
+#     ... href="index.cgi?block={B_[somename]}...etc...
 package Template;
 
 use Logging;
@@ -68,14 +122,16 @@ BEGIN {
 # Create a new Template object. This will create a new Template object that will
 # allow templates to be loaded into strings, or printed to stdout. Meaningful
 # arguments to this constructor are:
-# basedir   - The directory containing template themes. Defaults to "templates".
-# langdir   - The directory containing language files. Defaults to "lang".
-# lang      - The language file to use. Defaults to "en"
-# theme     - The theme to use. Defaults to "default"
-# timefmt   - The time format string, strftime(3) format, with the extension %o
-#             to mark the location of an ordinal specifier. %o is ignored if it
-#             does not immediately follow a digit field. Defaults to "%a, %d %b %Y %H:%M:%S"
-# blockname - If set, allow blocks to be specified by name rather than id.
+#
+# * basedir   - The directory containing template themes. Defaults to "templates".
+# * langdir   - The directory containing language files. Defaults to "lang". Set this
+#               to undef or an empty string to disable language file loading.
+# * lang      - The language file to use. Defaults to "en"
+# * theme     - The theme to use. Defaults to "default"
+# * timefmt   - The time format string, strftime(3) format, with the extension %o
+#               to mark the location of an ordinal specifier. %o is ignored if it
+#               does not immediately follow a digit field. Defaults to "%a, %d %b %Y %H:%M:%S"
+# * blockname - If set, allow blocks to be specified by name rather than id.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
@@ -286,6 +342,7 @@ sub replace_blockname {
 # @param name      The name of the template to load.
 # @param varmap    A reference to a hash containing values to replace in the template.
 # @param nocharfix If set, character fixes will not be applied to the templated string.
+#                  This defaults to true if not specified.
 # @return The template with replaced variables and language markers.
 sub load_template {
     my $self      = shift;
@@ -293,8 +350,10 @@ sub load_template {
     my $varmap    = shift;
     my $nocharfix = shift;
 
-    my $filename = path_join($self -> {"basedir"}, $self -> {"theme"}, $name);
+    # Default the nocharfix if needed.
+    $nocharfix = 1 unless(defined($nocharfix));
 
+    my $filename = path_join($self -> {"basedir"}, $self -> {"theme"}, $name);
     if(open(TEMPLATE, "<:utf8", $filename)) {
         undef $/;
         my $lines = <TEMPLATE>;
@@ -302,7 +361,7 @@ sub load_template {
         close(TEMPLATE);
 
         # Do variable substitution
-        $self -> process_template(\$lines, $varmap, 1);
+        $self -> process_template(\$lines, $varmap, $nocharfix);
 
         return $lines;
     } else {
@@ -445,7 +504,6 @@ sub wizard_box {
 
 # ============================================================================
 #  Emailing functions
-
 
 ## @method $ email_template($template, $args)
 # Load a template and send it as an email to the recipient(s) listed in the arguments.
@@ -611,6 +669,8 @@ sub bytes_to_human {
 # Convert a number of seconds to days/hours/minutes/seconds. This will take
 # the specified number of seconds and output a string containing the number
 # of days, hours, minutes, and seconds it corresponds to.
+#
+# @todo This function outputs English only text. Look into translating?
 #
 # @param seconds The number of seconds to convert.
 # @param short   If set, the generates string uses short forms of 'day', 'hour' etc.
