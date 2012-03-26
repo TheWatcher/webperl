@@ -187,16 +187,46 @@ sub set_module_obj {
     $self -> {"modules"} = shift;
 }
 
+# ============================================================================
+#  Templating functions
 
-## @method $ load_language(void)
+## @method $ set_language($lang)
+# Set the current language to the specified value. This will update the language
+# variables loaded in the system to the values set in the language files in the
+# specified language directory. This *will not erase* any previously loaded language
+# definitions - if you need to do that, call this with `lang` set to `undef` first, and
+# then call it with the new language.
+#
+# @param lang The new language directory to load language files from. If set to
+#             `undef` or `''`, this will clear the language data loaded already.
+# @return true if the language files were loaded successfully, false otherwise.
+sub set_language {
+    my $self = shift;
+    $self -> {"lang"} = shift;
+
+    # If the lang name has been cleared, drop the words hash.
+    if(!$self -> {"lang"}) {
+        $self -> {"words"} = {};
+        return 1;
+    }
+
+    # Otherwise, load the new language...
+    return $self -> load_language(1); # force overwite, we expect it to happen now.
+}
+
+
+## @method $ load_language($force_overwrite)
 # Load all of the language files in the appropriate language directory into a hash.
 # This will attempt to load all .lang files inside the langdir/lang/ directory,
 # attempting to parse VARNAME = string into a hash using VARNAME as the key and string
 # as the value. The hash is build up inside the Template object rather than returned.
 #
+# @param force_overwrite If true, redefinition of language variables will not result
+#                        in warning messages in the logs.
 # @return true if the language files loaded correctly, undef otherwise.
 sub load_language {
-    my $self = shift;
+    my $self            = shift;
+    my $force_overwrite = shift;
 
     # First work out which directory we are dealing with
     my $langdir = path_join($self -> {"langdir"}, $self -> {"lang"});
@@ -227,7 +257,8 @@ sub load_language {
                 $value =~ s/\\\"/\"/go;
 
                 # warn if we are about to redefine a word
-                warn_log("Unknown", "$key already exists in language hash!") if($self -> {"words"} -> {$key});
+                warn_log("Unknown", "$key already exists in language hash!")
+                    if($self -> {"words"} -> {$key} && !$force_overwrite);
 
                 $self -> {"words"} -> {$key} = $value;
             }
@@ -246,12 +277,6 @@ sub load_language {
 
     return 1;
 }
-
-
-# ============================================================================
-#  Templating functions
-
-## @method void set_template_dir
 
 
 ## @method $ replace_langvar($varname, $default, $varhash)
@@ -307,6 +332,22 @@ sub replace_langvar {
     }
 
     return $default;
+}
+
+
+# ============================================================================
+#  Templating functions
+
+## @method void set_template_dir($theme)
+# Set the template theme directory. This updates the directory from which
+# load_template() attempts to load template files. It does not modify the
+# fallback theme - that can only be done on Template creation.
+#
+# @param theme The new theme directory to use. Note that theme directories
+#              must be inside the base template directory (usually `templates`).
+sub set_template_dir {
+    my $self = shift;
+    $self -> {"theme"} = shift;
 }
 
 
