@@ -17,9 +17,41 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ## @class Modules
-# A class to simplify runtime loading of plugin modules. This class provides
-# methods to allow the various block plugin modules to be loaded on demand
-# during script execution.
+# A class to simplify runtime loading of modules. This class simplifies the
+# process of loading modules implementing system functionality at runtime: it
+# is primarily designed to load webapp block modules, but it can be used to
+# load any arbitrary module at runtime if needed.
+#
+# When this class is used to load other modules, it loads the module into
+# the interpreter, and then calls the module's new() function, passing it a
+# hash of arguments. The contents of that hash varies somewhat depending
+# on the way in which the loader is called, but at a minimum the hash will
+# contain the following key/value pairs:
+#
+# * cgi       - The system-wide CGI object.
+# * dbh       - The database handle to use for queries.
+# * settings  - The system settings object.
+# * template  - The system template object.
+# * session   - The session object.
+# * module    - The Modules object that loaded the new module.
+#
+# However, when calling a loaded module's new() function, this class will
+# copy the entirity of its $self variable into the argument list, so any
+# values present in the object will be made available to modules loaded by
+# it.
+#
+# The new_module(), new_module_byblockid(), and load_module() are the methods
+# most likely to be useful to client code. The first two allow modules with
+# entries in the blocks table to be loaded at runtime - these modules will be
+# passed a special 'args' value in the hash given to their constructor, the
+# contents of which are taken from the block's entry in the blocks table. This
+# allows the same code to be invoked with different arguments at runtime. The
+# load_module() function is a generic module loader, it requires no database
+# support, and allows you to pass in an arbitrary hash of values to give to
+# the loaded module's constructor. Note that the hash you provide will have
+# the contents of the Modules object's $self added to it, so that your loaded
+# modules will be given the standard value listed above in addition to any
+# values you specify in the argument hash.
 package Modules;
 
 use DBI;
@@ -38,13 +70,23 @@ BEGIN {
 
 ## @cmethod $ new(%args)
 # Create a new Modules object. This will create an object that provides functions
-# to create block modules on the fly.
-# cgi       - The CGI object to access parameters and cookies through.
-# dbh       - The database handle to use for queries.
-# settings  - The system settings object
-# template  - The system template object
-# session   - The session object
-# blockdir  - The directory containing blocks.
+# to create block modules on the fly. Any key/value pairs specified in the argument
+# hash will be passed to the new() method of loaded modules, so you may wish to
+# include more than the minimum when creating objects of this class in some situations.
+# The minimum values you need to provide are:
+#
+# * cgi       - The CGI object to access parameters and cookies through.
+# * dbh       - The database handle to use for queries.
+# * settings  - The system settings object
+# * template  - The system template object
+# * session   - The session object
+#
+# You may also specify the following:
+#
+# * blockdir  - The directory containing blocks. This adds the specified directory
+#               to the perl module loader search path - if not included, the modules
+#               you want to load must be in a location already visible to perl.
+#
 # @param args A hash of key, value pairs to initialise the object with.
 # @return A new Modules object, or undef if a problem occured.
 sub new {
@@ -92,7 +134,7 @@ sub new {
 
 ## @method void add_load_path($path)
 # Add a path to the list of paths the Modules object can load modules from.
-# This updates perl's @INC array to include the specified path.
+# This updates perl's INC array to include the specified path.
 #
 # @param path The path to add to the module load paths list.
 sub add_load_path {
@@ -170,9 +212,12 @@ sub new_module_byblockid {
 
 
 ## @method $ new_module_byname($modname, $argument)
-# Load a module based on its name, checking against the database to obtain the real
-# module name, and whether the module is active. Returns a new object of the module
-# on success, undef if the module is disabled or if there's a problem.
+# Load a module based on its name in the modules table. This allows direct creation
+# of a module from the modules table rather than the normal indirect route via
+# new_module() or new_module_byblockid().
+#
+# @note In most cases, you do not want to use this function - you want to use
+#       new_module() instead. Only use this if you know what you are doing.
 #
 # @param modname  The name of the module to load.
 # @param argument Argument to pass to the module constructor.
@@ -189,9 +234,12 @@ sub new_module_byname {
 
 
 ## @method $ new_module_byid($modid, $argument)
-# Load a module based on its id, checking against the database to obtain the real
-# module name, and whether the module is active. Returns a new object of the module
-# on success, undef if the module is disabled or if there's a problem.
+# Load a module based on its id in the modules table. This allows direct creation
+# of a module from the modules table rather than the normal indirect route via
+# new_module() or new_module_byblockid().
+#
+# @note In most cases, you do not want to use this function - you want to use
+#       new_module_byblockid() instead. Only use this if you know what you are doing.
 #
 # @param modid    The id of the module to load.
 # @param argument Argument to pass to the module constructor.
@@ -207,7 +255,7 @@ sub new_module_byid {
 }
 
 
-## @method $ _new_module_internal($where, $argument, $modargs)
+## @method private $ _new_module_internal($where, $argument, $modargs)
 # Create an instance of a module. This uses the where and argument parameters as part of a database
 # query to determine what the actual name of the module is, and then load and instantiate it.
 #
@@ -278,6 +326,11 @@ sub load_module {
 # side of the page, and call on their block_display() functions, concatenating the results into one
 # large string.
 #
+# @deprecated This function is considered deprecated, and should not be used
+#             in new code (unless you find a real use for it...) The same
+#             behaviour can generally be implemented more natually by loading
+#             sidebar generation blocks inside block implementations.
+#
 # @param side The side to generate the blocks for. Must be 'left' or 'right'.
 # @param page An optional page ID (corresponding to the module currently shown on in the core of the
 #             page) that can be used to filter the blocks shown in the sidebar.
@@ -342,14 +395,30 @@ sub get_block_id {
     return $blockr ? $blockr -> [0] : undef;
 }
 
+
 # ============================================================================
 #  Error functions
 
+## @cmethod private $ set_error($errstr)
+# Set the class-wide errstr variable to an error message, and return undef. This
+# function supports error reporting in the constructor and other class methods.
+#
+# @param errstr The error message to store in the class errstr variable.
+# @return Always returns undef.
 sub set_error { $errstr = shift; return undef; }
 
+
+## @method private $ self_error($errstr)
+# Set the object's errstr value to an error message, and return undef. This
+# function supports error reporting in various methods throughout the class.
+#
+# @param errstr The error message to store in the object's errstr.
+# @return Always returns undef.
 sub self_error {
     my $self = shift;
     $self -> {"errstr"} = shift;
+
     return undef;
 }
+
 1;
