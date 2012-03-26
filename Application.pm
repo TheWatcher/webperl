@@ -18,22 +18,23 @@
 
 ## @class
 # Provide the core functionality required to initialise and run a web application
-# based on the webperl framework. This class allows a web application to be
-# created with minimal code in the index.cgi script - all the developer needs to
-# do is:
-#<pre>
-#    use lib "/path/to/webperl";
-#    use lib "modules";
-#    use Application;
-#    use AppUser::MySystem; # Implemented in modules/AppUser/MySystem.pm
+# based on the webperl framework. This class is effectively a bootdtrapper,
+# allowing the core of a web application to be created with minimal code - all
+# the developer needs to do is:
 #
-#    my $app = Application -> new(appuser => AppUser::MySystem -> new());
-#    $app -> run();
-#</pre>
+#     use lib "/path/to/webperl";
+#     use lib "modules";
+#     use Application;
+#     use AppUser::MySystem; # Implemented in modules/AppUser/MySystem.pm
+#
+#     my $app = Application -> new(appuser => AppUser::MySystem -> new());
+#     $app -> run();
+#
 # In general, you will also want to load CGI::Carp and set it up, to handle
 # problems with fatals. Note that using this module is not required to use
 # the webperl modules - you can load the modules individually and set them
-# up as needed, this just simplifies the process.
+# up as needed, this just simplifies the process. See the @ref overview Overview
+# documentation for more details about the operation of this class.
 #
 # @todo Web applications created using the Application class use the default
 #       language and template settings - i18n and template selection need to
