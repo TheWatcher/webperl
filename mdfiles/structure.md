@@ -16,13 +16,13 @@ follow the diagram
 ![directory structure](filestructure.png)
 
 <dl><dt>blocks</dt>
-<dd>contains subclasses of Block that implement the actual functionality of
+<dd>Contains subclasses of Block that implement the actual functionality of
 your web application. Further subdirectories may be present, if more complex
 class hierarchies are needed. See the @ref blocks "Blocks" information for more details.</dd>
 </dl>
 
 <dl><dt>config</dt>
-<dd>contains the global site.cfg file, protected by .htaccess. You can easily
+<dd>Contains the global site.cfg file, protected by .htaccess. You can easily
 place the configuration file outside the web tree if you want, by using the
 `config` argument to Application::new(). See the @ref config "Configuration" information for
 more about the config file, and how configuration information is stored and
@@ -37,5 +37,22 @@ the 6 lines shown in the Application documentation!</dd>
 </dl>
 
 <dl><dt>lang</dt>
-<dd>has subdirectories containing language files.</dd>
+<dd>Contains subdirectories containing language files. Each subdirectory should be
+a language name, and can contain any number of files that define the language
+variables for the template engine. If langauge file handling is disabled in the
+template engine, this directory can be omitted.</dd>
+</dl>
+
+<dl><dt>modules</dt>
+<dd>If you have any application-specific non-Block modules, you may wish to
+add them to a separate directory tree for clarity (remember to add `use lib qw(modules)`
+to the index.cgi file if you do this). The modules directory can contain any
+modules you need, and by calling Modules::add_load_path() you can even use the
+dynamic module loading facility to load modules from this directory too.</dd>
+</dl>
+
+<dl><dt>templates</dt>
+<dd>The templates directory contains the templates for the application, each
+set of templates is arranged in its own theme directory - you will generally
+need to provide at least the  'default' template directory.</dd>
 </dl>
