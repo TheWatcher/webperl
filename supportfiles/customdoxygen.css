@@ -342,6 +342,10 @@ hr {
 	border-top: 1px solid #4A6AAA;
 }
 
+div.contents hr {
+    display: none;
+}
+
 hr.footer {
 	height: 1px;
 }
@@ -807,6 +811,11 @@ dl.section
 {
         border-left:4px solid;
         padding: 0 0 0 6px;
+}
+
+dl.return
+{
+        border-color: #00C000;
 }
 
 dl.note
