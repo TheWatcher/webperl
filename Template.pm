@@ -128,6 +128,7 @@ BEGIN {
 #               to undef or an empty string to disable language file loading.
 # * lang      - The language file to use. Defaults to "en"
 # * theme     - The theme to use. Defaults to "default"
+# * fallback  - The fallback theme to use if a template file is not found in `theme`. Defaults to "common".
 # * timefmt   - The time format string, strftime(3) format, with the extension %o
 #               to mark the location of an ordinal specifier. %o is ignored if it
 #               does not immediately follow a digit field. Defaults to "%a, %d %b %Y %H:%M:%S"
@@ -141,6 +142,7 @@ sub new {
                  "langdir"     => "lang",
                  "lang"        => "en",
                  "theme"       => "default",
+                 "fallback"    => "common",
                  "timefmt"     => '%a, %d %b %Y %H:%M:%S',
                  "mailfmt"     => '%a, %d %b %Y %H:%M:%S %z',
                  "mailcmd"     => '/usr/sbin/sendmail -t -f chris@starforge.co.uk',#pevesupport@cs.man.ac.uk', # Change -f as needed!
@@ -249,6 +251,9 @@ sub load_language {
 # ============================================================================
 #  Templating functions
 
+## @method void set_template_dir
+
+
 ## @method $ replace_langvar($varname, $default, $varhash)
 # Replace the specified language variable with the appropriate text string. This
 # takes a language variable name and returns the value stored for that variable,
@@ -353,20 +358,28 @@ sub load_template {
     # Default the nocharfix if needed.
     $nocharfix = 1 unless(defined($nocharfix));
 
-    my $filename = path_join($self -> {"basedir"}, $self -> {"theme"}, $name);
-    if(open(TEMPLATE, "<:utf8", $filename)) {
-        undef $/;
-        my $lines = <TEMPLATE>;
-        $/ = "\n";
-        close(TEMPLATE);
+    # Try to load the file from
+    foreach my $theme ($self -> {"theme"}, $self -> {"fallback"}) {
+        my $filename = path_join($self -> {"basedir"}, $theme, $name);
 
-        # Do variable substitution
-        $self -> process_template(\$lines, $varmap, $nocharfix);
+        # Don't bother even attempting to open the file if it doesn't exist or isn't readable.
+        next if(!-f $filename || !-r $filename);
 
-        return $lines;
-    } else {
-        return "<span class=\"error\">load_template: error opening $filename: $!</span>";
+        # Try the load and process the template...
+        if(open(TEMPLATE, "<:utf8", $filename)) {
+            undef $/;
+            my $lines = <TEMPLATE>;
+            $/ = "\n";
+            close(TEMPLATE);
+
+            # Do variable substitution
+            $self -> process_template(\$lines, $varmap, $nocharfix);
+
+            return $lines;
+        }
     }
+
+    return "<span class=\"error\">load_template: error opening $name</span>";
 }
 
 
