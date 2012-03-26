@@ -73,11 +73,12 @@ BEGIN {
 # can be used to generate the pages of a web application. Supported arguments
 # are:
 #
-# - config, the location of the application config file, defaults to 'config/site.cfg'.
-# - use_phpbb, if set, the phpBB3 support module is loaded (and takes over auth).
-# - appuser, a reference to an AppUser subclass object to do application-specific
+# - `config`, the location of the application config file, defaults to `config/site.cfg`.
+# - `use_phpbb`, if set, the phpBB3 support module is loaded (and takes over auth: the
+#   `auth` argument is ignored if `use_phpbb` is set).
+# - `appuser`, a reference to an AppUser subclass object to do application-specific
 #   user tasks during auth. Can be omitted if use_phpbb is set.
-# - auth, an optional reference to an auth object. If not specified, and use_phpbb
+# - `auth`, an optional reference to an auth object. If not specified, and `use_phpbb`
 #   is not set, an Auth object is made for you.
 #
 # @param args A hash of arguments to initialise the Application object with.
@@ -107,12 +108,12 @@ sub run {
 
     $self -> {"starttime"} = time();
 
-    # Create a new CGI object to generate page content through
-    $self -> {"cgi"} = $self -> load_cgi();
-
     # Load the system config
     $self -> {"settings"} = ConfigMicro -> new($self -> {"config"})
-    or die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to obtain configuration file: ".$ConfigMicro::errstr);
+        or die_log("Not avilable", "Application: Unable to obtain configuration file: ".$ConfigMicro::errstr);
+
+    # Create a new CGI object to generate page content through
+    $self -> {"cgi"} = $self -> load_cgi($self -> {"settings"} -> {"setup"} -> {"disable_compression"});
 
     # Database initialisation. Errors in this will kill program.
     $self -> {"dbh"} = DBI->connect($self -> {"settings"} -> {"database"} -> {"database"},
@@ -215,25 +216,38 @@ sub run {
 # ============================================================================
 #  Internal code
 
-## @method private $ load_cgi()
+## @method private $ load_cgi($no_compression)
 # Dynamically load a module to handle CGI interaction. This will attempt to
-# load the best available module for CGI work: if CGI::Compress::Gzip is installed
-# it will use that, otherwise it will fall back on CGI.
+# load the best available module for CGI handling based on the modules installed
+# on the server: if `CGI::Compress::Gzip` is installed it will use that, otherwise
+# it will fall back on plain `CGI`. The interface presented by both classes is the
+# same, so the caller should not need to care about which is loaded.
 #
+# @note In some situations, compression can lead to problems with debugging, and
+#       certain sorts of output. If problems are encountered, set the
+#       `no_compression` to true to disable compression.
+#
+# @param no_compression If true, this forces the method to load the uncompressed
+#                       version of CGI, even if CGI::Compress::Gzip is available.
+#                       This defaults to false (the compressed CGI is used if
+#                       it is available).
 # @return A reference to a cgi object. This will die on error.
 sub load_cgi {
-    my $self = shift;
+    my $self           = shift;
+    my $no_compression = shift;
     my $cgi;
 
-    # If loading the compressed version of CGI works, use it...
-    eval { load CGI::Compress::Gzip, '-utf8' };
-    if(!$@) {
-        $cgi = CGI::Compress::Gzip -> new();
+    # If the user isn't forcing uncompressed cgi, try to load the compressed version
+    if(!$no_compression) {
+        # If loading the compressed version of CGI works, use it...
+        eval { load CGI::Compress::Gzip, '-utf8' };
+        $cgi = CGI::Compress::Gzip -> new()
+            if(!$@);
+    }
 
-    } else {
-        # ... otherwise, try straight CGI
+    # If the cgi object has not been created yet, try straight CGI
+    if(!$cgi) {
         load CGI, '-utf8';
-
         $cgi = CGI -> new();
     }
 
