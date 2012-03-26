@@ -186,10 +186,10 @@ sub run {
 
     # Obtain an instance of the page module
     my $pageobj = $self -> {"modules"} -> new_module($pageblock)
-        or die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to load page module $pageblock: ".$self -> {"modules"} -> {"errstr");
+        or die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to load page module $pageblock: ".$self -> {"modules"} -> {"errstr"});
 
     # And call the page generation function of the page module
-    my $content = $pageobj -> page_display();
+                   my $content = $pageobj -> page_display();
 
     print $self -> {"cgi"} -> header(-charset => 'utf-8',
                                      -cookie  => $self -> {"session"} -> session_cookies());
