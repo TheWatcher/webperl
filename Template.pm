@@ -64,7 +64,7 @@
 # to do anything involving layout, it should be being done in the
 # templates.
 #
-# @bug See bug #FS70 for issues related to default language variables and
+# @bug See bug FS#70 for issues related to default language variables and
 #      langvar sharing between translations.
 #
 # Block name replacement
