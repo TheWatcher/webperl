@@ -23,9 +23,38 @@
 # cookie hijacking, but as with any cookie based auth system there is
 # the potential for security issues.
 #
-# This code is heavily based around the session code used by phpBB3, with
-# features removed or added to fit the different requirements of the
-# framework.
+# To initialise session handling in your code, simply create a new SessionHandler
+# object and ensure that, when sending the header back to the client, you send
+# the cookies obtained via session_cookies() to the client. If the user did not
+# send any cookies with their request, the new session will be anonymous,
+# otherwise the session cookies are validated. If the session is invalid (timed
+# out, junk, or hijacked) it is replaced with an anonymous session, otherwise
+# its timestamp is updated.
+#
+# To convert an initially anonymous session into a logged-in session,
+# call create_session() with the user's userid. This will update the user's
+# session cookies - you only need to call create_session the once when the
+# user logs in, from that point the user will remain logged in until the
+# cookies are deleted or time out. To log a user out, call delete_session().
+#
+# SessionHandler provides functions that wrap access to the authenticator
+# object (see below about this) - while you can access it directly via
+# `my $sess = SessionHandler -> new(...); $sess -> {"auth"} -> whatever()`,
+# methods that wrap the most common operations are provided in SessionHandler
+# and you are encouraged to use them for readability and futureproofing. The
+# following convenience methods are provided for interacting with the
+# authenticator:
+#
+# - get_session_userid() obtains the id of the session user
+# - get_user_byid() obtains the user record for a specified user, or the
+#   current session user if no userid is specified.
+# - valid_user() returns true if the provided user credentials are valid,
+#   false if they are not.
+# - auth_error() lets you fetch the authenticator's `lasterr` message.
+# - anonymous_session() returns true if the session is anonymous, false
+#   if the session belongs to a logged-in user.
+# - admin_session() returns true if the session belongs to a logged-in admin
+#   user.
 #
 # When creating a new SessionHandler, you must provide an authenticator
 # object. The authenticator object should encapsulate interaction with the
@@ -51,10 +80,14 @@
 #   from the point of view of using the id as part of session id calculation. The extra
 #   argument allows the addition of an arbitrary string to the seed used to create the id.
 #
+# This code is heavily based around the session code used by phpBB3, with
+# features removed or added to fit the different requirements of the
+# framework.
+#
 # This class requires two database tables: one for sessions, one for session keys (used
-# for autologin). If autologins are permanently disabled (get_config('allow_autologin')
-# always returns false) then the `session_keys` table may be omitted. The tables should
-# be as follows:
+# for autologin). If autologins are permanently disabled (that is, you can guarantee that
+# `get_config("allow_autologin")` always returns false) then the `session_keys` table
+# may be omitted. The tables should be as follows:
 #
 # A session table, the name of which is stored in the configuration as `{"database"} -> {"sessions"}`:
 #
@@ -70,7 +103,7 @@
 #      KEY `session_user_id` (`session_user_id`)
 #     ) DEFAULT CHARSET=utf8 COMMENT='Website sessions';
 #
-# A session key table, the name of which is in {"database"} -> {"keys"}
+# A session key table, the name of which is in `{"database"} -> {"keys"}`:
 #
 #     CREATE TABLE `session_keys` (
 #      `key_id` char(32) COLLATE utf8_bin NOT NULL DEFAULT '',
