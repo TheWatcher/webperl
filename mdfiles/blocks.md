@@ -13,7 +13,8 @@ The Block class itself is quite simple: it provides a number of useful validatio
 functions, so that your code doesn't need to implement its own string and option
 validation in most cases, it allows your application to log user actions if
 needed, and it provides stub implementations of the page_display() and
-block_display() functions, one or both of which all subclasses need to override.
+block_display() functions, one or both of which all subclasses will need to
+override.
 
 Each subclass of Block gets a number of references to useful objects added to
 it on creation, and methods in the subclass can access them from $self. Some
@@ -54,8 +55,15 @@ by other blocks as needed, you'll need to write a block_display() method
 instead. Sometimes you may find that there could be two different 'views' of
 your block - say that your system includes a calendar, and sometimes it will
 be displayed as a small box in a page with other content, and sometimes
-the user will want to look at a page that shows nothing but the calendar.
-You can implement both page_dusplay() and block_display() for the block,
+the user will want to look at a page that shows the calendar full-size.
+You can implement both page_display() and block_display() for the block,
 the latter dealing with the situation where the calendar is embedded in a
 larger page, while the former handles the situation where the user is
 looking at just the calendar.
+
+You may also find that you can simplify your code as a whole by subclassing
+Block with a single class (MyAppBlock for example), placing code that is
+likely to be common across most or all of your various blocks in that
+subclass, and then further subclassing it to add block-specific code. This
+technique is used in both Megaphone and the Review webapp to avoid much
+unnecessary code replication.

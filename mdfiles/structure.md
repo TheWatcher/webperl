@@ -1,11 +1,17 @@
 Web App Structure                                            {#appstructure}
 =================
 
-The framework assumes that a specific files and directories are present in
+The framework assumes that a number of files and directories are present in
 order to work correctly. Note that you can easily change these if you handle
 the initialisation of the various modules in the framework yourself, but if
 you use the Application module to handle all the setup for you, you must
 follow the structure given in this documentation.
+
+Generally, .htaccess files are used to keep users out of many directories,
+but if you are concerned about any of the files being present in the web tree,
+you can move them out into non-web-accessible locations as long as you
+specify appropriate paths in the configuration and when creating an
+Application object.
 
 Structure overview
 ------------------
