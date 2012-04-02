@@ -18,7 +18,7 @@
 
 ## @class
 # Provide the core functionality required to initialise and run a web application
-# based on the webperl framework. This class is effectively a bootdtrapper,
+# based on the webperl framework. This class is effectively a bootstrapper,
 # allowing the core of a web application to be created with minimal code - all
 # the developer needs to do is:
 #
@@ -38,7 +38,7 @@
 #
 # @todo Web applications created using the Application class use the default
 #       language and template settings - i18n and template selection need to
-#       be added after the session handler has been started.
+#       be added after the session handler has been started. See bug FS#68.
 package Application;
 
 use strict;
