@@ -20,7 +20,14 @@
 # A simple Template class with internationalisation support. Note that
 # this class does not cache templates or any fancy stuff like that - it
 # just provides a simple interface to generate content based on
-# replacing markers in files.
+# replacing markers in files. For security, executable content in
+# templates is not permitted - this admittedly makes some forms of
+# templating more difficult, but not insurmountably. If you really
+# need executable code in templates, you can add it by making
+# process_template() look for code markers (say `{E_[ ... code ...]}`)
+# in templates, and eval()ing the contents of the block (although note
+# that, quite aside from having security implications, this will also
+# be pretty slow).
 #
 # Replacement markers
 # -------------------
@@ -30,13 +37,28 @@
 # of characters unlikely to appear in normal text will work just as
 # well (for example, `{V_name}` would be fine, too). When calling
 # load_template() or process_template(), you simply pass it a hash
-# of replacment markers and values. eg:
+# of replacement markers and values. eg:
 #
-#     load_template("templatename.tem", { "***name***" => $value,
-#                                         "{V_foo}"    => "bar" });
+#     load_template("templatename.tem", { "***foo***" => $value,
+#                                         "{V_bar}"   => "wibble" });
 #
-# (as you may have gathered, you do not even need to use a single
-# marker style - you're free to set up the replacments as you see fit).
+# This will load `templatename.tem` from the current theme directory
+# (which will default to `templates/default` - see new() for more
+# information), replace any occurrences of `***foo***` with the
+# contents of the $value variable, replace any occurrences of `{V_bar}`
+# with the string `wibble`, and then return a string containing the
+# 'filled-in' template.
+#
+# Note that, when loading a template, you do not need to provide a
+# hash that contains replacements for all markers in the template. You
+# can call load_template() with replacements for zero or more markers,
+# and then later call process_template() to replace any remaining
+# markers. This is useful for pre-loading templates before entering
+# loops that may need to use the same template repeatedly.
+#
+# (Also, as you may have gathered, you do not even need to use a
+# single marker style in your templates - you're free to set up the
+# replacements as you see fit).
 #
 # I18N and language replacement
 # -----------------------------
