@@ -25,12 +25,6 @@ package AuthMethod;
 
 use strict;
 
-our $errstr;
-
-BEGIN {
-	$errstr = '';
-}
-
 # ============================================================================
 #  Constructor
 
@@ -78,13 +72,5 @@ sub authenticate {
     # This class does not know how to authenticate users, always return false.
     return 0;
 }
-
-
-# ============================================================================
-#  Error functions
-
-sub get_error { return $errstr; }
-
-sub set_error { $errstr = shift; return undef; }
 
 1;

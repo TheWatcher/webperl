@@ -26,21 +26,26 @@
 #
 # This class assumes that the user data is stored in a table whose name is
 # set in the 'users' variable in the 'database' section of the settings, and
-# that the following fields are present in the table:
+# that the following fields are present in the table (order of fields in the
+# table is unimportant):
 #
-# - user_id - unsigned int, unique to each user
-# - user_type - unsigned tinyint, 0 = normal, 1 = disabled, 3 = admin usually
-# - user_auth - unsigned tinyint, the id of the user's auth method, must allow null
-# - username - varchar or text, contains the user's username, must be unique per user
-# - created  - unsigned int, stores the user's creation unix timestamp
-# - last_login - unsigned int, stores the user's last login unix timestamp
+# - `user_id` (`unsigned int`), unique to each user
+# - `user_type` (`unsigned tinyint`), 0 = normal, 1 = disabled, 3 = admin usually
+# - `username` (`varchar` or `text`), contains the user's username, must be unique per user
+# - `user_auth` (`unsigned tinyint`), the id of the user's auth method, must allow null
+# - `created` (`unsigned int`), stores the user's creation unix timestamp
+# - `last_login` (`unsigned int`), stores the user's last login unix timestamp
+#
+# (note that the first three of these are basic requirements of the SessionHandler)
 #
 # In general, most subclasses of this class will only really be concerned with
-# overriding the post_authenticate() function - the other functions will usually
-# be sufficient for most purposes, and system-specific work will usually happen
-# in post_authenticate(). However, subclasses may wish to call the function in
-# this class via $self -> SUPER::post_authenticate() to extend the default
-# behaviour with system-specifics rather than entirely replacing it.
+# overriding the pre_authenticate() and post_authenticate() methods - the other
+# methods will usually be sufficient for most purposes, and system-specific work
+# will usually happen in pre_authenticate() or post_authenticate(). However,
+# subclasses that override pre_authenticate() or post_authenticate() may wish
+# to call the overridden methods this class via `$self -> SUPER::pre_authenticate()`
+# or `$self -> SUPER::pre_authenticate()` to extend the default behaviour with
+# system-specifics rather than entirely replacing it.
 package AppUser;
 
 use strict;
@@ -48,12 +53,6 @@ use Logging qw(die_log);
 
 use constant ANONYMOUS_ID => 1; # Default anonymous user id.
 use constant ADMIN_TYPE   => 3; # User type for admin users.
-
-our $errstr;
-
-BEGIN {
-	$errstr = '';
-}
 
 # ============================================================================
 #  Constructor
@@ -342,13 +341,5 @@ sub _get_user {
 
     return $userh -> fetchrow_hashref();
 }
-
-
-# ============================================================================
-#  Error functions
-
-sub get_error { return $errstr; }
-
-sub set_error { $errstr = shift; return undef; }
 
 1;
