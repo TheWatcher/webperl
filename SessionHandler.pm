@@ -24,66 +24,62 @@
 # the potential for security issues.
 #
 # This code is heavily based around the session code used by phpBB3, with
-# features removed or added to fit the different requirements of the ORB,
-# starforge site, etc
+# features removed or added to fit the different requirements of the
+# framework.
 #
 # When creating a new SessionHandler, you must provide an authenticator
 # object. The authenticator object should encapsulate interaction with the
 # user table, and must provide at least the following functions and values:
 #
-# $auth -> {"ANONYMOUS"} - should contain the ID of the anonymous (not logged in)
-#                          user.
-#
-# $ get_config($name) - should return a string, the value of which depends on the
-#                       value set for the specified configuration variable. The
-#                       used variables are:
-#      allow_autologin: Should be set to 1 to allow automatic logins, 0 or missing to disable them.
-#   max_autologin_time: How long should autologins last, should be something like '30d'. Defaults to 356d.
-#             ip_check: How may pieces of IP should be checked to verify user sessions. 0 = none, 4 = all four IP parts.
-#       session_length: How long should sessions last, in seconds.
-#           session_gc: How frequently should sessions be garbage collected, in seconds.
-#
-# $ get_user_byid($userid, $onlyreal) - should return a reference to a hash of user
-#                       data corresponding to the specified userid, or undef if the
-#                       userid does not correspond to a valid user. If the onlyreal
-#                       argument is set, the userid must correspond to 'real' user -
-#                       bots or inactive users should not be returned. The hash must
-#                       contain at least:
-#
-#                       user_id   - the user's unique id
-#                       user_type - 0 = normal user, 1 = inactive, 2 = bot/anonymous, 3 = admin
-#
-# $ unique_id($extra) - should return a unique id number. 'Uniqueness' is only important from the point
-#                       of view of using the id as part of session id calculation. The extra argument
-#                       allows the addition of an arbitrary string to the seed used to create the
-#                       id.
+# - `$auth -> {"ANONYMOUS"}` should contain the ID of the anonymous (not logged in) user.
+# - `$ get_config($name)` should return a string, the value of which depends on the value
+#   set for the specified configuration variable. The used variables are:
+#   + `allow_autologin`: Should be set to 1 to allow automatic logins, 0 or missing to disable them.
+#   + `max_autologin_time`: How long should autologins last, should be something like '30d'. Defaults to 356d.
+#   + `ip_check`: How may pieces of IP should be checked to verify user sessions. 0 = none, 4 = all four IP parts.
+#   + `session_length`: How long should sessions last, in seconds.
+#   + `session_gc`: How frequently should sessions be garbage collected, in seconds.
+# - `$ get_user_byid($userid, $onlyreal)` - should return a reference to a hash of user
+#   data corresponding to the specified userid, or undef if the userid does not
+#   correspond to a valid user. If the onlyreal argument is set, the userid must correspond
+#   to a 'real' user - bots or inactive users should not be returned. The hash must
+#   contain at least:
+#   + `user_id` - the user's unique id
+#   + `user_type` - 0 = normal user, 1 = inactive, 2 = bot/anonymous, 3 = admin
+#   + `username` - the user's username
+# - `$ unique_id($extra)` - should return a unique id number. 'Uniqueness' is only important
+#   from the point of view of using the id as part of session id calculation. The extra
+#   argument allows the addition of an arbitrary string to the seed used to create the id.
 #
 # This class requires two database tables: one for sessions, one for session keys (used
-# for autologin). If autologins are permanently disabled (get_config('allow_autologin') always returns
-# false) then the session_keys table may be omitted. The tables should be as follows:
+# for autologin). If autologins are permanently disabled (get_config('allow_autologin')
+# always returns false) then the `session_keys` table may be omitted. The tables should
+# be as follows:
 #
-# A session table, the name of which is stored in the configuration as {"database"} -> {"sessions"}:
-# CREATE TABLE `sessions` (
-#  `session_id` char(32) NOT NULL,
-#  `session_user_id` mediumint(9) unsigned NOT NULL,
-#  `session_start` int(11) unsigned NOT NULL,
-#  `session_time` int(11) unsigned NOT NULL,
-#  `session_ip` varchar(40) NOT NULL,
-#  `session_autologin` tinyint(1) unsigned NOT NULL,
-#  PRIMARY KEY (`session_id`),
-#  KEY `session_time` (`session_time`),
-#  KEY `session_user_id` (`session_user_id`)
-# ) DEFAULT CHARSET=utf8 COMMENT='Website sessions';
+# A session table, the name of which is stored in the configuration as `{"database"} -> {"sessions"}`:
+#
+#     CREATE TABLE `sessions` (
+#      `session_id` char(32) NOT NULL,
+#      `session_user_id` mediumint(9) unsigned NOT NULL,
+#      `session_start` int(11) unsigned NOT NULL,
+#      `session_time` int(11) unsigned NOT NULL,
+#      `session_ip` varchar(40) NOT NULL,
+#      `session_autologin` tinyint(1) unsigned NOT NULL,
+#      PRIMARY KEY (`session_id`),
+#      KEY `session_time` (`session_time`),
+#      KEY `session_user_id` (`session_user_id`)
+#     ) DEFAULT CHARSET=utf8 COMMENT='Website sessions';
 #
 # A session key table, the name of which is in {"database"} -> {"keys"}
-# CREATE TABLE `session_keys` (
-#  `key_id` char(32) COLLATE utf8_bin NOT NULL DEFAULT '',
-#  `user_id` mediumint(8) unsigned NOT NULL DEFAULT '0',
-#  `last_ip` varchar(40) COLLATE utf8_bin NOT NULL DEFAULT '',
-#  `last_login` int(11) unsigned NOT NULL DEFAULT '0',
-#  PRIMARY KEY (`key_id`,`user_id`),
-#  KEY `last_login` (`last_login`)
-# ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Autologin keys';
+#
+#     CREATE TABLE `session_keys` (
+#      `key_id` char(32) COLLATE utf8_bin NOT NULL DEFAULT '',
+#      `user_id` mediumint(8) unsigned NOT NULL DEFAULT '0',
+#      `last_ip` varchar(40) COLLATE utf8_bin NOT NULL DEFAULT '',
+#      `last_login` int(11) unsigned NOT NULL DEFAULT '0',
+#      PRIMARY KEY (`key_id`,`user_id`),
+#      KEY `last_login` (`last_login`)
+#     ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Autologin keys';
 #
 package SessionHandler;
 
@@ -196,7 +192,8 @@ sub new {
 
 ## @method $ create_session($user, $persist)
 # Create a new session. If the user is not specified, this creates an anonymous session,
-# otherwise the session is attached to the user.
+# otherwise the session is attached to the user. Generally you will only ever call this
+# immediately upon logging a user in - otherwise session maintainence is handled for you.
 #
 # @param user    Optional user ID to associate with the session.
 # @param persist If true, and autologins are permitted, an autologin key is generated for
@@ -251,6 +248,9 @@ sub create_session {
 
         $userdata = $self -> {"auth"} -> get_user_byid($self -> {"sessuser"});
 
+        # Give up if we can't get the anonymous user.
+        return set_error("Unable to fall back on anonymous user: user does not exist") if(!$userdata);
+
     # If we have user data, we also want their last login time if possible
     } elsif($self -> {"settings"} -> {"detabase"} -> {"lastvisit"}) {
         my $visith = $self -> {"dbh"} -> prepare("SELECT last_visit FROM ".$self -> {"settings"} -> {"detabase"} -> {"lastvisit"}.
@@ -303,6 +303,8 @@ sub create_session {
 # Delete the current session, resetting the user's data to anonymous. This will
 # remove the user's current session, and any associated autologin key, and then
 # generate a new anonymous session for the user.
+#
+# @return true if the session was created, undef otherwise.
 sub delete_session {
     my $self = shift;
 
@@ -409,11 +411,110 @@ sub session_cookies {
 }
 
 
+# ============================================================================
+#  User/auth abstraction
+#  These functions are really just here to hide the innards away
+
+## @method $ get_session_userid()
+# Obtain the id of the session user. This will return the id of the user attached
+# to the current session.
+#
+# @return The id of the session user. This should always be a positive integer.
+sub get_session_userid {
+    my $self = shift;
+
+    return $self -> {"sessuser"};
+}
+
+
+## @method $ get_user_byid($userid, $onlyreal)
+# Obtain the user record for the specified user, if they exist. This should
+# return a reference to a hash of user data corresponding to the specified userid,
+# or undef if the userid does not correspond to a valid user. If the onlyreal
+# argument is set, the userid must correspond to 'real' user - bots or inactive
+# users should not be returned.
+#
+# @param userid   The id of the user to obtain the data for. If not specified,
+#                 the current session userid is used instead.
+# @param onlyreal If true, only users of type 0 or 3 are returned.
+# @return A reference to a hash containing the user's data, or undef if the user
+#         can not be located (or is not real)
+sub get_user_byid {
+    my $self     = shift;
+    my $userid   = shift;
+    my $onlyreal = shift;
+
+    # Fall back on the session user if no userid is given.
+    $userid = $self -> {"sessuser"} if(!defined($userid));
+
+    return $self -> {"auth"} -> get_user_byid($userid, $onlyreal);
+}
+
+
+## @method $ valid_user($username, $password)
+# Determine whether the specified user is valid, and obtain their user record.
+# This will authenticate the user, and if the credentials supplied are valid, the
+# user's internal record will be returned to the caller.
+#
+# @param username The username to check.
+# @param password The password to check.
+# @return A reference to a hash containing the user's data if the user is valid,
+#         undef if the user is not valid. If this returns undef, the reason can be
+#         obtained from auth_error(). Note that this may return a user AND set a
+#         value that can be obtained via auth_error(), in which case the value in
+#         question is a warning regarding the user...
+sub valid_user {
+    my $self     = shift;
+    my $username = shift;
+    my $password = shift;
+
+    return $self -> {"auth"} -> valid_user($username, $password);
+}
+
+
+## @method $ auth_error()
+# Obtain the last error message generated by the authentication object. This will
+# return the error message generated during the last auth object method call, or
+# the empty string if no errors were generated.
+#
+# @return An error message generated during the last auth object method call, or
+#         '' if the call generated no errors.
+sub auth_error {
+    my $self = shift;
+
+    return $self -> {"auth"} -> {"lasterr"};
+}
+
+
+## @method $ anonymous_session()
+# Determine whether the current session is anonymous (no currently logged-in user).
+#
+# @return True if the current session is anonymous, false if the session has
+#         a real user attached to it.
+sub anonymous_session {
+    my $self = shift;
+
+    return (!defined($self -> {"sessuser"}) || $self -> {"sessuser"} == $self -> {"auth"} -> {"ANONYMOUS"});
+}
+
+
+## @method $ admin_session()
+# Determine whether the current session user is an admin.
+#
+# @return True if the current session user is an admin (has user_type of 3),
+#         false if the user is not an admin.
+sub admin_session {
+    my $self = shift;
+
+    my $user = $self -> {"auth"} -> get_user_byid($self -> {"sessuser"});
+    return ($user && $user -> {"user_type"} == 3);
+}
+
+
 # ==============================================================================
 # Theoretically internal stuff
 
-
-## @method ip_check($userip, $sessip)
+## @method private $ ip_check($userip, $sessip)
 # Checks whether the specified IPs match. The degree of match required depends
 # on the ip_check setting in the SessionHandler object this is called on: 0 means
 # that no checking is done, number between 1 and 4 indicate sections of the
@@ -442,7 +543,7 @@ sub ip_check {
 }
 
 
-## @method $ session_cleanup()
+## @method private $ session_cleanup()
 # Run garbage collection over the sessions table. This will remove all expired
 # sessions and session keys, but in the process it may need to update user
 # last visit information.
@@ -499,7 +600,7 @@ sub session_cleanup {
 }
 
 
-## @method $ session_expired($sessdata)
+## @method private $ session_expired($sessdata)
 # Determine whether the specified session has expired. Returns true if it has,
 # false if it is still valid.
 #
@@ -526,7 +627,7 @@ sub session_expired {
 }
 
 
-## @method $ get_session($sessid)
+## @method private $ get_session($sessid)
 # Obtain the data for the session with the specified session ID. If there is no
 # session with the specified id in the database, this returns undef, otherwise it
 # returns a reference to a hash containing the session data.
@@ -546,7 +647,7 @@ sub get_session {
 }
 
 
-## @method void touch_session($session)
+## @method private void touch_session($session)
 # Touch the specified session, updating its timestamp to the current time. This
 # will only touch the session if it has not been touched in the last minute,
 # otherwise this function does nothing.
@@ -568,7 +669,7 @@ sub touch_session {
 }
 
 
-## @method void set_login_key()
+## @method private void set_login_key()
 # Create the auto login key for the current session user.
 #
 sub set_login_key {
@@ -596,7 +697,7 @@ sub set_login_key {
 }
 
 
-## @method $ create_cookie($name, $value, $expires)
+## @method private $ create_cookie($name, $value, $expires)
 # Creates a cookie that can be sent back to the user's browser to provide session
 # information.
 #
@@ -619,7 +720,7 @@ sub create_cookie {
 }
 
 
-## @fn $ set_error($error)
+## @fn private $ set_error($error)
 # Set the error string to the specified value. This updates the class error
 # string and returns undef.
 #
