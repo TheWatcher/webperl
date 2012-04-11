@@ -31,7 +31,7 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join resolve_path check_directory load_file save_file superchomp trimspace lead_zero string_in_array blind_untaint title_case sentence_case is_defined_numeric rfc822_date get_proc_size find_bin);
+our @EXPORT_OK = qw(path_join resolve_path check_directory load_file save_file superchomp trimspace lead_zero string_in_array blind_untaint title_case sentence_case is_defined_numeric rfc822_date get_proc_size find_bin untaint_path read_pid write_pid);
 
 
 # ============================================================================
@@ -429,5 +429,68 @@ sub find_bin {
     return undef;
 }
 
+
+## @fn $ untaint_path($taintedpath)
+# Untaint the path provided. This will attempt to pull a valid path out of
+# the specified tainted path - note that this is rather stricter about
+# path contents than strictly necessary, and it will only allow alphanumerics,
+# /, . and - in paths.
+#
+# @param taintedpath The tainted path to untaint.
+# @return The untainted path, or undef if the path can not be untainted.
+sub untaint_path {
+    my $taintedpath = shift;
+
+    my ($untainted) = $taintedpath =~ m|^(/?(?:[-\w.]+)(?:/[-\w.]+)*)$|;
+
+    return $untainted;
+}
+
+
+# ============================================================================
+#  PID storage and retieval
+
+## @fn void write_pid($filename)
+# Write the process id of the current process to the specified file. This will
+# attempt to open the specified file and write the current processes' ID to
+# it for use by other processes.
+#
+# @param filename The name of the file to write the process ID to.
+sub write_pid {
+    my $filename = shift;
+
+    open(PIDFILE, "> $filename")
+        or die "FATAL: Unable to open PID file for writing: $!\n";
+
+    print PIDFILE $$;
+
+    close(PIDFILE);
+}
+
+
+## @fn $ read_pid($filename)
+# Attempt to read a PID from the specified file. This will read the file, if possible,
+# and verify that the content is a single string of digits.
+#
+# @param filename The name of the file to read the process ID from.
+# @return The process ID. This function will die on error.
+sub read_pid {
+    my $filename = shift;
+
+    open(PIDFILE, "< $filename")
+        or die "FATAL: Unable to open PID file for reading: $!\n";
+
+    my $pid = <PIDFILE>;
+    close(PIDFILE);
+
+    chomp($pid); # should not be needed, but best to be safe.
+
+    my ($realpid) = $pid =~ /^(\d+)$/;
+
+    die "FATAL: PID file does not appear to contain a valid process id.\n"
+        unless($realpid);
+
+    return $realpid;
+}
 
 1;
