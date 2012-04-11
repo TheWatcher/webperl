@@ -26,3 +26,8 @@ see:
 
 Once you have Doxygen and Doxygen Perl Filter installed, run the 'makedocs.sh'
 script in the main directory to generate the documentation.
+
+Why Doxygen instead of POD? Mainly personal preference: I find documentation
+written using doxygen formatting and markup vastly easier to write, and much
+easier to read, than POD documentation. Doxygen also provides better output
+than most POD tools. But if you disagree, there's a 'fork' button on github...

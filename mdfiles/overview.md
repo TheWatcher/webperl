@@ -66,7 +66,7 @@ specific aspects of the library:
 
 * [Blocks](@ref blocks) discusses the purpose, loading, and features of the
   Block class and subclasses you may with to implement in your application.
-* [Structure](@ref structure) covers the suggested layout of files and directories.
+* [Structure](@ref appstructure) covers the suggested layout of files and directories.
 * [Configuration](@ref config) discusses the core configuration file, and the
   optional settings table in the database.
 * [Sessions](@ref sessions) introduces the session handling feature of the
