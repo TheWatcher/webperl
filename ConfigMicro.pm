@@ -312,7 +312,7 @@ sub save_db_config {
 }
 
 
-## @method $ set_db_config($name, $value, $dbh, $table, $namecol, $valcol, $section)
+## @method $ set_db_config($name, $value, $dbh, $table, $namecol, $valuecol, $section)
 # Set the named configuration variable to the specified value. This updates the
 # settings variable with the specified name to the value provided in both the
 # database and in the ConfigMicro object. Use this function if you only need to
