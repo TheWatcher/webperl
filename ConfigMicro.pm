@@ -341,6 +341,10 @@ sub set_db_config {
     my $valuecol = shift;
     my $section  = shift;
 
+    # Catch potential problems with the API change, and make name and value safer anyway.
+    die "ConfigMicro::set_db_config: name must be a scalar value" if(ref($name));
+    die "ConfigMicro::set_db_config: value must be a scalar value" if(ref($value));
+
     # Try to pull values out of the dbconfig settings if not specified
     $dbh      = $self -> {"__privdata"} -> {"dbconfig"} -> {"dbh"}      if(!defined($dbh)      && defined($self -> {"__privdata"} -> {"dbconfig"} -> {"dbh"}));
     $table    = $self -> {"__privdata"} -> {"dbconfig"} -> {"table"}    if(!defined($table)    && defined($self -> {"__privdata"} -> {"dbconfig"} -> {"table"}));
