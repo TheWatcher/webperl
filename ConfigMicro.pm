@@ -19,25 +19,46 @@
 
 ## @class ConfigMicro
 # A simple configuration class intended to allow ini files to be read and saved. This
-# provides the means to read the contents of an ini file into a hash and saving such a
-# hash out as an ini file.
+# class reads the contents of an .ini style file, and stores the sections and
+# key/value pairs in the object's hash. A typical configuration file could look like
 #
-# @par Example
+#     ; comments can start with semicolons
+#     # or with U+0023
+#     [sectionA]
+#     keyA = valueA  # hash comments can appear after values, too
+#     keyB = valueB
 #
-# Given an ini file of the form
-# <pre>[sectionA]
-# keyA = valueA
-# keyB = valueB
+#     [sectionB]
+#     keyA = valueC
+#     keyC = "  example with spaces  ";
 #
-# [sectionB]
-# keyA = valueC
-# keyC = valueD</pre>
-# this will load the file into a hash of the form
-# <pre>{ "sectionA" => { "keyA" => "valueA",
-#                   "keyB" => "valueB" },
-#   "sectionB" => { "keyA" => "valueC",
-#                   "keyC" => "valueD" }
-# }</pre>
+# Leading and trailing spaces are removed from values (so the value for keyA above
+# will be 'valueA', without the leading and trailing spaces). Values may be enclosed
+# in quotes "", in which case any spaces within the "" are left untouched - keyC's
+# value will retain the two leading and trailing spaces, for example.
+#
+# Note also that keys in different sections may have the same name, but different
+# values. If two keys with the same name appear in the same section, the value for
+# the second copy of the key will overwrite any value set for the first. Keys and
+# sections are case sensitive: `SectionA` and `sectionA` would be different sections.
+# Similarly, if 'keyA' and 'KeyA' appear in the same section, they will be treated
+# as different keys!
+#
+# If the above example is saved as 'foo.cfg', it can be loaded and accessed using
+# code like:
+#
+#     use ConfigMicro;
+#     my $cfg = ConfigMicro -> new('foo.cfg');
+#
+#     # Print out the value of keyB in sectionA
+#     print "keyA in sectionA = '",$cfg -> {"sectionA"} -> {"keyA"},"'\n";
+#     print "keyA in sectionB = '",$cfg -> {"sectionB"} -> {"keyA"},"'\n";
+#
+# The ConfigMicro class provides three functions for pulling configuration data in
+# from a database, in addition to (or even instead of) from a file. Calling the
+# load_db_config() method in any ConfigMicro object allows a table containing key/value
+# pairs to be read into a configuration section. save_db_config() and set_db_config()
+# allow modifications made to configuration settings to be saved back into the table.
 package ConfigMicro;
 
 require 5.005;
@@ -81,7 +102,7 @@ sub new {
     return $obj if($obj -> read($filename));
 
     # Get here and things have gone wahoonie-shaped
-    return undef;
+    return set_error($obj -> {"errstr"});
 }
 
 
@@ -91,7 +112,8 @@ sub new {
 # pairs that occur before a [section] header are added to the '_' section.
 #
 # @param filename The name of the file to read the config data from.
-# @return True if the configuration has been loaded sucessfully, false otherwise.
+# @return True if the configuration has been loaded sucessfully, false otherwise. If
+#         this returns false, $obj -> {"errstr"} will contain the reason why.
 sub read {
     my $self     = shift;
     my $filename = shift or return set_error("No file name provided");
@@ -100,7 +122,7 @@ sub read {
     my $section = "_";
 
     # TODO: should this return the whole name? Possibly a security issue here
-    return set_error("Failed to open '$filename': $!")
+    return $self -> self_error("Failed to open '$filename': $!")
         if(!open(CFILE, "< $filename"));
 
     my $counter = 0;
@@ -128,7 +150,7 @@ sub read {
         # bad input...
 		} else {
             close(CFILE);
-            return set_error("Syntax error on line $counter: '$line'");
+            return $self -> self_error("Syntax error on line $counter: '$line'");
         }
 	}
 
@@ -190,7 +212,7 @@ sub write {
     # Do nothing if the config has not been modified.
     return 0 if(!$self -> {"__privdata"} -> {"modified"});
 
-    return set_error("Failed to save '$filename': $!")
+    return $self -> self_error("Failed to save '$filename': $!")
         if(!open(CFILE, "> $filename"));
 
     print CFILE $self -> text_config(@skip);
@@ -204,95 +226,165 @@ sub write {
 # ============================================================================
 #  Database config functions
 
-## @method $ load_db_config($dbh, $table, $name, $value)
+## @method $ load_db_config($dbh, $table, $namecol, $valuecol, $section)
 # Load settings from a database table. This will pull name/value pairs from the
-# named database table, storing them in a hashref called 'config'.
+# named database table, storing them in the ConfigMicro object in the specified
+# section. Note that if the section exists, and contains key/value pairs, any
+# keys with the same name read from the database will overwrite those already
+# in the configuration section in memory.
 #
 # @param dbh      A database handle to issue queries through.
 # @param table    The name of the table containing key/value pairs.
-# @param name     Optional name of the table column for the key name, defaults to 'name'
-# @param value    Optional name of the table column for the value, defaults to 'value'
+# @param namecol  Optional name of the table column for the key name, defaults to `name`
+# @param valuecol Optional name of the table column for the value, defaults to `value`
+# @param section  Optional name of the section to load key/value pairs into, defaults to `config`.
 # @return true if the configuration table was read into the config object, false
 #         if a problem occurred.
 sub load_db_config {
     my $self     = shift;
-    my $dbh      = shift or return set_error("No database handle provided");
-    my $table    = shift or return set_error("Settings table name not provided");
-    my $name     = shift || "name";
-    my $value    = shift || "value";
+    my $dbh      = shift or return $self -> self_error("No database handle provided");
+    my $table    = shift or return $self -> self_error("Settings table name not provided");
+    my $namecol  = shift || "name";
+    my $valuecol = shift || "value";
+    my $section  = shift || "config";
 
     my $confh = $dbh -> prepare("SELECT * FROM $table");
     $confh -> execute()
-       or return set_error("Unable to execute SELECT query - ".$dbh -> errstr);
+       or return $self -> self_error("Unable to execute SELECT query - ".$dbh -> errstr);
 
     my $row;
     while($row = $confh -> fetchrow_hashref()) {
-        $self -> {"config"} -> {$row -> {$name}} = $row -> {$value};
+        $self -> {$section} -> {$row -> {$namecol}} = $row -> {$valuecol};
     }
 
+    # store the information about where the configuration data came from
+    $self -> {"__privdata"} -> {"dbconfig"} = { "dbh"      => $dbh,
+                                                "table"    => $table,
+                                                "namecol"  => $namecol,
+                                                "valuecol" => $valuecol,
+                                                "section"  => $section };
     return 1;
 }
 
 
-## @method $ save_db_config($dbh, $table, $name, $value)
+## @method $ save_db_config($dbh, $table, $namecol, $valuecol, $section)
 # Save the database configuration back into the database table. This will write the
-# key/value pairs inside the 'config' configuration hash back into the database.
+# key/value pairs inside the key/value pairs in the specified section back into the
+# specified table in the database. If no database, table, or other arguments are
+# provided, this will attempt to use the database, table, and other settings provided
+# when load_db_config() was called. If this is called without arguments, and
+# load_db_config() has not yet been called, this returns false.
 #
-# @param dbh      A database handle to issue queries through.
-# @param table    The name of the table containing key/value pairs.
-# @param name     Optional name of the table column for the key name, defaults to 'name'
-# @param value    Optional name of the table column for the value, defaults to 'value'
+# @param dbh      Optional database handle to issue queries through.
+# @param table    Optional name of the table containing key/value pairs.
+# @param namecol  Optional name of the table column for the key name.
+# @param valuecol Optional name of the table column for the value.
+# @param section  Optional name of the section to save key/value pairs from.
 # @return true if the configuration table was updated from the config object, false
 #         if a problem occurred.
 sub save_db_config {
     my $self     = shift;
-    my $dbh      = shift or return set_error("No database handle provided");
-    my $table    = shift or return set_error("Settings table name not provided");
-    my $name     = shift || "name";
-    my $value    = shift || "value";
+    my $dbh      = shift;
+    my $table    = shift;
+    my $namecol  = shift;
+    my $valuecol = shift;
+    my $section  = shift;
 
-    my $confh = $dbh -> prepare("UPDATE $table SET `$value` = ? WHERE `$name` = ?");
+    # Try to pull values out of the dbconfig settings if not specified
+    $dbh      = $self -> {"__privdata"} -> {"dbconfig"} -> {"dbh"}      if(!defined($dbh)      && defined($self -> {"__privdata"} -> {"dbconfig"} -> {"dbh"}));
+    $table    = $self -> {"__privdata"} -> {"dbconfig"} -> {"table"}    if(!defined($table)    && defined($self -> {"__privdata"} -> {"dbconfig"} -> {"table"}));
+    $namecol  = $self -> {"__privdata"} -> {"dbconfig"} -> {"namecol"}  if(!defined($namecol)  && defined($self -> {"__privdata"} -> {"dbconfig"} -> {"namecol"}));
+    $valuecol = $self -> {"__privdata"} -> {"dbconfig"} -> {"valuecol"} if(!defined($valuecol) && defined($self -> {"__privdata"} -> {"dbconfig"} -> {"valuecol"}));
+    $section  = $self -> {"__privdata"} -> {"dbconfig"} -> {"section"}  if(!defined($section)  && defined($self -> {"__privdata"} -> {"dbconfig"} -> {"section"}));
 
-    foreach my $key (keys(%{$self -> {"config"}})) {
-        $confh -> execute($self -> {"config"} -> {$key}, $key)
-            or return set_error("Unable to execute UPDATE query - ".$dbh -> errstr);
+    # Give up unless everything needed is available.
+    return $self -> self_error("database configuration data missing in save_db_config()")
+        unless($dbh && $table && $namecol && $valuecol && $section);
+
+    my $confh = $dbh -> prepare("UPDATE $table SET `$valuecol` = ? WHERE `$namecol` = ?");
+
+    foreach my $key (keys(%{$self -> {$section}})) {
+        $confh -> execute($self -> {$section} -> {$key}, $key)
+            or return $self -> self_error("Unable to execute UPDATE query - ".$dbh -> errstr);
     }
 
     return 1;
 }
 
 
-## @method $ set_db_config($dbh, $table, $name, $value, $namecol, $valcol)
-# Set the named configuration variable to the specified calye.
+## @method $ set_db_config($name, $value, $dbh, $table, $namecol, $valcol, $section)
+# Set the named configuration variable to the specified value. This updates the
+# settings variable with the specified name to the value provided in both the
+# database and in the ConfigMicro object. Use this function if you only need to
+# update a small number of configuration values, otherwise consider updating the
+# configuration section yourself and using save_db_config() to bulk-save the options.
+# If no database, table, or later arguments are provided, this will attempt to use
+# the database, table, and other settings provided when load_db_config() was called.
+# If this is called without arguments, and load_db_config() has not yet been called,
+# this returns false.
 #
-# @param dbh      A database handle to issue queries through.
-# @param table    The name of the table containing key/value pairs.
 # @param name     The name of the variable to update.
 # @param value    The value to change the variable to.
-# @param namecol  Optional name of the table column for the key name, defaults to 'name'
-# @param valcol   Optional name of the table column for the value, defaults to 'value'
+# @param dbh      Optional database handle to issue queries through.
+# @param table    Optional name of the table containing key/value pairs.
+# @param namecol  Optional name of the table column for the key name.
+# @param valuecol Optional name of the table column for the value.
+# @param section  Optional name of the section to save key/value pairs from.
 # @return true if the config variable was changed, false otherwise.
 sub set_db_config {
     my $self     = shift;
-    my $dbh      = shift or return set_error("No database handle provided");
-    my $table    = shift or return set_error("Settings table name not provided");
     my $name     = shift;
     my $value    = shift;
-    my $namecol  = shift || "name";
-    my $valuecol = shift || "value";
+    my $dbh      = shift;
+    my $table    = shift;
+    my $namecol  = shift;
+    my $valuecol = shift;
+    my $section  = shift;
+
+    # Try to pull values out of the dbconfig settings if not specified
+    $dbh      = $self -> {"__privdata"} -> {"dbconfig"} -> {"dbh"}      if(!defined($dbh)      && defined($self -> {"__privdata"} -> {"dbconfig"} -> {"dbh"}));
+    $table    = $self -> {"__privdata"} -> {"dbconfig"} -> {"table"}    if(!defined($table)    && defined($self -> {"__privdata"} -> {"dbconfig"} -> {"table"}));
+    $namecol  = $self -> {"__privdata"} -> {"dbconfig"} -> {"namecol"}  if(!defined($namecol)  && defined($self -> {"__privdata"} -> {"dbconfig"} -> {"namecol"}));
+    $valuecol = $self -> {"__privdata"} -> {"dbconfig"} -> {"valuecol"} if(!defined($valuecol) && defined($self -> {"__privdata"} -> {"dbconfig"} -> {"valuecol"}));
+    $section  = $self -> {"__privdata"} -> {"dbconfig"} -> {"section"}  if(!defined($section)  && defined($self -> {"__privdata"} -> {"dbconfig"} -> {"section"}));
+
+    # Give up unless everything needed is available.
+    return $self -> self_error("database configuration data missing in set_db_config()")
+        unless($dbh && $table && $namecol && $valuecol && $section);
 
     my $confh = $dbh -> prepare("UPDATE $table SET `$valuecol` = ? WHERE `$namecol` = ?");
     $confh -> execute($value, $name)
-        or return set_error("Unable to execute UPDATE query - ".$dbh -> errstr);
+        or return $self -> self_error("Unable to execute UPDATE query - ".$dbh -> errstr);
 
-    $self -> {"config"} -> {$name} = $value;
+    $self -> {$section} -> {$name} = $value;
 
     return 1;
 }
 
+
 # ============================================================================
 #  Error functions
 
+## @cmethod private $ set_error($errstr)
+# Set the class-wide errstr variable to an error message, and return undef. This
+# function supports error reporting in the constructor and other class methods.
+#
+# @param errstr The error message to store in the class errstr variable.
+# @return Always returns undef.
 sub set_error { $errstr = shift; return undef; }
+
+
+## @method private $ self_error($errstr)
+# Set the object's errstr value to an error message, and return undef. This
+# function supports error reporting in various methods throughout the class.
+#
+# @param errstr The error message to store in the object's errstr.
+# @return Always returns undef.
+sub self_error {
+    my $self = shift;
+    $self -> {"errstr"} = shift;
+
+    return undef;
+}
 
 1;
