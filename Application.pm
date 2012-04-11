@@ -36,9 +36,6 @@
 # up as needed, this just simplifies the process. See the @ref overview Overview
 # documentation for more details about the operation of this class.
 #
-# @todo Web applications created using the Application class use the default
-#       language and template settings - i18n and template selection need to
-#       be added after the session handler has been started. See bug FS#68.
 package Application;
 
 use strict;
@@ -168,6 +165,20 @@ sub run {
                                                  template => $self -> {"template"},
                                                  settings => $self -> {"settings"})
         or die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create session object: ".$SessionHandler::errstr);
+
+    # At this point, there's potentially a real user associated with the session. If appropriate,
+    # update the template theme and language
+    if(!$self -> {"session"} -> anonymous_session()) {
+        my $sessuser = $self -> {"session"} -> get_user_byid();
+
+        if($sessuser) {
+            $self -> {"template"} -> set_language($sessuser -> {$self -> {"settings"} -> {"config"} -> {"Core:user_lang_field"}})
+                if(!$self -> {"settings"} -> {"config"} -> {"Core:force_lang"} && $self -> {"settings"} -> {"config"} -> {"Core:user_lang_field"} && $sessuser -> {$self -> {"settings"} -> {"config"} -> {"Core:user_lang_field"}});
+
+            $self -> {"template"} -> set_template_dir($sessuser -> {$self -> {"settings"} -> {"config"} -> {"Core:user_theme_field"}})
+                if(!$self -> {"settings"} -> {"config"} -> {"Core:force_theme"} && $self -> {"settings"} -> {"config"} -> {"Core:user_theme_field"} && $sessuser -> {$self -> {"settings"} -> {"config"} -> {"Core:user_theme_field"}});
+        }
+    }
 
     # And now we can make the module handler
     $self -> {"modules"} = Modules -> new(cgi      => $self -> {"cgi"},
