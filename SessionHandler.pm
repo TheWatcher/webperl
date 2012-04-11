@@ -591,7 +591,7 @@ sub session_cleanup {
     # We only want to run the garbage collect occasionally
     if($self -> {"settings"} -> {"config"} -> {"Session:lastgc"} < $now - $self -> {"auth"} -> get_config("session_gc")) {
         # Okay, we're due a garbage collect, update the config to reflect that we're doing it
-        $self -> {"settings"} -> set_db_config($self -> {"dbh"}, $self -> {"settings"} -> {"database"} -> {"settings"}, "Session:lastgc", $now);
+        $self -> {"settings"} -> set_db_config("Session:lastgc", $now);
 
         # Remove expired guest sessions first
         my $nukesess = $self -> {"dbh"} -> prepare("DELETE FROM ".$self -> {"settings"} -> {"database"} -> {"sessions"}.

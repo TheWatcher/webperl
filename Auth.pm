@@ -136,7 +136,7 @@ sub unique_id {
 
     # Potentially not atomic, but putting something in place that is really isn't worth it right now...
     my $id = $self -> {"settings"} -> {"config"} -> {"Auth:unique_id"};
-    $self -> {"settings"} -> set_db_config($self -> {"dbh"}, $self -> {"settings"} -> {"database"} -> {"settings"}, "Auth:unique_id", ++$id);
+    $self -> {"settings"} -> set_db_config("Auth:unique_id", ++$id);
 
     # Ask urandom for some randomness to combat potential problems with the above non-atomicity
     my $buffer;
