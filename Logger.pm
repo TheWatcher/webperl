@@ -29,11 +29,20 @@
 package Logger;
 
 use strict;
+our @EXPORT    = qw(warn_log die_log);
+our @EXPORT_OK = qw(start_log end_log);
 
 use constant WARNING       => 0;
 use constant NOTICE        => 1;
 use constant DEBUG         => 2;
 use constant MAX_VERBOSITY => 2;
+
+# This will store a singleton instance of the logger to use if functions
+# are called through the functional interface.
+our $log_singleton;
+BEGIN {
+    undef $log_singleton;
+}
 
 # ============================================================================
 #  Constructor
@@ -69,6 +78,10 @@ sub new {
     my $obj = bless $self, $class;
 
     $obj -> start_log($self -> {"logname"}) if($self -> {"logname"});
+
+    # Store as the singleton, just in case
+    $log_singleton = $obj;
+
     return $obj;
 }
 
@@ -80,7 +93,7 @@ sub new {
 #
 # @param newlvel The new verbosity level for this logger.
 sub set_verbosity {
-    my $self     = shift;
+    my $self     = self_or_default();
     my $newlevel = shift;
 
     $newlevel = MAX_VERBOSITY if(!defined($newlevel) || $newlevel < 0 || $newlevel > MAX_VERBOSITY);
@@ -102,7 +115,7 @@ sub set_verbosity {
 # @param filename The name of the file to log to.
 # @param progname A optional program name to show in the log. Defaults to $0
 sub start_log {
-    my $self     = shift;
+    my $self     = self_or_default();
     my $filename = shift;
     my $progname = shift || $0;
 
@@ -128,7 +141,7 @@ sub start_log {
 #
 # @param progname A optional program name to show in the log. Defaults to $0
 sub end_log {
-    my $self     = shift;
+    my $self     = self_or_default();
     my $progname = shift || $0;
 
     if($self -> {"logfile"}) {
@@ -161,7 +174,7 @@ sub end_log {
 #                 blargh will generate warning messages.
 # @return The current state of blargh fatality.
 sub fatal_setting {
-    my $self     = shift;
+    my $self     = self_or_default();
     my $newstate = shift;
 
     $self -> {"fatalblargh"} = $newstate if(defined($newstate));
@@ -182,7 +195,7 @@ sub fatal_setting {
 #                message may still contain its own newlines). If set to true, or omitted,
 #                a newline is printed after the message.
 sub print {
-    my $self      = shift;
+    my $self      = self_or_default();
     my $level     = shift;
     my $message   = shift;
     my $newline   = shift;
@@ -207,7 +220,7 @@ sub print {
 #
 # @param message The message to print.
 sub blargh {
-    my $self    = shift;
+    my $self    = self_or_default();
     my $message = shift;
 
     if($self -> {"fatalblargh"}) {
@@ -230,7 +243,7 @@ sub blargh {
 # @param ip      The IP address to log with the message. Defaults to 'unknown'
 # @param message The message to write to the log
 sub warn_log {
-    my $self    = shift;
+    my $self    = self_or_default();
     my $ip      = shift || "unknown";
     my $message = shift;
 
@@ -255,7 +268,7 @@ sub warn_log {
 # @param ip      The IP address to log with the message. Defaults to 'unknown'
 # @param message The message to write to the log
 sub die_log {
-    my $self    = shift;
+    my $self    = self_or_default();
     my $ip      = shift || "unknown";
     my $message = shift;
 
@@ -267,5 +280,33 @@ sub die_log {
     die "[$$:$ip]: $message\n";
 }
 
+
+# ============================================================================
+#  Scary internals
+#
+
+## @fn private @ self_or_default()
+# Support function to allow Logger functions to be called using functional or
+# OO methods. This will act as a pass-through if called by a function that has
+# itself been called using OO, otherwise it will modify the argument list to
+# insert a singleton instance of the Logger. This code is based on a function
+# of the same name in CGI.pm
+#
+# @return Either the argument list, or a reference to a singleton Logger if
+#         the caller expects a reference rather than a list.
+sub self_or_default {
+    # Called as 'Logger' -> something.
+    return @_ if(defined($_[0]) && (!ref($_[0]) && ($_[0] eq 'Logger')));
+
+    # If not called as a Logger object, shove the singleton into the argument list
+    unless(defined($_[0]) && (ref($_[0]) eq 'Logger' || UNIVERSAL::isa($_[0], 'Logger'))) {
+        # Make a new singleton if one hasn't been made already
+        $log_singleton = Logger -> new() unless(defined($log_singleton));
+
+        unshift(@_, $log_singleton);
+    }
+
+    return wantarray ? @_ : $log_singleton;
+}
 
 1;
