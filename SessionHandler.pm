@@ -312,7 +312,8 @@ sub create_session {
 
     # create a new session
     my $sessh = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"settings"} -> {"database"} -> {"sessions"}.
-                                            " VALUES(?, ?, ?, ?, ?, ?)");
+                                            "(session_id, session_user_id, session_start, session_time, session_ip, session_autologin)
+                                             VALUES(?, ?, ?, ?, ?, ?)");
     $sessh -> execute($self -> {"sessid"},
                       $self -> {"sessuser"},
                       $now,
@@ -709,7 +710,8 @@ sub set_login_key {
     # If we don't have a key, we want to create a new key in the table
     if(!$key) {
         my $keyh = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"settings"} -> {"database"} -> {"keys"}.
-                                               " VALUES(?, ?, ?, ?)");
+                                               "(key_id, user_id, last_ip, last_login)
+                                                VALUES(?, ?, ?, ?)");
         $keyh -> execute(md5_hex($key_id), $self -> {"sessuser"}, $ENV{REMOTE_ADDR}, time())
             or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to create autologin key. Error was: ".$self -> {"dbh"} -> errstr);
 
