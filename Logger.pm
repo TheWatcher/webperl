@@ -91,8 +91,7 @@ sub new {
 #
 # @param newlvel The new verbosity level for this logger.
 sub set_verbosity {
-    my $self     = self_or_default();
-    my $newlevel = shift;
+    my ($self, $newlevel) = self_or_default(@_);
 
     $newlevel = MAX_VERBOSITY if(!defined($newlevel) || $newlevel < 0 || $newlevel > MAX_VERBOSITY);
 
@@ -113,9 +112,9 @@ sub set_verbosity {
 # @param filename The name of the file to log to.
 # @param progname A optional program name to show in the log. Defaults to $0
 sub start_log {
-    my $self     = self_or_default();
-    my $filename = shift;
-    my $progname = shift || $0;
+    my ($self, $filename, $progname) = self_or_default(@_);
+
+    $progname = $0 unless(defined($progname));
 
     # Close the logfile if it has been opened already
     $self -> end_log($progname) if($self -> {"logfile"});
@@ -139,8 +138,9 @@ sub start_log {
 #
 # @param progname A optional program name to show in the log. Defaults to $0
 sub end_log {
-    my $self     = self_or_default();
-    my $progname = shift || $0;
+    my ($self, $progname) = self_or_default(@_);
+
+    $progname = $0 unless(defined($progname));
 
     if($self -> {"logfile"}) {
         my $logfile = $self -> {"logfile"};
@@ -172,8 +172,7 @@ sub end_log {
 #                 blargh will generate warning messages.
 # @return The current state of blargh fatality.
 sub fatal_setting {
-    my $self     = self_or_default();
-    my $newstate = shift;
+    my ($self, $newstate) = self_or_default(@_);
 
     $self -> {"fatalblargh"} = $newstate if(defined($newstate));
 
@@ -193,10 +192,7 @@ sub fatal_setting {
 #                message may still contain its own newlines). If set to true, or omitted,
 #                a newline is printed after the message.
 sub print {
-    my $self      = self_or_default();
-    my $level     = shift;
-    my $message   = shift;
-    my $newline   = shift;
+    my ($self, $level, $message, $newline) = self_or_default(@_);
 
     $newline = 1 if(!defined($newline));
     my $logfile = $self -> {"logfile"};
@@ -218,8 +214,7 @@ sub print {
 #
 # @param message The message to print.
 sub blargh {
-    my $self    = self_or_default();
-    my $message = shift;
+    my ($self, $message) = self_or_default(@_);
 
     if($self -> {"fatalblargh"}) {
         die "FATAL: $message\n";
@@ -241,9 +236,8 @@ sub blargh {
 # @param ip      The IP address to log with the message. Defaults to 'unknown'
 # @param message The message to write to the log
 sub warn_log {
-    my $self    = self_or_default();
-    my $ip      = shift || "unknown";
-    my $message = shift;
+    my ($self, $ip, $message) = self_or_default(@_);
+    $ip = "unknown" unless(defined($ip));
 
     my $logfile = $self -> {"logfile"};
 
@@ -266,9 +260,8 @@ sub warn_log {
 # @param ip      The IP address to log with the message. Defaults to 'unknown'
 # @param message The message to write to the log
 sub die_log {
-    my $self    = self_or_default();
-    my $ip      = shift || "unknown";
-    my $message = shift;
+    my ($self, $ip, $message) = self_or_default(@_);
+    $ip = "unknown" unless(defined($ip));
 
     my $logfile = $self -> {"logfile"};
 
@@ -294,7 +287,7 @@ sub die_log {
 #         the caller expects a reference rather than a list.
 sub self_or_default {
     # Called as 'Logger' -> something.
-    return @_ if(defined($_[0]) && (!ref($_[0]) && ($_[0] eq 'Logger')));
+    return @_ if(defined($_[0]) && (!ref($_[0])) && ($_[0] eq 'Logger'));
 
     # If not called as a Logger object, shove the singleton into the argument list
     unless(defined($_[0]) && (ref($_[0]) eq 'Logger' || UNIVERSAL::isa($_[0], 'Logger'))) {
