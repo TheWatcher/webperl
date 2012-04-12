@@ -32,7 +32,6 @@ use strict;
 
 # Custom module imports
 use AuthMethods;
-use Logging qw(die_log);
 
 our $errstr;
 
