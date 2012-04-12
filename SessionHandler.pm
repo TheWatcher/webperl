@@ -149,7 +149,6 @@ sub new {
         cgi       => undef,
         dbh       => undef,
         auth      => undef,
-        template  => undef,
         settings  => undef,
         @_,
     };
@@ -158,7 +157,6 @@ sub new {
     return set_error("cgi object not set") unless($self -> {"cgi"});
     return set_error("dbh object not set") unless($self -> {"dbh"});
     return set_error("auth object not set") unless($self -> {"auth"});
-    return set_error("template object not set") unless($self -> {"template"});
     return set_error("settings object not set") unless($self -> {"settings"});
 
     # Bless class so we canuse it properly
