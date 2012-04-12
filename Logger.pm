@@ -22,10 +22,6 @@
 # together the various functions needed for displaying log messages and errors
 # at various levels of verbosity, in an attempt to cut down on duplicate
 # parameter passing throughout the rest of the system.
-#
-# @todo A lot of functionality is duplicated in Logging, but the interface
-#       is completely different. Modify this class to allow for both OO
-#       and direct calls to methods.
 package Logger;
 
 use strict;
