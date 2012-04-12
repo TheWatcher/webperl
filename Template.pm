@@ -450,6 +450,11 @@ sub load_template {
 # provided hashref and replace all occurances of the key in the text with the value
 # set in the hash for that key.
 #
+# @todo This function loops until it has no language variables or markers left to
+#       replace. It will iterate over the variable map at least once more than it
+#       actually needs to in order to confirm that all possible replacements have
+#       been made. Try to find some way to optimise this (see bug FS#72)
+#
 # @param text      The text to process. If this is a reference, the replacement is
 #                  done in-place, otherwise the modified string is returned.
 # @param varmap    A reference to a hash containing variable names as keys, and the
@@ -467,15 +472,19 @@ sub process_template {
     my $textref = ref($text) ? $text : \$text;
 
     # replace all the keys in the text with the appropriate value.
-    my ($key, $value);
-    foreach $key (keys %$varmap) {
-        # pull out the value if it is defined, blank otherwise - avoids "Use of uninitialized value in substitution" problems
-        $value = defined($varmap -> {$key}) ? $varmap -> {$key} : "";
-        $$textref =~ s/\Q$key\E/$value/g;
-    }
+    my ($key, $value, $count);
+    do {
+        $count = 0;
 
-    # Do any language marker replacements
-    $$textref =~ s/{L_(\w+?)}/$self->replace_langvar($1)/ge;
+        foreach $key (keys %$varmap) {
+            # pull out the value if it is defined, blank otherwise - avoids "Use of uninitialized value in substitution" problems
+            $value = defined($varmap -> {$key}) ? $varmap -> {$key} : "";
+            $count += $$textref =~ s/\Q$key\E/$value/g;
+        }
+
+        # Do any language marker replacements
+        $count += $$textref =~ s/{L_(\w+?)}/$self->replace_langvar($1)/ge;
+    } while($count);
 
     # Do any module marker replacements if we can
     if($self -> {"modules"}) {
