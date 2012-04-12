@@ -29,6 +29,8 @@
 package Logger;
 
 use strict;
+require Exporter;
+our @ISA       = qw(Exporter);
 our @EXPORT    = qw(warn_log die_log);
 our @EXPORT_OK = qw(start_log end_log);
 
