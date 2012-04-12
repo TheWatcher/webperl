@@ -26,7 +26,6 @@ package AuthMethods;
 
 use strict;
 use Module::Load;
-use Logging qw(die_log);
 
 our $errstr;
 
@@ -51,10 +50,11 @@ sub new {
     };
 
     # Ensure that we have objects that we need
-    return set_error("cgi object not set") unless($self -> {"cgi"});
-    return set_error("dbh object not set") unless($self -> {"dbh"});
+    return set_error("cgi object not set")      unless($self -> {"cgi"});
+    return set_error("dbh object not set")      unless($self -> {"dbh"});
     return set_error("settings object not set") unless($self -> {"settings"});
-    return set_error("app object not set") unless($self -> {"app"});
+    return set_error("app object not set")      unless($self -> {"app"});
+    return set_error("logger object not set")   unless($self -> {"logger"});
 
     return bless $self, $class;
 }
@@ -80,7 +80,7 @@ sub available_methods {
                                               ($only_active ? " WHERE enabled = 1 " : " ").
                                               "ORDER BY priority ASC");
     $methodh -> execute()
-        or die_log($self -> {"cgi"} -> remote_host(), "Unable to execute auth method list query: ".$self -> {"dbh"} -> errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to execute auth method list query: ".$self -> {"dbh"} -> errstr);
 
     my @methods;
     while(my $method = $methodh -> fetchrow_arrayref()) {
@@ -113,7 +113,7 @@ sub load_method {
     my $moduleh = $self -> {"dbh"} -> prepare("SELECT perl_module, enabled FROM ".$self -> {"settings"} -> {"database"} -> {"auth_methods"}."
                                                WHERE id = ?");
     $moduleh -> execute($method_id)
-        or die_log($self -> {"cgi"} -> remote_host(), "Unable to execute auth method lookup query: ".$self -> {"dbh"} -> errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to execute auth method lookup query: ".$self -> {"dbh"} -> errstr);
 
     my $module = $moduleh -> fetchrow_hashref();
     return $self -> self_error("Unknown auth method requested in load_method($method_id)") if(!$module);
@@ -125,7 +125,7 @@ sub load_method {
     my $paramh = $self -> {"dbh"} -> prepare("SELECT name, value FROM ".$self -> {"settings"} -> {"database"} -> {"auth_params"}."
                                               WHERE method_id = ?");
     $paramh -> execute($method_id)
-        or die_log($self -> {"cgi"} -> remote_host(), "Unable to execute auth method parameter query: ".$self -> {"dbh"} -> errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to execute auth method parameter query: ".$self -> {"dbh"} -> errstr);
 
     # Build up a settings hash using the standard objects, and settings for the
     # module loaded from the database.

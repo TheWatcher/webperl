@@ -127,9 +127,6 @@ use MIME::Base64;
 
 use Data::Dumper;
 
-# Custom module imports
-use Logging qw(die_log);
-
 # Globals...
 our $errstr;
 
@@ -697,7 +694,7 @@ sub touch_session {
                                                  " SET session_time = ?
                                                    WHERE session_id = ?");
         $finger -> execute($self -> {"session_time"}, $session -> {"session_id"})
-            or die_log($self -> {"cgi"} -> remote_host(), "Unable to touch session. Error was: ".$self -> {"dbh"} -> errstr);
+            or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to touch session. Error was: ".$self -> {"dbh"} -> errstr);
     }
 }
 
@@ -716,14 +713,14 @@ sub set_login_key {
         my $keyh = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"settings"} -> {"database"} -> {"keys"}.
                                                " VALUES(?, ?, ?, ?)");
         $keyh -> execute(md5_hex($key_id), $self -> {"sessuser"}, $ENV{REMOTE_ADDR}, time())
-            or die_log($self -> {"cgi"} -> remote_host(), "Unable to create autologin key. Error was: ".$self -> {"dbh"} -> errstr);
+            or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to create autologin key. Error was: ".$self -> {"dbh"} -> errstr);
 
     # If we have a key, we want to overwrite it with the new stuff
     } else {
         my $keyh = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"keys"}.
                                                " SET key_id = ?, last_ip = ?, last_login = ? WHERE user_id = ? AND key_id = ?");
         $keyh -> execute(md5_hex($key_id), $ENV{REMOTE_ADDR}, 0 + time(), 0 + $self -> {"sessuser"}, md5_hex($key))
-            or die_log($self -> {"cgi"} -> remote_host(), "Unable to update autologin key. Error was: ".$self -> {"dbh"} -> errstr);
+            or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to update autologin key. Error was: ".$self -> {"dbh"} -> errstr);
     }
 
     $self -> {"autokey"} = $key_id;

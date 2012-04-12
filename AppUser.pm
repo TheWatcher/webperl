@@ -49,7 +49,6 @@
 package AppUser;
 
 use strict;
-use Logging qw(die_log);
 
 use constant ANONYMOUS_ID => 1; # Default anonymous user id.
 use constant ADMIN_TYPE   => 3; # User type for admin users.
@@ -74,7 +73,7 @@ sub new {
 }
 
 
-## @method $ init($cgi, $dbh, $settings)
+## @method $ init($cgi, $dbh, $settings, $logger)
 # Initialise the AppUser's references to other system objects. This allows the
 # setup of the object to be deferred from construction. If the cgi, dbh, and
 # settings objects have been passed into new(), calling this function is not
@@ -83,6 +82,7 @@ sub new {
 # @param cgi      A reference to the system-wide cgi object.
 # @param dbh      A reference to the system DBI object.
 # @param settings A reference to the global settings.
+# @param logger   A reference to the logger object.
 # @return undef on success, otherwise an error message
 sub init {
     my $self = shift;
@@ -90,11 +90,13 @@ sub init {
     $self -> {"cgi"} = shift;
     $self -> {"dbh"} = shift;
     $self -> {"settings"} = shift;
+    $self -> {"logger"} = shift;
 
     # Check things are set.
     return "cgi object not set" unless($self -> {"cgi"});
     return "dbh object not set" unless($self -> {"dbh"});
     return "settings object not set" unless($self -> {"settings"});
+    return "logger object not set" unless($self -> {"logger"});
 
     #  All good, return nothing...
     return undef;
@@ -221,7 +223,7 @@ sub set_user_authmethod {
                                             SET user_auth = ?
                                             WHERE username LIKE ?");
     my $result = $seth -> execute($methodid, $username)
-        or die_log($self -> {"cgi"} -> remote_host(), "Unable to execute user auth update query. Error was: ".$self -> {"dbh"} -> errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to execute user auth update query. Error was: ".$self -> {"dbh"} -> errstr);
 
     $self -> {"lasterr"} .= "Unable to update user auth method, unkown user selected"
         if($result != 1);
@@ -287,7 +289,7 @@ sub post_authenticate {
                                                    (username, created, last_login)
                                                    VALUES(?, UNIX_TIMESTAMP(), UNIX_TIMESTAMP())");
         $newuser -> execute($username)
-            or die_log($self -> {"cgi"} -> remote_host(), "FATAL: Unable to create new user record: ".$self -> {"dbh"} -> errstr);
+            or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "FATAL: Unable to create new user record: ".$self -> {"dbh"} -> errstr);
 
         $user = $self -> get_user($username);
     }
@@ -302,7 +304,7 @@ sub post_authenticate {
                                              SET last_login = UNIX_TIMESTAMP()
                                              WHERE user_id = ?");
     $pokeh -> execute($user -> {"user_id"})
-        or die_log($self -> {"cgi"} -> remote_host(), "FATAL: Unable to update user record: ".$self -> {"dbh"} -> errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "FATAL: Unable to update user record: ".$self -> {"dbh"} -> errstr);
 
     # All done...
     return $user;
@@ -337,7 +339,7 @@ sub _get_user {
                                              WHERE $field ".($uselike ? "LIKE" : "=")." ?".
                                             ($onlyreal ? " AND user_type IN (0,3)" : ""));
     $userh -> execute($value)
-        or die_log($self -> {"cgi"} -> remote_host(), "Unable to execute user lookup query. Error was: ".$self -> {"dbh"} -> errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to execute user lookup query. Error was: ".$self -> {"dbh"} -> errstr);
 
     return $userh -> fetchrow_hashref();
 }

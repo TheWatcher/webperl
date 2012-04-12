@@ -99,7 +99,6 @@
 #     ... href="index.cgi?block={B_[somename]}...etc...
 package Template;
 
-use Logging;
 use POSIX qw(strftime);
 use Utils qw(path_join superchomp);
 use strict;
@@ -279,7 +278,7 @@ sub load_language {
                 $value =~ s/\\\"/\"/go;
 
                 # warn if we are about to redefine a word
-                warn_log("Unknown", "$key already exists in language hash!")
+                $self -> {"logger"} -> warn_log("Unknown", "$key already exists in language hash!")
                     if($self -> {"words"} -> {$key} && !$force_overwrite);
 
                 $self -> {"words"} -> {$key} = $value;
@@ -287,7 +286,7 @@ sub load_language {
 
             close(WORDFILE);
         }  else {
-            warn_log("Unknown", "Unable to open language file $filename: $!");
+            $self -> {"logger"} -> warn_log("Unknown", "Unable to open language file $filename: $!");
         }
     }
 

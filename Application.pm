@@ -49,7 +49,7 @@ use Time::HiRes qw(time);
 # Webperl modules
 use Auth;
 use ConfigMicro;
-use Logging qw(start_log end_log die_log);
+use Logger;
 use Template;
 use SessionHandler;
 use Modules;
@@ -105,9 +105,12 @@ sub run {
 
     $self -> {"starttime"} = time();
 
+    $self -> {"logger"} = Logger -> new()
+        or die "FATAL: Unable to create logger object";
+
     # Load the system config
     $self -> {"settings"} = ConfigMicro -> new($self -> {"config"})
-        or die_log("Not avilable", "Application: Unable to obtain configuration file: ".$ConfigMicro::errstr);
+        or $self -> {"logger"} -> die_log("Not avilable", "Application: Unable to obtain configuration file: ".$ConfigMicro::errstr);
 
     # Create a new CGI object to generate page content through
     $self -> {"cgi"} = $self -> load_cgi($self -> {"settings"} -> {"setup"} -> {"disable_compression"});
@@ -117,54 +120,57 @@ sub run {
                                     $self -> {"settings"} -> {"database"} -> {"username"},
                                     $self -> {"settings"} -> {"database"} -> {"password"},
                                     { RaiseError => 0, AutoCommit => 1, mysql_enable_utf8 => 1 })
-        or die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to connect to database: ".$DBI::errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to connect to database: ".$DBI::errstr);
 
     # Pull configuration data out of the database into the settings hash
     $self -> {"settings"} -> load_db_config($self -> {"dbh"}, $self -> {"settings"} -> {"database"} -> {"settings"});
 
     # Start doing logging if needed
-    start_log($self -> {"settings"} -> {"config"} -> {"logfile"}) if($self -> {"settings"} -> {"config"} -> {"logfile"});
+    $self -> {"logger"} -> start_log($self -> {"settings"} -> {"config"} -> {"logfile"}) if($self -> {"settings"} -> {"config"} -> {"logfile"});
 
     # Create the template handler object
-    $self -> {"template"} = Template -> new(basedir   => path_join($self -> {"settings"} -> {"config"} -> {"base"}, "templates"),
+    $self -> {"template"} = Template -> new(logger    => $self -> {"logger"},
+                                            basedir   => path_join($self -> {"settings"} -> {"config"} -> {"base"}, "templates"),
                                             timefmt   => $self -> {"settings"} -> {"config"} -> {"timefmt"},
                                             blockname => 1,
                                             mailcmd   => '/usr/sbin/sendmail -t -f '.$self -> {"settings"} -> {"config"} -> {"Core:envelope_address"})
-        or die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create template handling object: ".$Template::errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create template handling object: ".$Template::errstr);
 
     # If phpbb mode is enabled, it takes over auth.
     if($self -> {"use_phpbb"}) {
         load phpBB3;
-        $self -> {"phpbb"} = phpBB3 -> new(prefix   => $self -> {"settings"} -> {"database"} -> {"phpbb_prefix"},
+        $self -> {"phpbb"} = phpBB3 -> new(logger   => $self -> {"logger"},
+                                           prefix   => $self -> {"settings"} -> {"database"} -> {"phpbb_prefix"},
                                            cgi      => $self -> {"cgi"},
                                            data_src => $self -> {"settings"} -> {"database"} -> {"phpbb_database"},
                                            username => $self -> {"settings"} -> {"database"} -> {"phpbb_username"},
                                            password => $self -> {"settings"} -> {"database"} -> {"phpbb_password"},
                                            codepath => path_join($self -> {"settings"} -> {"config"} -> {"base"}, "templates", "default"),
                                            url      => $self -> {"settings"} -> {"config"} -> {"forumurl"})
-            or die_log($self -> {"cgi"} -> remote_host(), "Unable to create phpbb object: ".$phpBB3::errstr);
+            or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to create phpbb object: ".$phpBB3::errstr);
 
         $self -> {"auth"} = $self -> {"phpbb"};
 
     # phpBB3 is not enabled, initialise the auth modules.
     } else {
         # Initialise the appuser object
-        $self -> {"appuser"} -> init($self -> {"cgi"}, $self -> {"dbh"}, $self -> {"settings"});
+        $self -> {"appuser"} -> init($self -> {"cgi"}, $self -> {"dbh"}, $self -> {"settings"}, $self -> {"logger"});
 
         # If the auth object is not set, make one
         $self -> {"auth"} = Auth -> new() if(!$self -> {"auth"});
 
         # Initialise the auth object
-        $self -> {"auth"} -> init($self -> {"cgi"}, $self -> {"dbh"}, $self -> {"appuser"}, $self -> {"settings"});
+        $self -> {"auth"} -> init($self -> {"cgi"}, $self -> {"dbh"}, $self -> {"appuser"}, $self -> {"settings"}, $self -> {"logger"});
     }
 
     # Start the session engine...
-    $self -> {"session"} = SessionHandler -> new(cgi      => $self -> {"cgi"},
+    $self -> {"session"} = SessionHandler -> new(logger   => $self -> {"logger"},
+                                                 cgi      => $self -> {"cgi"},
                                                  dbh      => $self -> {"dbh"},
                                                  auth     => $self -> {"auth"},
                                                  template => $self -> {"template"},
                                                  settings => $self -> {"settings"})
-        or die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create session object: ".$SessionHandler::errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create session object: ".$SessionHandler::errstr);
 
     # At this point, there's potentially a real user associated with the session. If appropriate,
     # update the template theme and language
@@ -181,7 +187,8 @@ sub run {
     }
 
     # And now we can make the module handler
-    $self -> {"modules"} = Modules -> new(cgi      => $self -> {"cgi"},
+    $self -> {"modules"} = Modules -> new(logger   => $self -> {"logger"},
+                                          cgi      => $self -> {"cgi"},
                                           dbh      => $self -> {"dbh"},
                                           settings => $self -> {"settings"},
                                           template => $self -> {"template"},
@@ -189,7 +196,7 @@ sub run {
                                           phpbb    => $self -> {"phpbb"}, # this will handily be undef if phpbb mode is disabled
                                           blockdir => $self -> {"settings"} -> {"paths"} -> {"blocks"} || "blocks",
                                           logtable => $self -> {"settings"} -> {"database"} -> {"logging"})
-        or die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create module handling object: ".$Modules::errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create module handling object: ".$Modules::errstr);
 
     # Obtain the page moduleid, fall back on the default if this fails
     my $pageblock = $self -> {"cgi"} -> param("block");
@@ -197,7 +204,7 @@ sub run {
 
     # Obtain an instance of the page module
     my $pageobj = $self -> {"modules"} -> new_module($pageblock)
-        or die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to load page module $pageblock: ".$self -> {"modules"} -> {"errstr"});
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to load page module $pageblock: ".$self -> {"modules"} -> {"errstr"});
 
     # And call the page generation function of the page module
                    my $content = $pageobj -> page_display();
@@ -220,7 +227,7 @@ sub run {
     $self -> {"template"} -> set_module_obj(undef);
 
     $self -> {"dbh"} -> disconnect();
-    end_log();
+    $self -> {"logger"} -> end_log();
 }
 
 

@@ -38,6 +38,10 @@ database, issue queries through this rather than creating a separate
 connection if possible.
 * `$self -> {"session"}` is a reference to the current SessionHandler object. See
 the [Sessions](@ref sessions) documentation for more about this.
+* `$self -> {"logger"}` is the global Logger object. You can use this to call
+Logger functions (note that this is distinct from the Block::log() function -
+the latter is intended to do database logging of normal user actions, while
+Logger is for recording warnings and exceptional circumstances in the system.
 
 Each Block subclass also has access to a few values that can be useful:
 

@@ -37,13 +37,6 @@ use Encode;
 use HTML::Entities;
 use strict;
 
-# Globals within this and available to subclasses
-our $errstr;
-
-BEGIN {
-	$errstr = '';
-}
-
 # ============================================================================
 #  Constructor
 
@@ -52,16 +45,17 @@ BEGIN {
 # args are optional, all the remaining arguments must be provided. The arguments should be
 # a hash of parameters, valid key names are:
 #
-#  modid    The module id set for the block module's entry in the database.
-#  args     Any arguments passed to the plugin at runtime, usually pulled from the database.
-#  cgi      A reference to the script's CGI object.
-#  dbh      A database handle to talk to the database through.
-#  phpbb    A phpbb3 handle object used to perform operations on a phpbb3 database.
-#  template A template engine module object to load templates through.
-#  settings The global configuration hashref.
-#  session  A reference to the current session object
-#  module   The module handler object, used to load other blocks on demand.
-#  logtable A string containing the name of the table to use for logging. See the log() function.
+# - `modid`    The module id set for the block module's entry in the database.
+# - `args`     Any arguments passed to the plugin at runtime, usually pulled from the database.
+# - `cgi`      A reference to the script's CGI object.
+# - `dbh`      A database handle to talk to the database through.
+# - `phpbb`    A phpbb3 handle object used to perform operations on a phpbb3 database.
+# - `template` A template engine module object to load templates through.
+# - `settings` The global configuration hashref.
+# - `session`  A reference to the current session object
+# - `module`   The module handler object, used to load other blocks on demand.
+# - `logtable` A string containing the name of the table to use for logging. See the log() function.
+# - `logger`   A reference to a logger object.
 #
 # @param args     A hash containing key/value pairs used to set up the module.
 # @return A newly created Block object.
@@ -395,7 +389,7 @@ sub log {
                                               (logtime, user_id, ipaddr, logtype, logdata)
                                               VALUES(UNIX_TIMESTAMP(), ?, ?, ?, ?)");
     $eventh -> execute($userid, $self -> {"cgi"} -> remote_addr(), $type, $data)
-        or die_log($self -> {"cgi"} -> remote_host(), "FATAL: Unable to insert log entry for $userid ('$type', '$data')");
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "FATAL: Unable to insert log entry for $userid ('$type', '$data')");
 }
 
 
@@ -447,17 +441,5 @@ sub page_display {
 
     return "<p class=\"error\">".$self -> {"template"} -> replace_langvar("BLOCK_PAGE_DISPLAY")."</p>";
 }
-
-
-# ============================================================================
-#  Internal
-
-## @fn $ set_error($errstr)
-# Set a class error string. This will always return undef, and can be used to
-# set an error message and return undef at the same time.
-#
-# @param errstr The error to store in the global errstr variable.
-# @return undef, always.
-sub set_error { $errstr = shift; return undef; }
 
 1;

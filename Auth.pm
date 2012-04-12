@@ -52,6 +52,7 @@ BEGIN {
 # - dbh, a reference to the DBI object to issue database queries through.
 # - settings, a reference to the global settings object.
 # - app, a reference to a AppUser object to perform user-related db queries through.
+# - logger, a reference to a Logger object.
 #
 # @param args A hash of key, value pairs to initialise the object with.
 # @return     A reference to a new Auth object on success, undef on failure.
@@ -66,7 +67,7 @@ sub new {
 }
 
 
-## @method $ init($cgi, $dbh, $app, $settings)
+## @method $ init($cgi, $dbh, $app, $settings, $logger)
 # Initialise the Auth's references to other system objects. This allows the
 # setup of the object to be deferred from construction. If the cgi, dbh, app,
 # and settings objects have been passed into new(), calling this function is
@@ -84,18 +85,21 @@ sub init {
     $self -> {"dbh"} = shift;
     $self -> {"app"} = shift;
     $self -> {"settings"} = shift;
+    $self -> {"logger"} = shift;
 
     # Ensure that we have objects that we need
     return "cgi object not set" unless($self -> {"cgi"});
     return "dbh object not set" unless($self -> {"dbh"});
     return "settings object not set" unless($self -> {"settings"});
     return "app object not set" unless($self -> {"app"});
+    return "logger object not set" unless($self -> {"logger"});
 
     # Create the authmethods object to handle invocation of individual methods
     $self -> {"methods"} = AuthMethods -> new(cgi      => $self -> {"cgi"},
                                               dbh      => $self -> {"dbh"},
                                               settings => $self -> {"settings"},
-                                              app      => $self -> {"app"})
+                                              app      => $self -> {"app"},
+                                              logger   => $self -> {"logger"})
         or return "Unable to create AuthMethods object: ".$AuthMethods::errstr;
 
     $self -> {"ANONYMOUS"} = $self -> {"app"} -> anonymous_user();
@@ -141,7 +145,7 @@ sub unique_id {
     # Ask urandom for some randomness to combat potential problems with the above non-atomicity
     my $buffer;
     open(RND, "/dev/urandom")
-        or die_log($self -> {"cgi"} -> remote_host(), "Unable to open urandom: $!");
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to open urandom: $!");
     read(RND, $buffer, 24);
     close(RND);
 
@@ -222,7 +226,7 @@ sub valid_user {
     if(!$valid && (!$authmethod || !$methodimpl || $self -> {"settings"} -> {"Auth:enable_fallback"})) {
         foreach my $trymethod (@{$methods}) {
             my $methodimpl = $self -> {"methods"} -> load_method($trymethod)
-                or die_log($self -> {"cgi"} -> remote_host(), "Auth implementation load failed: ".$self -> {"methods"} -> {"errstr"});
+                or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Auth implementation load failed: ".$self -> {"methods"} -> {"errstr"});
 
             $valid = $methodimpl -> authenticate($username, $password, $self);
 

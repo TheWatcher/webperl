@@ -34,6 +34,7 @@
 # * template  - The system template object.
 # * session   - The session object.
 # * module    - The Modules object that loaded the new module.
+# * logger    - The system logger object.
 #
 # However, when calling a loaded module's new() function, this class will
 # copy the entirity of its $self variable into the argument list, so any
@@ -56,7 +57,6 @@ package Modules;
 
 use DBI;
 use Module::Load;
-use Logging qw(die_log);
 use strict;
 
 our $errstr;
@@ -171,7 +171,7 @@ sub new_module {
     my $sth = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"settings"} -> {"database"} -> {"blocks"}."
                                            WHERE $mode");
     $sth -> execute($arg) or
-        die_log($self -> {"cgi"} -> remote_host(), "new_module: Unable to execute query: ". $self -> {"dbh"} -> errstr);
+        $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "new_module: Unable to execute query: ". $self -> {"dbh"} -> errstr);
 
     my $modrow = $sth -> fetchrow_hashref();
 
@@ -198,7 +198,7 @@ sub new_module_byblockid {
     my $sth = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"settings"} -> {"database"} -> {"blocks"}."
                                            WHERE id = ?");
     $sth -> execute($blockid) or
-        die_log($self -> {"cgi"} -> remote_host(), "new_module_byblockid: Unable to execute query: ". $self -> {"dbh"} -> errstr);
+        $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "new_module_byblockid: Unable to execute query: ". $self -> {"dbh"} -> errstr);
 
     my $modrow = $sth -> fetchrow_hashref();
 
@@ -271,7 +271,7 @@ sub _new_module_internal {
 
     my $modh = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"settings"} -> {"database"} -> {"modules"}." $where");
     $modh -> execute($argument)
-        or die_log($self -> {"cgi"} -> remote_host(), "Unable to execute module resolve query: ".$self -> {"dbh"} -> errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to execute module resolve query: ".$self -> {"dbh"} -> errstr);
 
     my $modrow = $modh -> fetchrow_hashref();
 
@@ -353,7 +353,7 @@ sub build_sidebar {
                                            WHERE TYPE = ? AND $filter
                                            ORDER BY position");
     $sth -> execute($side, $page) or
-        die_log($self -> {"cgi"} -> remote_host(), "build_sidebar: Unable to execute query: ". $self -> {"dbh"} -> errstr);
+        $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "build_sidebar: Unable to execute query: ". $self -> {"dbh"} -> errstr);
 
     my $result = "";
     while(my $row = $sth -> fetchrow_hashref()) {
@@ -386,7 +386,7 @@ sub get_block_id {
     my $blockh = $self -> {"dbh"} -> prepare("SELECT id FROM ".$self -> {"settings"} -> {"database"} -> {"blocks"}."
                                               WHERE name LIKE ?");
     $blockh -> execute($blockname)
-        or die_log($self -> {"cgi"} -> remote_host(), "get_block_id: Unable to execute query: ". $self -> {"dbh"} -> errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "get_block_id: Unable to execute query: ". $self -> {"dbh"} -> errstr);
 
     # Do we have the block?
     my $blockr = $blockh -> fetchrow_arrayref();
