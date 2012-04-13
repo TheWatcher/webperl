@@ -447,7 +447,7 @@ sub load_template {
         }
     }
 
-    return "<span class=\"error\">load_template: unalbe to load $name: $errs</span>";
+    return "<span class=\"error\">load_template: unable to load $name: $errs</span>";
 }
 
 
