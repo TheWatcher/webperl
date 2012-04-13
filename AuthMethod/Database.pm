@@ -41,9 +41,6 @@ use strict;
 use base qw(AuthMethod); # This class extends AuthMethod
 use Crypt::Eksblowfish::Bcrypt qw(bcrypt en_base64);
 
-# Custom module imports
-use Logging qw(die_log);
-
 use constant COST_DEFAULT => 14; # The default cost to use if bcrypt_cost is not set.
 
 
@@ -100,7 +97,7 @@ sub authenticate {
     my $userh = $self -> {"dbh"} -> prepare("SELECT ".$self -> {"passfield"}." FROM ".$self -> {"table"}."
                                              WHERE ".$self -> {"userfield"}." LIKE ?");
     $userh -> execute($username)
-        or die_log($self -> {"cgi"} -> remote_host(), "Unable to execute user lookup query: ".$self -> {"dbh"} -> errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to execute user lookup query: ".$self -> {"dbh"} -> errstr);
 
     # If a user has been found with the specified username, check the password...
     my $user = $userh -> fetchrow_arrayref();

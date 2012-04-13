@@ -41,7 +41,6 @@ use base qw(AuthMethod); # This class extends AuthMethod
 use Net::SSH::Expect;
 
 # Custom module imports
-use Logging qw(die_log);
 use Utils qw(blind_untaint);
 
 

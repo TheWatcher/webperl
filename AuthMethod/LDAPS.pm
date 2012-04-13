@@ -42,10 +42,6 @@ use strict;
 use base qw(AuthMethod); # This class extends AuthMethod
 use Net::LDAPS;
 
-# Custom module imports
-use Logging qw(die_log);
-
-
 ## @cmethod $ new(%args)
 # Construct a new AuthMethod object. This will create a new AuthMethod object
 # initialised with the provided arguments. All the arguments are copied into
