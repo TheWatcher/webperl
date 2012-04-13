@@ -133,7 +133,7 @@ sub load_method {
                      dbh      => $self -> {"dbh"},
                      settings => $self -> {"settings"},
                      app      => $self -> {"app"},      # Methods shouldn't actually need access to app, but add it anyway in case.
-                     logger   => $slef -> {"logger"});
+                     logger   => $self -> {"logger"});
     while(my $param = $paramh -> fetchrow_hashref()) {
         $settings{$param -> {"name"}} = $param -> {"value"};
     }
