@@ -416,6 +416,7 @@ sub load_template {
     my $name      = shift;
     my $varmap    = shift;
     my $nocharfix = shift;
+    my $errs      = shift;
 
     # Default the nocharfix if needed.
     $nocharfix = 1 unless(defined($nocharfix));
@@ -425,7 +426,10 @@ sub load_template {
         my $filename = path_join($self -> {"basedir"}, $theme, $name);
 
         # Don't bother even attempting to open the file if it doesn't exist or isn't readable.
-        next if(!-f $filename || !-r $filename);
+        if(!-f $filename || !-r $filename) {
+            $errs = " ".path_join($theme, $name).": does not exist.";
+            next;
+        }
 
         # Try the load and process the template...
         if(open(TEMPLATE, "<:utf8", $filename)) {
@@ -438,10 +442,12 @@ sub load_template {
             $self -> process_template(\$lines, $varmap, $nocharfix);
 
             return $lines;
+        } else {
+            $errs .= " ".path_join($theme, $name).": $!";
         }
     }
 
-    return "<span class=\"error\">load_template: error opening $name</span>";
+    return "<span class=\"error\">load_template: unalbe to load $name: $errs</span>";
 }
 
 
