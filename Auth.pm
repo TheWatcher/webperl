@@ -76,6 +76,7 @@ sub new {
 # @param dbh      A reference to the system DBI object.
 # @param app      A reference to an AppUser object.
 # @param settings A reference to the global settings.
+# @param logger   A reference to a Logger object.
 # @return undef on success, otherwise an error message
 sub init {
     my $self = shift;

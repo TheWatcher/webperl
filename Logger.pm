@@ -89,7 +89,7 @@ sub new {
 # newlevel argument is not specified, or it is out of range, the object is set
 # to the maximum supported verbosity.
 #
-# @param newlvel The new verbosity level for this logger.
+# @param newlevel The new verbosity level for this logger.
 sub set_verbosity {
     my ($self, $newlevel) = self_or_default(@_);
 
