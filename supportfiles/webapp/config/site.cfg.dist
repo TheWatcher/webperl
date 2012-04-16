@@ -1,0 +1,17 @@
+[database]
+# Basic database connection information. Drivers other than mysql may not work!
+database = DBI:mysql:DATABASE
+username = USERNAME
+password = PASSWORD
+
+# Core webperl tables.
+auth_methods   = auth_methods
+auth_params    = auth_methods_params
+blocks         = blocks
+modules        = modules
+sessions       = sessions
+keys           = session_keys
+settings       = settings
+users          = users
+
+# Add any other table mappings you need here
