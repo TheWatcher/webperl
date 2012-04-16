@@ -62,3 +62,5 @@ dynamic module loading facility to load modules from this directory too.</dd>
 set of templates is arranged in its own theme directory - you will generally
 need to provide at least the  'default' template directory.</dd>
 </dl>
+
+A copy of this structure may be found in the `supportfiles/webapp` directory.
