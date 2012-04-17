@@ -77,6 +77,8 @@ BEGIN {
 #   user tasks during auth. Can be omitted if use_phpbb is set.
 # - `auth`, an optional reference to an auth object. If not specified, and `use_phpbb`
 #   is not set, an Auth object is made for you.
+# - `default_name`, an optional string to use as the name of the default block config
+#   variable. This defaults to `default_block` if not set.
 #
 # @param args A hash of arguments to initialise the Application object with.
 # @return A new Application object.
@@ -84,8 +86,9 @@ sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
     my $self     = {
-        config    => "config/site.cfg",
-        use_phpbb => 0,
+        config       => "config/site.cfg",
+        default_name => "default_block",
+        use_phpbb    => 0,
         @_,
     };
 
@@ -200,7 +203,7 @@ sub run {
 
     # Obtain the page moduleid, fall back on the default if this fails
     my $pageblock = $self -> {"cgi"} -> param("block");
-    $pageblock = $self -> {"settings"} -> {"config"} -> {"default_block"} if(!$pageblock); # This ensures $pageblock is defined and non-zero
+    $pageblock = $self -> {"settings"} -> {"config"} -> {$self -> {"default_name"}} if(!$pageblock); # This ensures $pageblock is defined and non-zero
 
     # Obtain an instance of the page module
     my $pageobj = $self -> {"modules"} -> new_module($pageblock)
