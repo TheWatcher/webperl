@@ -125,6 +125,21 @@ CREATE TABLE `session_keys` (
   KEY `last_login` (`last_login`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Autologin keys';
 
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `session_variables`
+--
+
+CREATE TABLE `session_variables` (
+  `session_id` char(32) NOT NULL,
+  `var_name` varchar(80) NOT NULL,
+  `var_value` text NOT NULL,
+  KEY `session_id` (`session_id`),
+  KEY `sess_name_map` (`session_id`,`var_name`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Session-related variables';
+
 -- --------------------------------------------------------
 
 --
