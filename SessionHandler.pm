@@ -84,10 +84,11 @@
 # features removed or added to fit the different requirements of the
 # framework.
 #
-# This class requires two database tables: one for sessions, one for session keys (used
-# for autologin). If autologins are permanently disabled (that is, you can guarantee that
-# `get_config("allow_autologin")` always returns false) then the `session_keys` table
-# may be omitted. The tables should be as follows:
+# This class requires three database tables: one for sessions, one for session keys (used
+# for autologin), and one for session variables. If autologins are permanently disabled
+# (that is, you can guarantee that `get_config("allow_autologin")` always returns false)
+# then the `session_keys` table may be omitted. If session variables are not needed then
+# the `session_variables` table may also be omitted. The tables should be as follows:
 #
 # A session table, the name of which is stored in the configuration as `{"database"} -> {"sessions"}`:
 #
@@ -114,6 +115,15 @@
 #      KEY `last_login` (`last_login`)
 #     ) DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Autologin keys';
 #
+# A session variables table, the name of which is in `{"database"} -> {"session_variables"}`:
+#
+#     CREATE TABLE `session_variables` (
+#       `session_id` char(32) NOT NULL,
+#       `var_name` varchar(80) NOT NULL,
+#       `var_value` text NOT NULL,
+#       KEY `session_id` (`session_id`),
+#       KEY `sess_name_map` (`session_id`,`var_name`)
+#     ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Session-related variables';
 package SessionHandler;
 
 require 5.005;
@@ -540,6 +550,87 @@ sub admin_session {
 }
 
 
+# ============================================================================
+#  Session variables
+
+## @method $ set_variable($name, $value)
+# Set the value for a session variable for the current session. This sets the
+# variable for the session identified by `name` to the specified value,
+# overwriting any previous value.
+#
+# @note If `session_variables` is not set in the `database` section of the
+#       configuration, calling this function will result in a fatal error.
+#
+# @param name  The name of the variable to set. Variable names must be 80
+#              characters or less, but are otherwise unconstrained.
+# @param value The value to set for the variable. This must be a scalar value,
+#              references are not supported. If this is undef, the variable
+#              is deleted.
+# @return The previous contents of the variable, or undef if the variable had
+#         not been previously set.
+sub set_variable {
+    my $self  = shift;
+    my $name  = shift;
+    my $value = shift;
+    $self -> self_error("");
+
+    $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Attempt to use session variables without a session variables table!")
+        unless($self -> {"settings"} -> {"database"} -> {"session_variables"});
+
+    $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unsupported reference passed to set_variable")
+        if(ref($value));
+
+    # Does the variable exist already?
+    my $oldvalue = $self -> get_variable($name);
+    if(defined($oldvalue)) {
+        # Yes, remove the old value
+        my $hukeh = $self -> {"dbh"} -> prepare("DELETE FROM ".$self -> {"settings"} -> {"database"} -> {"session_variables"}."
+                                                 WHERE session_id = ?
+                                                 AND var_name LIKE ?");
+        $hukeh -> execute($self -> {"sessid"}, $name)
+            or return $self -> self_error("Unable to look up session variable\nError was: ".$self -> {"dbh"} -> errstr);
+    }
+
+    # If a new value has been specified, insert it
+    if(defined($value)) {
+        my $newh = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"settings"} -> {"database"} -> {"session_variables"}."
+                                                (session_id, var_name, var_value)
+                                                VALUES(?, ?, ?)");
+        $newh -> execute($self -> {"sessid"}, $name, $value)
+            or return $self -> self_error("Unable to set session variable\nError was: ".$self -> {"dbh"} -> errstr);
+    }
+
+    return $oldvalue;
+}
+
+
+## @method $ get_variable($name)
+# Obtain the value for the specified session variable. This returns the value set
+# for the session variable with the given name associated with the current session,
+# or undef if the value is not set. Note that, if the value has somehow been set
+# to undef (which should not be possible through set_value!), this will return the
+# empty string instead! Undef is only returned iff the named variable does not
+# appear in the session's variable list.
+#
+# @param name The name of the session variable to get. Variable names must be 80
+#             characters or less, but are otherwise unconstrained.
+# @return The contents of the variable, or undef if it does not exist.
+sub get_variable {
+    my $self = shift;
+    my $name = shift;
+
+    my $geth = $self -> {"dbh"} -> prepare("SELECT var_value FROM ".$self -> {"settings"} -> {"database"} -> {"session_variables"}."
+                                            WHERE session_id = ?
+                                            AND var_name LIKE ?");
+    $geth -> execute($self -> {"sessid"}, $name)
+        or return $self -> self_error("Unable to look up session variable\nError was: ".$self -> {"dbh"} -> errstr);
+
+    my $valrow = $geth -> fetchrow_arrayref();
+
+    return $valrow ? ($valrow -> [0] || "") : undef;
+}
+
+
 # ==============================================================================
 # Theoretically internal stuff
 
@@ -750,14 +841,27 @@ sub create_cookie {
 }
 
 
-## @fn private $ set_error($error)
-# Set the error string to the specified value. This updates the class error
-# string and returns undef.
+# ============================================================================
+#  Error functions
+
+## @cmethod private $ set_error($errstr)
+# Set the class-wide errstr variable to an error message, and return undef. This
+# function supports error reporting in the constructor and other class methods.
 #
-# @param error The message to set in the error string
-# @return undef, always.
-sub set_error {
-    $errstr = shift;
+# @param errstr The error message to store in the class errstr variable.
+# @return Always returns undef.
+sub set_error { $errstr = shift; return undef; }
+
+
+## @method private $ self_error($errstr)
+# Set the object's errstr value to an error message, and return undef. This
+# function supports error reporting in various methods throughout the class.
+#
+# @param errstr The error message to store in the object's errstr.
+# @return Always returns undef.
+sub self_error {
+    my $self = shift;
+    $self -> {"errstr"} = shift;
 
     return undef;
 }
