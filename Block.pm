@@ -37,6 +37,13 @@ use Encode;
 use HTML::Entities;
 use strict;
 
+# Globals...
+our $errstr;
+
+BEGIN {
+    $errstr = '';
+}
+
 # ============================================================================
 #  Constructor
 
@@ -441,5 +448,16 @@ sub page_display {
 
     return "<p class=\"error\">".$self -> {"template"} -> replace_langvar("BLOCK_PAGE_DISPLAY")."</p>";
 }
+
+# ============================================================================
+#  Error functions
+
+## @cmethod private $ set_error($errstr)
+# Set the class-wide errstr variable to an error message, and return undef. This
+# function supports error reporting in the constructor and other class methods.
+#
+# @param errstr The error message to store in the class errstr variable.
+# @return Always returns undef.
+sub set_error { $errstr = shift; return undef; }
 
 1;
