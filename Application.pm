@@ -48,6 +48,7 @@ use Time::HiRes qw(time);
 
 # Webperl modules
 use Auth;
+use BlockSelector;
 use ConfigMicro;
 use Logger;
 use Template;
