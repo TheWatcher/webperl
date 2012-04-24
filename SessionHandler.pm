@@ -618,6 +618,7 @@ sub set_variable {
 sub get_variable {
     my $self = shift;
     my $name = shift;
+    $self -> self_error("");
 
     my $geth = $self -> {"dbh"} -> prepare("SELECT var_value FROM ".$self -> {"settings"} -> {"database"} -> {"session_variables"}."
                                             WHERE session_id = ?
