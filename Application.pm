@@ -77,8 +77,8 @@ BEGIN {
 #   user tasks during auth. Can be omitted if use_phpbb is set.
 # - `auth`, an optional reference to an auth object. If not specified, and `use_phpbb`
 #   is not set, an Auth object is made for you.
-# - `default_name`, an optional string to use as the name of the default block config
-#   variable. This defaults to `default_block` if not set.
+# - `block_selector`, an optional reference to a BlockSelector subclass. If not specified,
+#   the default BlockSelector is used instead to provide standard block selection behaviour.
 #
 # @param args A hash of arguments to initialise the Application object with.
 # @return A new Application object.
@@ -87,7 +87,6 @@ sub new {
     my $class    = ref($invocant) || $invocant;
     my $self     = {
         config       => "config/site.cfg",
-        default_name => "default_block",
         use_phpbb    => 0,
         @_,
     };
@@ -201,16 +200,20 @@ sub run {
                                           logtable => $self -> {"settings"} -> {"database"} -> {"logging"})
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create module handling object: ".$Modules::errstr);
 
+    # Has a block selector been specified? If not, make a default one
+    $self -> {"block_selector"} = BlockSelector -> new()
+        if(!defined($self -> {"block_selector"}));
+
     # Obtain the page moduleid, fall back on the default if this fails
-    my $pageblock = $self -> {"cgi"} -> param("block");
-    $pageblock = $self -> {"settings"} -> {"config"} -> {$self -> {"default_name"}} if(!$pageblock); # This ensures $pageblock is defined and non-zero
+    my $pageblock = $self -> {"block_selector"} -> get_block($self -> {"dbh"}, $self -> {"cgi"}, $self -> {"settings"}, $self -> {"logger"})
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to determine page block: ".$self -> {"block_selector"} -> {"errstr"});
 
     # Obtain an instance of the page module
     my $pageobj = $self -> {"modules"} -> new_module($pageblock)
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to load page module $pageblock: ".$self -> {"modules"} -> {"errstr"});
 
     # And call the page generation function of the page module
-                   my $content = $pageobj -> page_display();
+    my $content = $pageobj -> page_display();
 
     print $self -> {"cgi"} -> header(-charset => 'utf-8',
                                      -cookie  => $self -> {"session"} -> session_cookies());
