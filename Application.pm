@@ -80,6 +80,9 @@ BEGIN {
 #   is not set, an Auth object is made for you.
 # - `block_selector`, an optional reference to a BlockSelector subclass. If not specified,
 #   the default BlockSelector is used instead to provide standard block selection behaviour.
+# - `system`, an optional reference to a System object. If specified, the init() method
+#   in this module is called with a hash of arguments containing the database handle,
+#   cgi object, settings, session handler, template handler, and module loader.
 #
 # @param args A hash of arguments to initialise the Application object with.
 # @return A new Application object.
@@ -198,8 +201,21 @@ sub run {
                                           session  => $self -> {"session"},
                                           phpbb    => $self -> {"phpbb"}, # this will handily be undef if phpbb mode is disabled
                                           blockdir => $self -> {"settings"} -> {"paths"} -> {"blocks"} || "blocks",
-                                          logtable => $self -> {"settings"} -> {"database"} -> {"logging"})
+                                          logtable => $self -> {"settings"} -> {"database"} -> {"logging"},
+                                          system   => $self -> {"system"})
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create module handling object: ".$Modules::errstr);
+
+    if($self -> {"system"}) {
+        $self -> {"system"} -> init(logger   => $self -> {"logger"},
+                                    cgi      => $self -> {"cgi"},
+                                    dbh      => $self -> {"dbh"},
+                                    settings => $self -> {"settings"},
+                                    template => $self -> {"template"},
+                                    session  => $self -> {"session"},
+                                    phpbb    => $self -> {"phpbb"},
+                                    modules  => $self -> {"modules"})
+            or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create system object: ".$self -> {"system"} -> {"errstr"});
+    }
 
     # Has a block selector been specified? If not, make a default one
     $self -> {"block_selector"} = BlockSelector -> new()
@@ -231,7 +247,10 @@ sub run {
     }
 
     print Encode::encode_utf8($self -> {"template"} -> process_template($content, {"***debug***" => $debug}));
+
+    # Prevent circular references from messing up shutdown
     $self -> {"template"} -> set_module_obj(undef);
+    $self -> {"system"} -> clear();
 
     $self -> {"dbh"} -> disconnect();
     $self -> {"logger"} -> end_log();
