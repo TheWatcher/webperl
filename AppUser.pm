@@ -60,7 +60,7 @@ use constant ADMIN_TYPE   => 3; # User type for admin users.
 # Create a new AppUser object. This will create an AppUser object that may be
 # passed to the Auth class to provide application-specific user handling.
 #
-# @param args A hash of arguments to initialise the UserApp object with.
+# @param args A hash of arguments to initialise the AppUser object with.
 # @return A new AppUser object.
 sub new {
     my $invocant = shift;
