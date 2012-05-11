@@ -158,6 +158,61 @@ sub end_log {
 
 
 # ============================================================================
+#  Database logging
+#
+
+## @method void init_database_log($dbh, $tablename)
+# Initialise database logging. This allows the log() function to be called and
+# have some effect.
+#
+# @param dbh       The database handle to issue logging queries through.
+# @param tablename The name of the table to log events into
+sub init_database_log {
+    my $self = shift;
+
+    $self -> {"dbh"} = shift;
+    $self -> {"logtable"} = shift;
+}
+
+
+## @method void log($type, $user, $ip, $data)
+# Create an entry in the database log table with the specified type and data.
+# This will add an entry to the log table in the database, storing the time,
+# user, and type and data supplied. It expects a table of the following structure
+# @verbatim
+# CREATE TABLE `log` (
+# `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY ,
+# `logtime` INT UNSIGNED NOT NULL COMMENT 'The time the logged event happened at',
+# `user_id` INT UNSIGNED NULL DEFAULT NULL COMMENT 'The id of the user who triggered the event, if any',
+# `ipaddr` VARCHAR(16) NULL DEFAULT NULL COMMENT 'The IP address the event was triggered from',
+# `logtype` VARCHAR( 64 ) NOT NULL COMMENT 'The event type',
+# `logdata` VARCHAR( 255 ) NULL DEFAULT NULL COMMENT 'Any data that might be appropriate to log for this event'
+# )
+# @endverbatim
+#
+# @param type The log event type, may be any string up to 64 characters long.
+# @param user The ID of the user to log as the event triggerer.
+# @param ip   The IP address of the user, defaults to "unknown" if not supplied.
+# @param data The event data, may be any string up to 255 characters.
+sub log {
+    my $self = shift;
+    my $type = shift;
+    my $user = shift;
+    my $ip   = shift || "unknown";
+    my $data = shift;
+
+    # Do nothing if there is no log table set.
+    return if(!$self -> {"logtable"});
+
+    my $eventh = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"logtable"}."
+                                              (logtime, user_id, ipaddr, logtype, logdata)
+                                              VALUES(UNIX_TIMESTAMP(), ?, ?, ?, ?)");
+    $eventh -> execute($user, $ip, $type, $data)
+        or $self -> die_log($ip, "FATAL: Unable to insert log entry for $user ('$type', '$data')");
+}
+
+
+# ============================================================================
 #  log printing
 #
 

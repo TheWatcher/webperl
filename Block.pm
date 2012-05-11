@@ -86,6 +86,11 @@ sub new {
         $self -> {"block"} = $self -> {"settings"} -> {"config"} -> {"default_block"} if(!$self -> {"block"});
     }
 
+    # Set up the logger, if needed (Application usually does this long before the Block constructor
+    # gets called, but even if it has, doing it again won't hurt anything).
+    $self -> {"logger"} -> init_database_log($self -> {"dbh"}, $self -> {"logtable"})
+        if($self -> {"logtable"});
+
     return bless $self, $class;
 }
 
@@ -365,18 +370,7 @@ sub validate_htmlarea {
 ## @method void log($type, $data)
 # Create an entry in the database log table with the specified type and data.
 # This will add an entry to the log table in the database, storing the time,
-# user, and type and data supplied. It expects a table of the following structure
-# @verbatim
-# CREATE TABLE `log` (
-# `id` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-# `logtime` INT UNSIGNED NOT NULL COMMENT 'The time the logged event happened at',
-# `user_id` INT UNSIGNED NULL DEFAULT NULL COMMENT 'The id of the user who triggered the event, if any',
-# `ipaddr` VARCHAR(16) NULL DEFAULT NULL COMMENT 'The IP address the event was triggered from',
-# `logtype` VARCHAR( 64 ) NOT NULL COMMENT 'The event type',
-# `logdata` VARCHAR( 255 ) NULL DEFAULT NULL COMMENT 'Any data that might be appropriate to log for this event'
-# )
-# @endverbatim
-# When creating the block, you must set the 'logtable' option to the name of the log table.
+# user, and type and data supplied.
 #
 # @param type The log event type, may be any string up to 64 characters long.
 # @param data The event data, may be any string up to 255 characters.
@@ -385,18 +379,11 @@ sub log {
     my $type = shift;
     my $data = shift;
 
-    # Do nothing if there is no log table set.
-    return if(!$self -> {"logtable"});
-
     # Work out the user
     my $userid = $self -> {"session"} -> {"sessuser"};
     $userid = undef unless($userid); # force undef, even if userid is 0.
 
-    my $eventh = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"logtable"}."
-                                              (logtime, user_id, ipaddr, logtype, logdata)
-                                              VALUES(UNIX_TIMESTAMP(), ?, ?, ?, ?)");
-    $eventh -> execute($userid, $self -> {"cgi"} -> remote_addr(), $type, $data)
-        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "FATAL: Unable to insert log entry for $userid ('$type', '$data')");
+    $self -> {"logger"} -> log($type, $userid, $self -> {"cgi"} -> remote_addr(), $data);
 }
 
 

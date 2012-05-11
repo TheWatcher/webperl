@@ -131,6 +131,10 @@ sub run {
     # Pull configuration data out of the database into the settings hash
     $self -> {"settings"} -> load_db_config($self -> {"dbh"}, $self -> {"settings"} -> {"database"} -> {"settings"});
 
+    # Start database logging if available
+    $self -> {"logger"} -> init_database_log($self -> {"dbh"}, $self -> {"settings"} -> {"database"} -> {"logging"})
+        if($self -> {"settings"} -> {"database"} -> {"logging"});
+
     # Start doing logging if needed
     $self -> {"logger"} -> start_log($self -> {"settings"} -> {"config"} -> {"logfile"}) if($self -> {"settings"} -> {"config"} -> {"logfile"});
 
@@ -201,7 +205,6 @@ sub run {
                                           session  => $self -> {"session"},
                                           phpbb    => $self -> {"phpbb"}, # this will handily be undef if phpbb mode is disabled
                                           blockdir => $self -> {"settings"} -> {"paths"} -> {"blocks"} || "blocks",
-                                          logtable => $self -> {"settings"} -> {"database"} -> {"logging"},
                                           system   => $self -> {"system"})
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create module handling object: ".$Modules::errstr);
 
