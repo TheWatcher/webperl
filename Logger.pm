@@ -191,7 +191,7 @@ sub init_database_log {
 # @endverbatim
 #
 # @param type The log event type, may be any string up to 64 characters long.
-# @param user The ID of the user to log as the event triggerer.
+# @param user The ID of the user to log as the event triggerer, use 0 for unknown/internal.
 # @param ip   The IP address of the user, defaults to "unknown" if not supplied.
 # @param data The event data, may be any string up to 255 characters.
 sub log {
