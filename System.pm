@@ -76,8 +76,8 @@ sub init {
 ## @method void clear()
 # Delete all references to other application objects from this System object. This
 # must be called before the program closes to prevent circular references messing
-# with cleanup. Subclasses may wish to override this to explicitly break any
-# circular references created during init().
+# with cleanup. Subclasses should override this to explicitly break any circular
+# references created during init().
 sub clear {
     my $self = shift;
 

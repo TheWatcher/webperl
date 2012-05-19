@@ -253,7 +253,7 @@ sub run {
 
     # Prevent circular references from messing up shutdown
     $self -> {"template"} -> set_module_obj(undef);
-    $self -> {"system"} -> clear();
+    $self -> {"system"} -> clear() if($self -> {"system"};
 
     $self -> {"dbh"} -> disconnect();
     $self -> {"logger"} -> end_log();
