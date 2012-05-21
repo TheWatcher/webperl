@@ -84,6 +84,7 @@ sub clear {
     # clear all the references in $self. Yes, this is inefficient, but
     # the alternative is reassigning self... so no, delete them all.
     foreach $key (keys %{$self}) {
+        $self -> {$key} -> clear() if($self -> {$key} -> can("clear"));
         delete $self -> {$key};
     }
 }
