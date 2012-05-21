@@ -65,6 +65,19 @@ sub new {
 
 
 # ============================================================================
+#  Clean shutdown support
+
+## @method void clear()
+# A function callable by System to ensure that any circular references do not
+# prevent object destruction.
+sub clear {
+    my $self = shift;
+
+    # The method, it does nothing!
+}
+
+
+# ============================================================================
 #  Error functions
 
 ## @cmethod private $ set_error($errstr)
