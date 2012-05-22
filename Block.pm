@@ -64,8 +64,8 @@ use HTML::Entities;
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     $class -> SUPER::new("logtable" => "",
-                                      @_);
+    my $self     = $class -> SUPER::new("logtable" => "",
+                                        @_);
     return undef if(!$self);
 
     # Work out which block we're being invoked with
