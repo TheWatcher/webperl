@@ -30,19 +30,14 @@
 # loading other Blocks and using their inline block fragments to construct the
 # overall page content.
 package Block;
+use strict;
+use base qw(SystemModule);
 
 use HTMLValidator;
 use Utils qw(is_defined_numeric);
 use Encode;
 use HTML::Entities;
-use strict;
 
-# Globals...
-our $errstr;
-
-BEGIN {
-    $errstr = '';
-}
 
 # ============================================================================
 #  Constructor
@@ -69,11 +64,9 @@ BEGIN {
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-
-    my $self     = {
-        "logtable" => "",
-        @_,
-    };
+    my $self     $class -> SUPER::new("logtable" => "",
+                                      @_);
+    return undef if(!$self);
 
     # Work out which block we're being invoked with
     $self -> {"block"} = is_defined_numeric($self -> {"cgi"}, "block");
@@ -91,7 +84,7 @@ sub new {
     $self -> {"logger"} -> init_database_log($self -> {"dbh"}, $self -> {"logtable"})
         if($self -> {"logtable"});
 
-    return bless $self, $class;
+    return $self;
 }
 
 
