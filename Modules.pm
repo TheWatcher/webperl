@@ -57,6 +57,7 @@ package Modules;
 
 use DBI;
 use Module::Load;
+use SystemModule;
 use strict;
 
 our $errstr;
@@ -314,7 +315,7 @@ sub load_module {
 
     # Render unto us a new instance of thyself!
     my $modobj = $name -> new(%args)
-        or $self -> self_error("Unable to load module: ".$Block::errstr);
+        or $self -> self_error("Unable to load module: ".$SystemModule::errstr);
     use strict;
 
     return $modobj;
