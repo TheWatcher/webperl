@@ -54,7 +54,7 @@ sub new {
 # ============================================================================
 #  Block Selection
 
-## @method $ get_block($dbh, $cgi, $settings, $logger)
+## @method $ get_block($dbh, $cgi, $settings, $logger, $session)
 # Determine which block to use to generate the requested page. This will inspect
 # the query string looking for a `block` argument, and if present it will return
 # that. If the `block` argument is not present, it will fall back on a default
@@ -64,6 +64,7 @@ sub new {
 # @param cgi      A reference to the system CGI object.
 # @param settings A reference to the global settings object.
 # @param logger   A reference to the system logger object.
+# @param session  A reference to the session object.
 # @return The id or name of the block to use to render the page, or undef if
 #         an error occurred while selecting the block.
 sub get_block {
@@ -72,6 +73,7 @@ sub get_block {
     my $cgi      = shift;
     my $settings = shift;
     my $logger   = shift;
+    my $session  = shift;
 
     $self -> self_error("");
 

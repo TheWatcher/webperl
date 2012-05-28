@@ -225,7 +225,7 @@ sub run {
         if(!defined($self -> {"block_selector"}));
 
     # Obtain the page moduleid, fall back on the default if this fails
-    my $pageblock = $self -> {"block_selector"} -> get_block($self -> {"dbh"}, $self -> {"cgi"}, $self -> {"settings"}, $self -> {"logger"})
+    my $pageblock = $self -> {"block_selector"} -> get_block($self -> {"dbh"}, $self -> {"cgi"}, $self -> {"settings"}, $self -> {"logger"}, $self -> {"session"})
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to determine page block: ".$self -> {"block_selector"} -> {"errstr"});
 
     # Obtain an instance of the page module
