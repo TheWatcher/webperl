@@ -418,7 +418,7 @@ sub block_display {
 
 
 ## @method $ page_display()
-# Produce the string containing this blocks full page content, if it provides one.
+# Produce the string containing this block's full page content, if it provides one.
 # By default, this will return a string containing an error message, override it to
 # generate pages in subclasses.
 #
