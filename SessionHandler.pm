@@ -228,14 +228,16 @@ sub new {
 }
 
 
-## @method $ create_session($user, $persist)
+## @method $ create_session($user, $persist, $initvars)
 # Create a new session. If the user is not specified, this creates an anonymous session,
 # otherwise the session is attached to the user. Generally you will only ever call this
 # immediately upon logging a user in - otherwise session maintainence is handled for you.
 #
-# @param user    Optional user ID to associate with the session.
-# @param persist If true, and autologins are permitted, an autologin key is generated for
-#                this session.
+# @param user     Optional user ID to associate with the session.
+# @param persist  If true, and autologins are permitted, an autologin key is generated for
+#                 this session.
+# @param initvars Optional reference to a hash of initial session variables to set for the
+#                 new session.
 # @return true if the session was created, undef otherwise.
 sub create_session {
     my $self     = shift;
@@ -333,6 +335,13 @@ sub create_session {
             or return set_error("Unable to peform session creation\nError was: ".$self -> {"dbh"} -> errstr);
 
     $self -> set_login_key($self -> {"sessuser"}, $ENV{"REMOTE_ADDR"}) if($persist);
+
+    # set any initial variables if needed.
+    if($initvars) {
+        foreach my $var (keys(%{$initvars})) {
+            $self -> set_variable($var, $initvars -> {$var});
+        }
+    }
 
     return $self;
 }
