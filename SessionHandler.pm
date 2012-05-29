@@ -243,6 +243,7 @@ sub create_session {
     my $self     = shift;
     my $user     = shift;
     my $persist  = shift;
+    my $initvars = shift;
     my $userdata;
 
     # nuke the cookies, it's the only way to be sure
