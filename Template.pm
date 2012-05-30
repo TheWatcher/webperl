@@ -86,9 +86,6 @@
 # to do anything involving layout, it should be being done in the
 # templates.
 #
-# @bug See bug FS#70 for issues related to default language variables and
-#      langvar sharing between translations.
-#
 # Block name replacement
 # ----------------------
 # The template engine will recognise and replace `{B_[blockname]}` markers
@@ -97,6 +94,20 @@
 # table. Usually your templates will include content like
 #
 #     ... href="index.cgi?block={B_[somename]}...etc...
+#
+# System variable replacement
+# ---------------------------
+# Sometimes templates need to include values set in the configuration. This
+# can be done using the `{V_[varname]}` syntax, where `varname` is the name
+# of the configuration variable to show. Note that, as this would be a
+# serious security risk if any configuration variable could be used, the
+# system only converts specific variable markers. At present, the following
+# are supported:
+#
+# * `{V_[scriptpath]}` is replaced by the value of the scriptpath variable in
+#   the configuration. This will always have a trailing '/', even when the
+#   scriptpath is empty (so, an empty scriptpath will result in this marker
+#   being replaced by "/".
 package Template;
 
 use POSIX qw(strftime);
@@ -456,6 +467,18 @@ sub load_template {
 # provided hashref and replace all occurances of the key in the text with the value
 # set in the hash for that key.
 #
+# The following pre-defined markers are recognised and processed by this function:
+#
+# * `{L_varname}` is used to indicate a language marker, and it will be replaced by
+#   the contents of the `varname` language variable, or an error marker if no
+#   corrsponding variable exists.
+# * `{B_[somename]}` is used to indicate a block name marker, and it will be replaced
+#   by the appropriate block name or id. This is largely redundant at this point - you
+#   can use use the literal block name in most situations.
+# * `{V_[varname]}` is used to indicate a config variable marker, and will be replaced
+#   by the corresponding config variable value, if permitted. See the class docs for
+#   more on this.
+#
 # @todo This function loops until it has no language variables or markers left to
 #       replace. It will iterate over the variable map at least once more than it
 #       actually needs to in order to confirm that all possible replacements have
@@ -491,6 +514,11 @@ sub process_template {
         # Do any language marker replacements
         $count += $$textref =~ s/{L_(\w+?)}/$self->replace_langvar($1)/ge;
     } while($count);
+
+    # Fix 'standard' variables
+    my $scriptpath = $self -> {"settings"} -> {"config"} -> {"scriptpath"} || "/";
+    $scriptpath .= "/" if($scriptpath !~ m|/$|);
+    $$textref =~ s/{V_[scriptpath]}/$scriptpath/;
 
     # Do any module marker replacements if we can
     if($self -> {"modules"}) {
