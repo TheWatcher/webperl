@@ -104,10 +104,10 @@
 # system only converts specific variable markers. At present, the following
 # are supported:
 #
-# * `{V_[scriptpath]}` is replaced by the value of the scriptpath variable in
-#   the configuration. This will always have a trailing '/', even when the
-#   scriptpath is empty (so, an empty scriptpath will result in this marker
-#   being replaced by "/".
+# - `{V_[scriptpath]}` is replaced by the value of the scriptpath variable in
+#    the configuration. This will always have a trailing '/', even when the
+#    scriptpath is empty (so, an empty scriptpath will result in this marker
+#    being replaced by "/".
 package Template;
 
 use POSIX qw(strftime);
@@ -155,16 +155,16 @@ BEGIN {
 # allow templates to be loaded into strings, or printed to stdout. Meaningful
 # arguments to this constructor are:
 #
-# * basedir   - The directory containing template themes. Defaults to "templates".
-# * langdir   - The directory containing language files. Defaults to "lang". Set this
+# - `basedir`   The directory containing template themes. Defaults to "templates".
+# - `langdir`   The directory containing language files. Defaults to "lang". Set this
 #               to undef or an empty string to disable language file loading.
-# * lang      - The language file to use. Defaults to "en"
-# * theme     - The theme to use. Defaults to "default"
-# * fallback  - The fallback theme to use if a template file is not found in `theme`. Defaults to "common".
-# * timefmt   - The time format string, strftime(3) format, with the extension %o
+# - `lang`      The language file to use. Defaults to "en"
+# - `theme`     The theme to use. Defaults to "default"
+# - `fallback`  The fallback theme to use if a template file is not found in `theme`. Defaults to "common".
+# - `timefmt`   The time format string, strftime(3) format, with the extension %o
 #               to mark the location of an ordinal specifier. %o is ignored if it
 #               does not immediately follow a digit field. Defaults to "%a, %d %b %Y %H:%M:%S"
-# * blockname - If set, allow blocks to be specified by name rather than id.
+# - `blockname` If set, allow blocks to be specified by name rather than id.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
@@ -469,13 +469,13 @@ sub load_template {
 #
 # The following pre-defined markers are recognised and processed by this function:
 #
-# * `{L_varname}` is used to indicate a language marker, and it will be replaced by
+# - `{L_varname}` is used to indicate a language marker, and it will be replaced by
 #   the contents of the `varname` language variable, or an error marker if no
 #   corrsponding variable exists.
-# * `{B_[somename]}` is used to indicate a block name marker, and it will be replaced
+# - `{B_[somename]}` is used to indicate a block name marker, and it will be replaced
 #   by the appropriate block name or id. This is largely redundant at this point - you
 #   can use use the literal block name in most situations.
-# * `{V_[varname]}` is used to indicate a config variable marker, and will be replaced
+# - `{V_[varname]}` is used to indicate a config variable marker, and will be replaced
 #   by the corresponding config variable value, if permitted. See the class docs for
 #   more on this.
 #
