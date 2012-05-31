@@ -143,7 +143,8 @@ sub run {
                                             basedir   => path_join($self -> {"settings"} -> {"config"} -> {"base"}, "templates"),
                                             timefmt   => $self -> {"settings"} -> {"config"} -> {"timefmt"},
                                             blockname => 1,
-                                            mailcmd   => '/usr/sbin/sendmail -t -f '.$self -> {"settings"} -> {"config"} -> {"Core:envelope_address"})
+                                            mailcmd   => '/usr/sbin/sendmail -t -f '.$self -> {"settings"} -> {"config"} -> {"Core:envelope_address"},
+                                            settings  => $self -> {"settings"})
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create template handling object: ".$Template::errstr);
 
     # If phpbb mode is enabled, it takes over auth.
