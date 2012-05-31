@@ -518,7 +518,7 @@ sub process_template {
     # Fix 'standard' variables
     my $scriptpath = $self -> {"settings"} -> {"config"} -> {"scriptpath"} || "/";
     $scriptpath .= "/" if($scriptpath !~ m|/$|);
-    $$textref =~ s/{V_[scriptpath]}/$scriptpath/;
+    $$textref =~ s/{V_\[scriptpath\]}/$scriptpath/;
 
     # Do any module marker replacements if we can
     if($self -> {"modules"}) {
