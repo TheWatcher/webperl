@@ -500,6 +500,26 @@ sub get_user_byid {
 }
 
 
+## @method $ get_user($username, $onlyreal)
+# Obtain the user record for the specified user, if they exist. This returns a
+# reference to a hash of user data corresponding to the specified userid,
+# or undef if the userid does not correspond to a valid user. If the onlyreal
+# argument is set, the userid must correspond to 'real' user - bots or inactive
+# users are not be returned.
+#
+# @param username The username of the user to obtain the data for.
+# @param onlyreal If true, only users of type 0 or 3 are returned.
+# @return A reference to a hash containing the user's data, or undef if the user
+#         can not be located (or is not real)
+sub get_user {
+    my $self     = shift;
+    my $username = shift;
+    my $onlyreal = shift || 0;
+
+    return $self -> {"auth"} -> get_user($username, $onlyreal);
+}
+
+
 ## @method $ valid_user($username, $password)
 # Determine whether the specified user is valid, and obtain their user record.
 # This will authenticate the user, and if the credentials supplied are valid, the
