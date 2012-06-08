@@ -546,7 +546,7 @@ sub process_template {
 # ============================================================================
 #  Higher-level templating functions
 
-## @method $ message_box($title, $type, $summary, $longdesc, $additional)
+## @method $ message_box($title, $type, $summary, $longdesc, $additional, $boxclass)
 # Create a message box block to include in a page. This generates a templated
 # message box to include in a page. It assumes the presence of messagebox.tem
 # in the template directory, containing markers for a title, type, summary,
@@ -558,15 +558,17 @@ sub process_template {
 # @param summary    A summary version of the message.
 # @param longdesc   The full message body
 # @param additional Any additional content to include in the message box.
+# @param boxclass   Optional additional classes to add to the messagebox container.
 # @return A string containing the message box.
 sub message_box {
-    my ($self, $title, $type, $summary, $longdesc, $additional) = @_;
+    my ($self, $title, $type, $summary, $longdesc, $additional, $boxclass) = @_;
 
     return $self -> load_template("messagebox.tem", { "***title***"      => $title,
                                                       "***icon***"       => $type,
                                                       "***summary***"    => $summary,
                                                       "***longdesc***"   => $longdesc,
-                                                      "***additional***" => $additional });
+                                                      "***additional***" => $additional,
+                                                      "***boxclass***"   => $boxclass});
 }
 
 
