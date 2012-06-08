@@ -108,6 +108,9 @@
 #    the configuration. This will always have a trailing '/', even when the
 #    scriptpath is empty (so, an empty scriptpath will result in this marker
 #    being replaced by "/".
+# - `{V_[templatepath]}` is replaced by the path from the base of the web
+#    application to the template directory (useful for image and other resource
+#    paths inside the template). This will always have a trailing '/'.
 package Template;
 
 use POSIX qw(strftime);
@@ -193,6 +196,9 @@ sub new {
     # Load the language definitions
     $obj -> load_language() or return undef
         if($self -> {"langdir"} && $self -> {"lang"});
+
+    # Update the theme and paths
+    $self -> set_template_dir($self -> {"theme"});
 
     return $obj;
 }
@@ -380,6 +386,14 @@ sub replace_langvar {
 sub set_template_dir {
     my $self = shift;
     $self -> {"theme"} = shift;
+
+    # Work out the scriptpath and templatepath
+    $self -> {"scriptpath"} = $self -> {"settings"} -> {"config"} -> {"scriptpath"} || "/";
+    $self -> {"scriptpath"} .= "/" unless($self -> {"scriptpath"} =~ m|/$|); # Scriptpath must have trailing slash
+
+    # work out the current template path
+    $self -> {"templatepath"} = path_join($self -> {"scriptpath"}, $self -> {"basedir"}, $self -> {"theme"});
+    $self -> {"templatepath"} .= "/" unless($self -> {"templatepath"} =~ m|/$|); # templatepath must have trailing slash
 }
 
 
@@ -516,9 +530,8 @@ sub process_template {
     } while($count);
 
     # Fix 'standard' variables
-    my $scriptpath = $self -> {"settings"} -> {"config"} -> {"scriptpath"} || "/";
-    $scriptpath .= "/" if($scriptpath !~ m|/$|);
-    $$textref =~ s/{V_\[scriptpath\]}/$scriptpath/g;
+    $$textref =~ s/{V_\[scriptpath\]}/$self->{scriptpath}/g;
+    $$textref =~ s/{V_\[templatepath\]}/$self->{templatepath}/g;
 
     # Do any module marker replacements if we can
     if($self -> {"modules"}) {
