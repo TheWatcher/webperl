@@ -158,7 +158,7 @@ BEGIN {
 # allow templates to be loaded into strings, or printed to stdout. Meaningful
 # arguments to this constructor are:
 #
-# - `basedir`   The directory containing template themes. Defaults to "templates".
+# - `basedir`   The directory containing template themes, relative to the app root. Defaults to "templates".
 # - `langdir`   The directory containing language files. Defaults to "lang". Set this
 #               to undef or an empty string to disable language file loading.
 # - `lang`      The language file to use. Defaults to "en"
@@ -387,6 +387,9 @@ sub set_template_dir {
     my $self = shift;
     $self -> {"theme"} = shift;
 
+    # Internal base path
+    $self -> {"basepath"} = path_join($self -> {"settings"} -> {"config"} -> {"base"}, $self -> {"basedir"});
+
     # Work out the scriptpath and templatepath
     $self -> {"scriptpath"} = $self -> {"settings"} -> {"config"} -> {"scriptpath"} || "/";
     $self -> {"scriptpath"} .= "/" unless($self -> {"scriptpath"} =~ m|/$|); # Scriptpath must have trailing slash
@@ -448,7 +451,7 @@ sub load_template {
 
     # Try to load the file from
     foreach my $theme ($self -> {"theme"}, $self -> {"fallback"}) {
-        my $filename = path_join($self -> {"basedir"}, $theme, $name);
+        my $filename = path_join($self -> {"basepath"}, $theme, $name);
 
         # Don't bother even attempting to open the file if it doesn't exist or isn't readable.
         if(!-f $filename || !-r $filename) {
@@ -710,7 +713,7 @@ sub send_email_sendmail {
 sub get_bbcode_path {
     my $self = shift;
 
-    my $filename = path_join($self -> {"basedir"}, $self -> {"theme"});
+    my $filename = path_join($self -> {"basepath"}, $self -> {"theme"});
 
     return (-d $filename) ? $filename : undef;
 }

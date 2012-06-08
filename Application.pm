@@ -140,7 +140,7 @@ sub run {
 
     # Create the template handler object
     $self -> {"template"} = Template -> new(logger    => $self -> {"logger"},
-                                            basedir   => path_join($self -> {"settings"} -> {"config"} -> {"base"}, "templates"),
+                                            basedir   => $self -> {"settings"} -> {"config"} -> {"template_dir"} || "templates",
                                             timefmt   => $self -> {"settings"} -> {"config"} -> {"timefmt"},
                                             blockname => 1,
                                             mailcmd   => '/usr/sbin/sendmail -t -f '.$self -> {"settings"} -> {"config"} -> {"Core:envelope_address"},
