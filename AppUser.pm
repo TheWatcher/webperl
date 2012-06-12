@@ -237,9 +237,10 @@ sub set_user_authmethod {
 
 ## @method $ pre_authenticate($username, $auth)
 # Perform any system-specific pre-authentication tasks on the specified
-# user. This function allows systems to tailor pre-auth tasks to the
-# requirements of the system. For example, this may be used to check the
-# username against a table of authorised users.
+# user. This function is called once, before the system interrogates any
+# defined AuthMethod modules, and it allows systems to tailor pre-auth
+# tasks to the requirements of the system. For example, this may be used to
+# check the username against a table of authorised users.
 #
 # @note The implementation provided here does no work, and simply returns
 #       true in all cases.
@@ -260,10 +261,14 @@ sub pre_authenticate {
 }
 
 
-## @method $ post_authenticate($username, $auth)
+## @method $ post_authenticate($username, $password, $auth)
 # Perform any system-specific post-authentication tasks on the specified
 # user's data. This function allows each system to tailor post-auth tasks
-# to the requirements of the system.
+# to the requirements of the system. This function is only called if
+# authentication has been successful (one of the AuthMethods has indicated
+# that the user's credentials are valid), and if it returns undef the
+# authentication is treated as having failed even if the user's credentials
+# are valid.
 #
 # @note The implementation provided here will create an empty user record
 #       if one with the specified username does not already exist. The
@@ -272,6 +277,7 @@ sub pre_authenticate {
 #       desirable, subclasses may wish to override this function completely.
 #
 # @param username The username of the user to perform post-auth tasks on.
+# @param password The password the user authenticated with.
 # @param auth     A reference to the auth object calling this.
 # @return A reference to a hash containing the user's data on success,
 #         undef otherwise. If this returns undef, an error message will be

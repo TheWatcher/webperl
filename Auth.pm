@@ -267,7 +267,7 @@ sub valid_user {
     # database record.
     if($valid) {
         # If postauth fails, treat the user as invalid
-        if($self -> {"app"} -> post_authenticate($username, $self)) {
+        if($self -> {"app"} -> post_authenticate($username, $password, $self)) {
             $self -> {"app"} -> set_user_authmethod($username, $authmethod);
 
             return $self -> {"app"} -> get_user($username);
