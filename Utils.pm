@@ -50,22 +50,27 @@ our @EXPORT_OK = qw(path_join resolve_path check_directory load_file save_file s
 sub path_join {
     my @fragments = @_;
 
-    my $result = "";
+    # Need a lead slash?
+    my $leadslash = $fragments[0] =~ m|^/|;
 
-    # We can't easily use join here, as fragments might end in /, which
-    # would result in some '//' in the string. This may be slower, but
-    # it will ensure there aren't stray slashes around.
-    foreach my $fragment (@fragments) {
-        next if(!$fragment); # skip empty fragments.
+    # strip leading and trailing slashes from fragments
+    my @parts;
+    foreach my $bit (@fragments) {
+        # Skip empty fragments.
+        next unless($bit);
 
-        $result .= $fragment;
-        # append a slash if the result doesn't end with one
-        $result .= "/" if($result !~ /\/$/);
+        # Remove leading and trailing slashes
+        $bit =~ s|^/*||; $bit =~ s|/*$||;
+
+        # If the fragment was nothing more than slashes, ignore it
+        next unless($bit);
+
+        # Store for joining
+        push(@parts, $bit);
     }
 
-    # strip the trailing / if there is one
-    return substr($result, 0, length($result) - 1) if($result =~ /\/$/);
-    return $result;
+    # Join the path, possibly including a leading slash if needed
+    return ($leadslash ? "/" : "").join("/", @parts);
 }
 
 
