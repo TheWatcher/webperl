@@ -237,7 +237,7 @@ sub set_user_authmethod {
     my $result = $seth -> execute($methodid, $username)
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to execute user auth update query. Error was: ".$self -> {"dbh"} -> errstr);
 
-    $self -> {"lasterr"} .= "Unable to update user auth method, unkown user selected"
+    $self -> self_error("Unable to update user auth method, unknown user selected")
         if($result != 1);
 
     return ($result == 1);
@@ -261,8 +261,8 @@ sub set_user_authmethod {
 # @param auth     A reference to the auth object calling this.
 # @return true if the authentication process should continue, false if the
 #         user should not be authenticated or logged in. If this returns
-#         false, an error message will be appended to the specified auth's
-#         lasterr field.
+#         false, an error message will be set in the specified auth's
+#         errstr field.
 sub pre_authenticate {
     my $self     = shift;
     my $username = shift;
@@ -293,7 +293,7 @@ sub pre_authenticate {
 # @param auth     A reference to the auth object calling this.
 # @return A reference to a hash containing the user's data on success,
 #         undef otherwise. If this returns undef, an error message will be
-#         appended to the specified auth's lasterr field.
+#         set in the specified auth's errstr field.
 sub post_authenticate {
     my $self     = shift;
     my $username = shift;
@@ -312,10 +312,8 @@ sub post_authenticate {
         $user = $self -> get_user($username);
     }
 
-    if(!$user) {
-        $auth -> {"lasterr"} .= "User addition failed.";
-        return undef;
-    }
+    return $auth -> self_error("User addition failed.")
+        if(!$user);
 
     # Touch the user's record...
     my $pokeh = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"users"}."

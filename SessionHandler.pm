@@ -50,7 +50,7 @@
 #   current session user if no userid is specified.
 # - valid_user() returns true if the provided user credentials are valid,
 #   false if they are not.
-# - auth_error() lets you fetch the authenticator's `lasterr` message.
+# - auth_error() lets you fetch the authenticator's `errstr` message.
 # - anonymous_session() returns true if the session is anonymous, false
 #   if the session belongs to a logged-in user.
 # - admin_session() returns true if the session belongs to a logged-in admin
@@ -551,7 +551,7 @@ sub valid_user {
 sub auth_error {
     my $self = shift;
 
-    return $self -> {"auth"} -> {"lasterr"};
+    return $self -> {"auth"} -> {"errstr"};
 }
 
 

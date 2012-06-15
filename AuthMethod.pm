@@ -61,7 +61,7 @@ sub new {
 # @param password The password of the user to authenticate.
 # @param auth     A reference to the Auth object calling this function,
 #                 if any errors are encountered while performing the
-#                 authentication, they will be appended to $auth -> {"lasterr"}.
+#                 authentication, they will be set in $auth -> {"errstr"}.
 # @return true if the user's credentials are valid, false otherwise.
 sub authenticate {
     my $self     = shift;
