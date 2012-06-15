@@ -575,7 +575,11 @@ sub process_template {
 # @param longdesc   The full message body
 # @param additional Any additional content to include in the message box.
 # @param boxclass   Optional additional classes to add to the messagebox container.
-# @param buttons    Optional reference to an array of hashes containing button data.
+# @param buttons    Optional reference to an array of hashes containing button data. Each
+#                   hash in the array should contain three keys: `colour` which specifies
+#                   the button colour; `action` which should contain javascript to run
+#                   when the button is clicked; and `message` which should be the message
+#                   to show in the button.
 # @return A string containing the message box.
 sub message_box {
     my ($self, $title, $type, $summary, $longdesc, $additional, $boxclass, $buttons) = @_;
