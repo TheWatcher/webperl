@@ -24,6 +24,7 @@
 package System;
 
 use strict;
+use base qw(SystemModule);
 
 # ============================================================================
 #  Constructor and initialiser
@@ -87,23 +88,6 @@ sub clear {
         $self -> {$key} -> clear() if($self -> {$key} -> can("clear"));
         delete $self -> {$key};
     }
-}
-
-
-# ============================================================================
-#  Error functions
-
-## @method private $ self_error($errstr)
-# Set the object's errstr value to an error message, and return undef. This
-# function supports error reporting in various methods throughout the class.
-#
-# @param errstr The error message to store in the object's errstr.
-# @return Always returns undef.
-sub self_error {
-    my $self = shift;
-    $self -> {"errstr"} = shift;
-
-    return undef;
 }
 
 1;
