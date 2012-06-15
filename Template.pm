@@ -593,7 +593,7 @@ sub message_box {
                                                                "***message***" => $button -> {"message"}});
         }
         # Shove into the bar
-        $buttonbar = $self -> load_template("messagebox_buttons.tem", {"***buttons***" => $buttonlist});
+        $buttonbar = $self -> load_template("messagebox_buttonbar.tem", {"***buttons***" => $buttonlist});
     }
 
     return $self -> load_template("messagebox.tem", { "***title***"      => $title,
