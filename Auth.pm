@@ -33,15 +33,10 @@
 package Auth;
 
 use strict;
+use base qw(SystemModule);
 
 # Custom module imports
 use AuthMethods;
-
-our $errstr;
-
-BEGIN {
-	$errstr = '';
-}
 
 # ============================================================================
 #  Constructor
@@ -208,9 +203,9 @@ sub get_user {
 # @param password The password to check.
 # @return A reference to a hash containing the user's data if the user is valid,
 #         undef if the user is not valid. If this returns undef, the reason is
-#         contained in $obj -> {"lasterr"}. Note that this may return a user
-#         AND have a value in $obj -> {"lasterr"}, in which case the value in
-#         lasterr is a warning regarding the user...
+#         contained in $obj -> {"errstr"}. Note that this may return a user
+#         AND have a value in $obj -> {"errstr"}, in which case the value in
+#         errstr is a warning regarding the user...
 sub valid_user {
     my $self       = shift;
     my $username   = shift;
@@ -218,13 +213,11 @@ sub valid_user {
     my $valid      = 0;
     my $methodimpl;
 
-    $self -> {"lasterr"} = "";
+    $self -> clear_error();
 
     # Is the user disabled?
-    if($self -> {"app"} -> user_disabled($username)) {
-        $self -> {"lasterr"} .= "This user account has been disabled.";
-        return undef;
-    }
+    return $self -> self_error("This user account has been disabled.")
+        if($self -> {"app"} -> user_disabled($username));
 
     # Is the user allowed to proceed to authentication?
     return undef unless($self -> {"app"} -> pre_authenticate($username, $self));
@@ -275,16 +268,8 @@ sub valid_user {
         return undef;
     }
 
-    $self -> {"lasterr"} .= "Invalid username or password specified.";
-
     # Authentication failed.
-    return undef;
+    return $self -> self_error("Invalid username or password specified.");
 }
-
-
-# ============================================================================
-#  Error functions
-
-sub set_error { $errstr = shift; return undef; }
 
 1;

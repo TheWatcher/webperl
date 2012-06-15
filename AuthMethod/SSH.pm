@@ -82,7 +82,7 @@ sub new {
 # @param password The password to check against the server.
 # @param auth     A reference to the Auth object calling this function,
 #                 if any errors are encountered while performing the
-#                 authentication, they will be appended to $auth -> {"lasterr"}.
+#                 authentication, they will be set in $auth -> {"errstr"}.
 # @return true if the user's credentials are valid, false otherwise.
 sub authenticate {
     my $self     = shift;
@@ -108,7 +108,7 @@ sub authenticate {
 
         # Did the ssh fail horribly?
         if($@) {
-            $auth -> {"lasterr"} .= "ssh login to ".$self -> {"server"}." failed. Error was: $@\n";
+            return $auth -> self_error("ssh login to ".$self -> {"server"}." failed. Error was: $@");
 
         # Did the user log in?
         } elsif($resp =~ /Welcome/ || $resp =~ /Last\s*login/s) {
@@ -119,8 +119,7 @@ sub authenticate {
         return 0;
     }
 
-    $auth -> {"lasterr"} .= "SSH login failed: username and password are required.\n";
-    return 0;
+    return $auth -> self_error("SSH login failed: username and password are required.");
 }
 
 1;

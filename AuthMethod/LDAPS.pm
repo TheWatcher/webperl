@@ -78,7 +78,7 @@ sub new {
 # @param password The password to check against the server.
 # @param auth     A reference to the Auth object calling this function,
 #                 if any errors are encountered while performing the
-#                 authentication, they will be appended to $auth -> {"lasterr"}.
+#                 authentication, they will be set in $auth -> {"errstr"}.
 # @return true if the user's credentials are valid, false otherwise.
 sub authenticate {
     my $self     = shift;
@@ -98,7 +98,7 @@ sub authenticate {
             my $mesg = ($self -> {"adminuser"} && $self -> {"adminpass"}) ? $ldap -> bind($self -> {"adminuser"}, $self -> {"adminpass"})
                                                                           : $ldap -> bind();
             if($mesg -> code) {
-                $auth -> {"lasterr"} .= "LDAPS bind to ".$self -> {"server"}." failed. Response was: ".$mesg -> error."\n";
+                return $auth -> self_error("LDAPS bind to ".$self -> {"server"}." failed. Response was: ".$mesg -> error);
             } else {
                 # Search for a user with the specified username in the base dn
                 my $result = $ldap -> search("base"   => $self -> {"base"},
@@ -126,18 +126,17 @@ sub authenticate {
 
                     $ldap -> unbind();
                 } else {
-                    $auth -> {"lasterr"} .= "Unable to connect to LDAP server: $@\n";
+                    return $auth -> self_error("Unable to connect to LDAP server: $@");
                 }
             }
         } else {
-            $auth -> {"lasterr"} .= "Unable to connect to LDAP server: $@\n";
+            return $auth -> self_error("Unable to connect to LDAP server: $@");
         }
 
         return $valid;
     }
 
-    $auth -> {"lasterr"} .= "LDAP login failed: username and password are required\n";
-    return 0;
+    return $auth -> self_error("LDAP login failed: username and password are required");
 }
 
 1;
