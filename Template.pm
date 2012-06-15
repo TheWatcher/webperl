@@ -575,15 +575,33 @@ sub process_template {
 # @param longdesc   The full message body
 # @param additional Any additional content to include in the message box.
 # @param boxclass   Optional additional classes to add to the messagebox container.
+# @param buttons    Optional reference to an array of hashes containing button data.
 # @return A string containing the message box.
 sub message_box {
-    my ($self, $title, $type, $summary, $longdesc, $additional, $boxclass) = @_;
+    my ($self, $title, $type, $summary, $longdesc, $additional, $boxclass, $buttons) = @_;
+    my $buttonbar = "";
+
+    # Has the caller specified any buttons?
+    if($buttons) {
+        my $buttem = $self -> load_template("messagebox_button.tem");
+
+        # Build the list of buttons...
+        my $buttonlist = "";
+        for my $button (@{$buttons}) {
+            $buttonlist .= $self -> process_template($buttem, {"***colour***"  => $button -> {"colour"},
+                                                               "***onclick***" => $button -> {"action"},
+                                                               "***message***" => $button -> {"message"}});
+        }
+        # Shove into the bar
+        $buttonbar $self -> load_template("messagebox_button.tem", {"***buttons***" => $buttonlist});
+    }
 
     return $self -> load_template("messagebox.tem", { "***title***"      => $title,
                                                       "***icon***"       => $type,
                                                       "***summary***"    => $summary,
                                                       "***longdesc***"   => $longdesc,
                                                       "***additional***" => $additional,
+                                                      "***buttons***"    => $buttonbar,
                                                       "***boxclass***"   => $boxclass});
 }
 
