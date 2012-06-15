@@ -104,6 +104,17 @@ sub init {
 }
 
 
+## @method void set_system($system)
+# Set the AppUser's refrence to the system object. This must be done after both
+# construction and initialisation, as the system object may not be available
+# at either stage.
+#
+# @param system A reference to the system System object.
+sub set_system {
+    my $self = shift;
+    $self -> {"system"} = shift;
+}
+
 # ============================================================================
 #  Constants access
 

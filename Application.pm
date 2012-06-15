@@ -219,6 +219,8 @@ sub run {
                                     phpbb    => $self -> {"phpbb"},
                                     modules  => $self -> {"modules"})
             or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create system object: ".$self -> {"system"} -> {"errstr"});
+
+        $self -> {"appuser"} -> set_system($self -> {"system"}) if($self -> {"appuser"});
     }
 
     # Has a block selector been specified? If not, make a default one
@@ -255,6 +257,7 @@ sub run {
     # Prevent circular references from messing up shutdown
     $self -> {"template"} -> set_module_obj(undef);
     $self -> {"system"} -> clear() if($self -> {"system"});
+    $self -> {"appuser"} -> set_system(undef) if($self -> {"appuser"});
 
     $self -> {"dbh"} -> disconnect();
     $self -> {"logger"} -> end_log();
