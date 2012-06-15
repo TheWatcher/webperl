@@ -25,13 +25,8 @@
 package AuthMethods;
 
 use strict;
+use base qw(SystemModule);
 use Module::Load;
-
-our $errstr;
-
-BEGIN {
-	$errstr = '';
-}
 
 # ============================================================================
 #  Constructor
@@ -50,11 +45,11 @@ sub new {
     };
 
     # Ensure that we have objects that we need
-    return set_error("cgi object not set")      unless($self -> {"cgi"});
-    return set_error("dbh object not set")      unless($self -> {"dbh"});
-    return set_error("settings object not set") unless($self -> {"settings"});
-    return set_error("app object not set")      unless($self -> {"app"});
-    return set_error("logger object not set")   unless($self -> {"logger"});
+    return SystemModule::set_error("cgi object not set")      unless($self -> {"cgi"});
+    return SystemModule::set_error("dbh object not set")      unless($self -> {"dbh"});
+    return SystemModule::set_error("settings object not set") unless($self -> {"settings"});
+    return SystemModule::set_error("app object not set")      unless($self -> {"app"});
+    return SystemModule::set_error("logger object not set")   unless($self -> {"logger"});
 
     return bless $self, $class;
 }
@@ -99,15 +94,15 @@ sub available_methods {
 # @param method_id The id of the auth method to load.
 # @return A reference to an AuthMethod subclass implementing the method
 #         on success, undef on failure or if the method is disabled. If this
-#         returns undef, $self -> {"lasterr"} is set to a message indicating
+#         returns undef, $self -> {"errstr"} is set to a message indicating
 #         what went wrong. Note that attempting to load a disabled method is
-#         NOT considered an error: this will return undef, but lasterr will
+#         NOT considered an error: this will return undef, but errstr will
 #         be empty.
 sub load_method {
     my $self      = shift;
     my $method_id = shift;
 
-    $self -> {"errstr"} = "";
+    $self -> clear_error();
 
     # Fetch the module name first
     my $moduleh = $self -> {"dbh"} -> prepare("SELECT perl_module, enabled FROM ".$self -> {"settings"} -> {"database"} -> {"auth_methods"}."
@@ -154,32 +149,6 @@ sub load_method {
 
     # Otherwise, return the auth method object.
     return $methodobj;
-}
-
-
-# ============================================================================
-#  Error functions
-
-## @cmethod private $ set_error($errstr)
-# Set the class-wide errstr variable to an error message, and return undef. This
-# function supports error reporting in the constructor and other class methods.
-#
-# @param errstr The error message to store in the class errstr variable.
-# @return Always returns undef.
-sub set_error { $errstr = shift; return undef; }
-
-
-## @method private $ self_error($errstr)
-# Set the object's errstr value to an error message, and return undef. This
-# function supports error reporting in various methods throughout the class.
-#
-# @param errstr The error message to store in the object's errstr.
-# @return Always returns undef.
-sub self_error {
-    my $self = shift;
-    $self -> {"errstr"} = shift;
-
-    return undef;
 }
 
 1;
