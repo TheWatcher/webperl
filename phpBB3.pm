@@ -896,7 +896,7 @@ sub get_config {
 ## @method $ unique_id($extra)
 # Generate a unique ID that can be used with phpBB3 tables.
 #
-# @param $extra Optional extra string to append to the seed.
+# @param extra Optional extra string to append to the seed.
 # @return a unique ID compatible with phpBB3
 sub unique_id {
     my $self  = shift;

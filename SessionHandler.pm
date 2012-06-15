@@ -755,7 +755,7 @@ sub session_cleanup {
 # Determine whether the specified session has expired. Returns true if it has,
 # false if it is still valid.
 #
-# @param $sessdata A reference to a hash containing the session information
+# @param sessdata A reference to a hash containing the session information
 # @return true if the session has expired, false otherwise
 sub session_expired {
     my $self = shift;

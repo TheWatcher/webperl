@@ -562,7 +562,7 @@ sub process_template {
 # ============================================================================
 #  Higher-level templating functions
 
-## @method $ message_box($title, $type, $summary, $longdesc, $additional, $boxclass)
+## @method $ message_box($title, $type, $summary, $longdesc, $additional, $boxclass, $buttons)
 # Create a message box block to include in a page. This generates a templated
 # message box to include in a page. It assumes the presence of messagebox.tem
 # in the template directory, containing markers for a title, type, summary,
