@@ -85,6 +85,11 @@ sub clear {
     # clear all the references in $self. Yes, this is inefficient, but
     # the alternative is reassigning self... so no, delete them all.
     foreach my $key (keys %{$self}) {
+        if(!defined($self -> {$key})) {
+            print STDERR "System::clear attempting to clear value for $key when undef?\n";
+            next;
+        }
+
         $self -> {$key} -> clear() if($self -> {$key} -> can("clear"));
         delete $self -> {$key};
     }
