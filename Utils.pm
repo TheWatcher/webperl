@@ -49,15 +49,16 @@ our @EXPORT_OK = qw(path_join resolve_path check_directory load_file save_file s
 # @return A string containing the path fragments joined with forward slashes.
 sub path_join {
     my @fragments = @_;
-
-    # Need a lead slash?
-    my $leadslash = $fragments[0] =~ m|^/|;
+    my $leadslash;
 
     # strip leading and trailing slashes from fragments
     my @parts;
     foreach my $bit (@fragments) {
         # Skip empty fragments.
         next unless($bit);
+
+        # Determine whether the first real path has a leading slash.
+        $leadslash = $bit =~ m|^/| unless(defined($leadslash));
 
         # Remove leading and trailing slashes
         $bit =~ s|^/*||; $bit =~ s|/*$||;
