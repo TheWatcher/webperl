@@ -178,6 +178,8 @@ sub new_module {
 
     # If we have a block row, return an instance of the module for it
     return $self -> new_module_byid($modrow -> {"module_id"},
+                                    $modrow -> {"id"},
+                                    $modrow -> {"name"},
                                     $modrow -> {"args"})
         if($modrow);
 
@@ -205,6 +207,8 @@ sub new_module_byblockid {
 
     # If we have a block row, return an instance of the module for it
     return $self -> new_module_byid($modrow -> {"module_id"},
+                                    $modrow -> {"id"},
+                                    $modrow -> {"name"},
                                     $modrow -> {"args"})
         if($modrow);
 
@@ -212,7 +216,7 @@ sub new_module_byblockid {
 }
 
 
-## @method $ new_module_byname($modname, $argument)
+## @method $ new_module_byname($modname, $block_id, $block_name, $argument)
 # Load a module based on its name in the modules table. This allows direct creation
 # of a module from the modules table rather than the normal indirect route via
 # new_module() or new_module_byblockid().
@@ -220,21 +224,27 @@ sub new_module_byblockid {
 # @note In most cases, you do not want to use this function - you want to use
 #       new_module() instead. Only use this if you know what you are doing.
 #
-# @param modname  The name of the module to load.
-# @param argument Argument to pass to the module constructor.
+# @param modname    The name of the module to load.
+# @param block_id   The ID of the block to associate with the loaded module. May be undef.
+# @param block_name The name of the block to associate with the loaded module. May be undef.
+# @param argument   Argument to pass to the module constructor.
 # @return An instance of the module, or undef on error.
 sub new_module_byname {
-    my $self      = shift;
-    my $modname   = shift;
-    my $argument = shift;
+    my $self       = shift;
+    my $modname    = shift;
+    my $block_id   = shift;
+    my $block_name = shift;
+    my $argument   = shift;
 
     return $self -> _new_module_internal("WHERE name LIKE ?",
                                          $modname,
+                                         $block_id,
+                                         $block_name,
                                          $argument);
 }
 
 
-## @method $ new_module_byid($modid, $argument)
+## @method $ new_module_byid($modid, $block_id, $block_name, $argument)
 # Load a module based on its id in the modules table. This allows direct creation
 # of a module from the modules table rather than the normal indirect route via
 # new_module() or new_module_byblockid().
@@ -242,16 +252,22 @@ sub new_module_byname {
 # @note In most cases, you do not want to use this function - you want to use
 #       new_module_byblockid() instead. Only use this if you know what you are doing.
 #
-# @param modid    The id of the module to load.
-# @param argument Argument to pass to the module constructor.
+# @param modid      The id of the module to load.
+# @param block_id   The ID of the block to associate with the loaded module. May be undef.
+# @param block_name The name of the block to associate with the loaded module. May be undef.
+# @param argument   Argument to pass to the module constructor.
 # @return An instance of the module, or undef on error.
 sub new_module_byid {
-    my $self      = shift;
-    my $modid     = shift;
-    my $argument = shift;
+    my $self       = shift;
+    my $modid      = shift;
+    my $block_id   = shift;
+    my $block_name = shift;
+    my $argument   = shift;
 
     return $self -> _new_module_internal("WHERE module_id = ?",
                                          $modid,
+                                         $block_id,
+                                         $block_name,
                                          $argument);
 }
 
@@ -265,10 +281,12 @@ sub new_module_byid {
 # @param modargs  The argument to pass to the module.
 # @return A new object, or undef if a problem occured or the module is disabled.
 sub _new_module_internal {
-    my $self     = shift;
-    my $where    = shift;
-    my $argument = shift;
-    my $modarg   = shift;
+    my $self       = shift;
+    my $where      = shift;
+    my $argument   = shift;
+    my $block_id   = shift;
+    my $block_name = shift;
+    my $modarg     = shift;
 
     my $modh = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"settings"} -> {"database"} -> {"modules"}." $where");
     $modh -> execute($argument)
@@ -281,7 +299,7 @@ sub _new_module_internal {
 
     my $name = $modrow -> {"perl_module"};
 
-    return $self -> load_module($name, id => $modrow -> {"module_id"}, args => $modarg);
+    return $self -> load_module($name, id => $modrow -> {"module_id"}, block => $block_name, block_id => $block_id, args => $modarg);
 }
 
 

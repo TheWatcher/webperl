@@ -68,17 +68,6 @@ sub new {
                                         @_);
     return undef if(!$self);
 
-    # Work out which block we're being invoked with
-    $self -> {"block"} = is_defined_numeric($self -> {"cgi"}, "block");
-
-    # block id is not set, check whether the block name is
-    if(!defined($self -> {"block"})) {
-        my $block = $self -> {"cgi"} -> param("block");
-
-        $self -> {"block"} = $block if($block && $block =~ /^\w+$/);
-        $self -> {"block"} = $self -> {"settings"} -> {"config"} -> {"default_block"} if(!$self -> {"block"});
-    }
-
     # Set up the logger, if needed (Application usually does this long before the Block constructor
     # gets called, but even if it has, doing it again won't hurt anything).
     $self -> {"logger"} -> init_database_log($self -> {"dbh"}, $self -> {"logtable"})
