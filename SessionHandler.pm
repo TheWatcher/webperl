@@ -246,7 +246,7 @@ sub create_session {
     my $initvars = shift;
     my $userdata;
 
-    # nuke the cookies, it's the only way to be sure
+    # nuke the cookies from orbit, it's the only way to be sure
     delete($self -> {"cookies"}) if($self -> {"cookies"});
 
     # get the current time...
@@ -827,7 +827,8 @@ sub set_login_key {
     my $self = shift;
 
     my $key = $self -> {"autokey"};
-    my $key_id = $self -> {"auth"} -> unique_id(substr($self -> {"sessid"}, 0, 8));
+    # key_id needs to be base64 encoded as it may contain binary.
+    my $key_id = encode_base64($self -> {"auth"} -> unique_id(substr($self -> {"sessid"}, 0, 8)), '');
 
     # If we don't have a key, we want to create a new key in the table
     if(!$key) {
