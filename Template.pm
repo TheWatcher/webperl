@@ -111,6 +111,9 @@
 # - `{V_[templatepath]}` is replaced by the path from the base of the web
 #    application to the template directory (useful for image and other resource
 #    paths inside the template). This will always have a trailing '/'.
+# - `{V_[commonpath]}` is replaced by the path from the base of the web
+#    application to the common template directory (useful for image and other resource
+#    paths inside the common template). This will always have a trailing '/'.
 package Template;
 
 use POSIX qw(strftime);
@@ -397,6 +400,14 @@ sub set_template_dir {
     # work out the current template path
     $self -> {"templatepath"} = path_join($self -> {"scriptpath"}, $self -> {"basedir"}, $self -> {"theme"});
     $self -> {"templatepath"} .= "/" unless($self -> {"templatepath"} =~ m|/$|); # templatepath must have trailing slash
+
+    # And the common path, if possible
+    if($self -> {"fallback"}) {
+        $self -> {"commonpath"} = path_join($self -> {"scriptpath"}, $self -> {"basedir"}, $self -> {"fallback"});
+        $self -> {"commonpath"} .= "/" unless($self -> {"templatepath"} =~ m|/$|); # templatepath must have trailing slash
+    } else {
+        $self -> {"commonpath"} = $self -> {"templatepath"};
+    }
 }
 
 
@@ -535,6 +546,7 @@ sub process_template {
     # Fix 'standard' variables
     $$textref =~ s/{V_\[scriptpath\]}/$self->{scriptpath}/g;
     $$textref =~ s/{V_\[templatepath\]}/$self->{templatepath}/g;
+    $$textref =~ s/{V_\[commonpath\]}/$self->{commonpath}/g;
 
     # Do any module marker replacements if we can
     if($self -> {"modules"}) {
