@@ -404,7 +404,7 @@ sub set_template_dir {
     # And the common path, if possible
     if($self -> {"fallback"}) {
         $self -> {"commonpath"} = path_join($self -> {"scriptpath"}, $self -> {"basedir"}, $self -> {"fallback"});
-        $self -> {"commonpath"} .= "/" unless($self -> {"templatepath"} =~ m|/$|); # templatepath must have trailing slash
+        $self -> {"commonpath"} .= "/" unless($self -> {"commonpath"} =~ m|/$|); # commonpath must have trailing slash
     } else {
         $self -> {"commonpath"} = $self -> {"templatepath"};
     }
