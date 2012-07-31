@@ -120,7 +120,7 @@ use POSIX qw(strftime);
 use Utils qw(path_join superchomp);
 use strict;
 
-our ($errstr, $utfentities, $entities, $ords);
+our ($errstr, $utfentities, $entities, $ords, @timescales);
 
 BEGIN {
 	$errstr = '';
@@ -134,6 +134,7 @@ BEGIN {
                      '\xE2\x80\x94' => '&mdash;',
                      '\xE2\x80\xA6' => '&hellip;',
     };
+
     $entities = {'\x91' => '&lsquo;',  # 0x91 (145) and 0x92 (146) are 'smart' singlequotes
                  '\x92' => '&rsquo;',
                  '\x93' => '&ldquo;',  # 0x93 (147) and 0x94 (148) are 'smart' quotes
@@ -142,6 +143,7 @@ BEGIN {
                  '\x97' => '&mdash;',
                  '\x88' => '&hellip;', # 0x88 (133) is an ellisis
     };
+
     $ords = {1 => "st",
              2 => "nd",
              3 => "rd",
@@ -150,6 +152,16 @@ BEGIN {
              23 => 'rd',
              31 => 'st'
     };
+
+    @timescales = ( { "seconds" => 31557600, "singular" => "TIMES_YEAR"   , "plural" => "TIMES_YEARS"   },
+                    { "seconds" =>  2629800, "singular" => "TIMES_MONTH"  , "plural" => "TIMES_MONTHS"  },
+                    { "seconds" =>   604800, "singular" => "TIMES_WEEK"   , "plural" => "TIMES_WEEKS"   },
+                    { "seconds" =>    86400, "singular" => "TIMES_DAY"    , "plural" => "TIMES_DAYS"    },
+                    { "seconds" =>     3600, "singular" => "TIMES_HOUR"   , "plural" => "TIMES_HOURS"   },
+                    { "seconds" =>       60, "singular" => "TIMES_MINUTE" , "plural" => "TIMES_MINUTES" },
+                    { "seconds" =>       15, "singular" => "TIMES_SECONDS", "plural" => "TIMES_SECONDS" },
+                    { "seconds" =>        1, "singular" => "TIMES_JUSTNOW", "plural" => "TIMES_JUSTNOW" },
+    );
 }
 
 
@@ -783,6 +795,43 @@ sub format_time {
     my $datestr = strftime($format, localtime($time));
     $datestr =~ s/(\d+)\s*%o/ordinal($1)/ge;
     return $datestr;
+}
+
+
+## @method $ fancy_time($time)
+# Generate a string containing a 'fancy' representation of the time - rather than
+# explicitly showing the time, this will generate things like "just now", "less
+# than a minute ago", "1 minute ago", "20 minutes ago", etc. The real formatted
+# time is provided as the title for a span containing the fancy time.
+#
+# @param time The time to generate a string for.
+# @return A string containing a span element representing both the fancy time as
+#         the element content, and the formatted time as the title. The span has
+#         the class 'timestr' for css formatting.
+sub fancy_time {
+    my $self = shift;
+    my $time = shift;
+    my $now  = time();
+    my $formatted = $self -> format_time($time);
+    my $fancytime;
+
+    # If the duration is negative (time is in the future), just use format_time
+    my $dur = $now - $time;
+    if($dur < 0) {
+        $fancytime = $formatted;
+
+    # Otherwise, find the largest matching time string
+    } else {
+        foreach my $scale (@timescales) {
+            if($dur > $scale -> {"seconds"}) {
+                $dur = int($dur / $scale -> {"seconds"}); # Always going to be positive, so no need for floor() here
+
+                $fancytime = $self -> replace_langvar($dur == 1 ? $scale -> {"singular"} : $scale -> {"plural"}, {"%t" => $dur});
+            }
+        }
+    }
+
+    return '<span class="timestr" title="'.$formatted."'>'".$fancytime.'</span>';
 }
 
 
