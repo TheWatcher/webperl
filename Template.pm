@@ -798,20 +798,23 @@ sub format_time {
 }
 
 
-## @method $ fancy_time($time)
+## @method $ fancy_time($time, $nospan)
 # Generate a string containing a 'fancy' representation of the time - rather than
 # explicitly showing the time, this will generate things like "just now", "less
 # than a minute ago", "1 minute ago", "20 minutes ago", etc. The real formatted
 # time is provided as the title for a span containing the fancy time.
 #
-# @param time The time to generate a string for.
+# @param time   The time to generate a string for.
+# @param nospan Allow the suppression of span generation, in which case only the
+#               fancy time string is returned.
 # @return A string containing a span element representing both the fancy time as
 #         the element content, and the formatted time as the title. The span has
 #         the class 'timestr' for css formatting.
 sub fancy_time {
-    my $self = shift;
-    my $time = shift;
-    my $now  = time();
+    my $self   = shift;
+    my $time   = shift;
+    my $nospan = shift;
+    my $now    = time();
     my $formatted = $self -> format_time($time);
     my $fancytime;
 
@@ -831,6 +834,8 @@ sub fancy_time {
             }
         }
     }
+
+    return $fancytime if(!$nospan);
 
     return '<span class="timestr" title="'.$formatted.'">'.$fancytime.'</span>';
 }
