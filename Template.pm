@@ -827,6 +827,7 @@ sub fancy_time {
                 $dur = int($dur / $scale -> {"seconds"}); # Always going to be positive, so no need for floor() here
 
                 $fancytime = $self -> replace_langvar($dur == 1 ? $scale -> {"singular"} : $scale -> {"plural"}, {"%t" => $dur});
+                last;
             }
         }
     }
