@@ -835,7 +835,7 @@ sub fancy_time {
         }
     }
 
-    return $fancytime if(!$nospan);
+    return $fancytime if($nospan);
 
     return '<span class="timestr" title="'.$formatted.'">'.$fancytime.'</span>';
 }
