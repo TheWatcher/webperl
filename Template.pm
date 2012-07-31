@@ -831,7 +831,7 @@ sub fancy_time {
         }
     }
 
-    return '<span class="timestr" title="'.$formatted."'>'".$fancytime.'</span>';
+    return '<span class="timestr" title="'.$formatted.'">'.$fancytime.'</span>';
 }
 
 
