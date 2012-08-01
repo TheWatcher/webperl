@@ -153,14 +153,14 @@ BEGIN {
              31 => 'st'
     };
 
-    @timescales = ( { "seconds" => 31557600, "singular" => "TIMES_YEAR"   , "plural" => "TIMES_YEARS"   },
-                    { "seconds" =>  2629800, "singular" => "TIMES_MONTH"  , "plural" => "TIMES_MONTHS"  },
-                    { "seconds" =>   604800, "singular" => "TIMES_WEEK"   , "plural" => "TIMES_WEEKS"   },
-                    { "seconds" =>    86400, "singular" => "TIMES_DAY"    , "plural" => "TIMES_DAYS"    },
-                    { "seconds" =>     3600, "singular" => "TIMES_HOUR"   , "plural" => "TIMES_HOURS"   },
-                    { "seconds" =>       60, "singular" => "TIMES_MINUTE" , "plural" => "TIMES_MINUTES" },
-                    { "seconds" =>       15, "singular" => "TIMES_SECONDS", "plural" => "TIMES_SECONDS" },
-                    { "seconds" =>        1, "singular" => "TIMES_JUSTNOW", "plural" => "TIMES_JUSTNOW" },
+    @timescales = ( { "seconds" => 31557600, "scale" => 31557600, "singular" => "TIMES_YEAR"   , "plural" => "TIMES_YEARS"   },
+                    { "seconds" =>  2629800, "scale" =>  2629800, "singular" => "TIMES_MONTH"  , "plural" => "TIMES_MONTHS"  },
+                    { "seconds" =>   604800, "scale" =>   604800, "singular" => "TIMES_WEEK"   , "plural" => "TIMES_WEEKS"   },
+                    { "seconds" =>    86400, "scale" =>    86400, "singular" => "TIMES_DAY"    , "plural" => "TIMES_DAYS"    },
+                    { "seconds" =>     3600, "scale" =>     3600, "singular" => "TIMES_HOUR"   , "plural" => "TIMES_HOURS"   },
+                    { "seconds" =>       60, "scale" =>       60, "singular" => "TIMES_MINUTE" , "plural" => "TIMES_MINUTES" },
+                    { "seconds" =>       15, "scale" =>        1, "singular" => "TIMES_SECONDS", "plural" => "TIMES_SECONDS" },
+                    { "seconds" =>        0, "scale" =>        1, "singular" => "TIMES_JUSTNOW", "plural" => "TIMES_JUSTNOW" },
     );
 }
 
@@ -826,8 +826,8 @@ sub fancy_time {
     # Otherwise, find the largest matching time string
     } else {
         foreach my $scale (@timescales) {
-            if($dur > $scale -> {"seconds"}) {
-                $dur = int($dur / $scale -> {"seconds"}); # Always going to be positive, so no need for floor() here
+            if($dur >= $scale -> {"seconds"}) {
+                $dur = int($dur / $scale -> {"scale"}); # Always going to be positive, so no need for floor() here
 
                 $fancytime = $self -> replace_langvar($dur == 1 ? $scale -> {"singular"} : $scale -> {"plural"}, {"%t" => $dur});
                 last;
