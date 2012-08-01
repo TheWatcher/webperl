@@ -286,8 +286,13 @@ sub validate_htmlarea {
 
     # first we need the textarea contents...
     my $text = $self -> {"cgi"} -> param($param);
+
+    # Get a copy of the input with no tags at all so that it can be checked for length
+    my $scrubber = HTML::Scrubber -> new();
+    my $nohtml = $scrubber -> scrub($text)
+
     # If the text area is empty, deal with the whole default/required malarky
-    if(!defined($text)) {
+    if(!defined($nohtml) || !$nohtml) {
         # If the parameter is required, return empty and an error
         if($settings -> {"required"}) {
             return ("", $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTSET", "", {"***field***" => $settings -> {"nicename"}}));
@@ -298,6 +303,11 @@ sub validate_htmlarea {
     }
     # Don't bother doing anything if the text is empty at this point
     return ("", undef) if(!$text || length($text) == 0);
+
+    # Is the string too short? If so, store it and return an error.
+    return ($text, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_TOOSHORT", "", {"***field***"  => $settings -> {"nicename"},
+                                                                                            "***minlen***" => $settings -> {"minlen"}}))
+        if($settings -> {"minlen"} && (length($nohtml) < $settings -> {"minlen"}));
 
     # Now we get to the actual validation and stuff. Begin by scrubbing any tags
     # and other crap we don't want out completely. As far as I can tell, this should
