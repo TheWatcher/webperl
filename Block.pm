@@ -289,7 +289,7 @@ sub validate_htmlarea {
 
     # Get a copy of the input with no tags at all so that it can be checked for length
     my $scrubber = HTML::Scrubber -> new();
-    my $nohtml = $scrubber -> scrub($text)
+    my $nohtml = $scrubber -> scrub($text);
 
     # If the text area is empty, deal with the whole default/required malarky
     if(!defined($nohtml) || !$nohtml) {
