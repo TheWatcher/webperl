@@ -202,7 +202,7 @@ sub validate_string {
     # Is the string too short? If so, store it and return an error.
     return ($text, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_TOOSHORT", "", {"***field***"  => $settings -> {"nicename"},
                                                                                             "***minlen***" => $settings -> {"minlen"}}))
-        if($settings -> {"minlen"} && (length($text) < $settings -> {"minlen"}));
+        if($settings -> {"required"} && $settings -> {"minlen"} && (length($text) < $settings -> {"minlen"}));
 
     # Get here and all the tests have been passed or skipped
     return ($text, undef);
@@ -309,7 +309,7 @@ sub validate_htmlarea {
     # Is the string too short? If so, store it and return an error.
     return ($text, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_TOOSHORT", "", {"***field***"  => $settings -> {"nicename"},
                                                                                             "***minlen***" => $settings -> {"minlen"}}))
-        if($settings -> {"minlen"} && (length($nohtml) < $settings -> {"minlen"}));
+        if($settings -> {"required"} && $settings -> {"minlen"} && (length($nohtml) < $settings -> {"minlen"}));
 
     # Now we get to the actual validation and stuff. Begin by scrubbing any tags
     # and other crap we don't want out completely. As far as I can tell, this should
