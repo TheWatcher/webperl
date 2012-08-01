@@ -291,7 +291,7 @@ sub validate_htmlarea {
     my $scrubber = HTML::Scrubber -> new();
     my $nohtml = $scrubber -> scrub($text);
 
-    $nohtml =~ s/\s//g; # Kill some kinds of whitespace that may be left by scrubber that will confuse length checks.
+    $nohtml =~ s/(\s|&nbsp;)//g; # Kill some kinds of whitespace that may be left by scrubber that will confuse length checks.
 
     # If the text area is empty, deal with the whole default/required malarky
     if(!defined($nohtml) || !$nohtml) {
