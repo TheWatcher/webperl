@@ -197,12 +197,12 @@ sub validate_string {
     # string as is allowed, and an error
     return (substr($text, 0, $settings -> {"maxlen"}), $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_TOOLONG", "", {"***field***"  => $settings -> {"nicename"},
                                                                                                                                "***maxlen***" => $settings -> {"maxlen"}}))
-        if($settings -> {"maxlen"} && length($text) > $settings -> {"maxlen"});
+        if($settings -> {"maxlen"} && (length($text) > $settings -> {"maxlen"}));
 
-    # Is the string too short (we only need to check if it's required or has content) ? If so, store it and return an error.
+    # Is the string too short? If so, store it and return an error.
     return ($text, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_TOOSHORT", "", {"***field***"  => $settings -> {"nicename"},
                                                                                             "***minlen***" => $settings -> {"minlen"}}))
-        if($settings -> {"minlen"} && length($text) < $settings -> {"minlen"});
+        if($settings -> {"minlen"} && (length($text) < $settings -> {"minlen"}));
 
     # Get here and all the tests have been passed or skipped
     return ($text, undef);
