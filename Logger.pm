@@ -323,6 +323,8 @@ sub die_log {
     print $logfile scalar(localtime)," [$$:$ip]: $message\n"
         if($logfile);
 
+    $self -> log("fatal", 0, $ip, $message);
+
     die "[$$:$ip]: $message\n";
 }
 
