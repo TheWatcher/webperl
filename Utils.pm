@@ -31,7 +31,7 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join resolve_path check_directory load_file save_file superchomp trimspace lead_zero string_in_array blind_untaint title_case sentence_case is_defined_numeric rfc822_date get_proc_size find_bin untaint_path read_pid write_pid);
+our @EXPORT_OK = qw(path_join resolve_path check_directory load_file save_file superchomp trimspace lead_zero string_in_array blind_untaint title_case sentence_case is_defined_numeric rfc822_date get_proc_size find_bin untaint_path read_pid write_pid hash_or_hashref);
 
 
 # ============================================================================
@@ -382,6 +382,33 @@ sub rfc822_date {
                    $days[$ts[6]], $ts[3], $mons[$ts[4]], $ts[5] + 1900,
                    $ts[2], $ts[1], $ts[0],
                    strftime("%Z", @ts));
+}
+
+
+## @method $ hash_or_hashref(@args)
+# Given a list of arguments, if the first argument is a hashref it is returned,
+# otherwise if the list length is nonzero and even, the arguments are shoved
+# into a hash and a reference to that is returned. If the argument list is
+# empty or its length is odd, and empty hashref is returned.
+#
+# @param args A list of arguments, may either be a hashref or a list of key/value
+#             pairs to place into a hash.
+# @return A hashref.
+sub hash_or_hashref {
+    my $len = scalar(@_);
+    return {} unless($len);
+
+    # Even number of args? Shove them into a hash and get a ref
+    if($len % 2 == 0) {
+        return { @_ };
+
+    # First arg is a hashref? Return it
+    } elsif(ref($_[0]) eq "HASH") {
+        return $_[0];
+    }
+
+    # No idea what to do, so give up.
+    return {};
 }
 
 
