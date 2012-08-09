@@ -66,8 +66,13 @@ use constant ADMIN_TYPE   => 3; # User type for admin users.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
+    # Note this doesn't use the superclass constructor, as it may be called before
+    # the objects the superclass checks for are acutally available
+    my $self     = {
+        @_,
+    };
 
-    return $class -> SUPER::new(@_);
+    return bless $self, $class;
 }
 
 

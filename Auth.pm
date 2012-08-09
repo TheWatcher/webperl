@@ -57,7 +57,13 @@ use AuthMethods;
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    return $class -> SUPER::new(@_);
+    # Note this doesn't use the superclass constructor, as it may be called before
+    # the objects the superclass checks for are acutally available
+    my $self     = {
+        @_,
+    };
+
+    return bless $self, $class;
 }
 
 
