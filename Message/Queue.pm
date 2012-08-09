@@ -85,7 +85,7 @@ sub add_message {
     $args -> {"send_at"} += $args -> {"delay"} if($args -> {"delay"});
 
     # FUTURE: potentially support other formats here. See also: https://www.youtube.com/watch?v=JENdgiAPD6c however.
-    my $format = "plain";
+    my $args -> {"format"} = "plain";
 
     # Force required fields
     return $self -> self_error("Email subject not specified") unless($args -> {"subject"});
@@ -168,7 +168,7 @@ sub _queue_message {
     my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"message_queue"}."`
                                             (created, creator_id, message_ident, subject, body, format, send_after)
                                             VALUES(?, ?, ?, ?, ?, ?, ?)");
-    my $result = $newh -> execute($args -> {"now"}, $args -> {"userid"}, $args -> {"ident"}, $args -> {"subject"}, $args -> {"message"}, $format, $args -> {"send_after"});
+    my $result = $newh -> execute($args -> {"now"}, $args -> {"userid"}, $args -> {"ident"}, $args -> {"subject"}, $args -> {"message"}, $args -> {"format"}, $args -> {"send_after"});
     return $self -> self_error("Unable to perform message insert: ". $self -> {"dbh"} -> errstr) if(!$result);
     return $self -> self_error("Message insert failed, no rows inserted") if($result eq "0E0");
 

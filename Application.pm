@@ -54,6 +54,7 @@ use Logger;
 use Template;
 use SessionHandler;
 use Modules;
+use Message::Queue;
 use Utils qw(path_join is_defined_numeric get_proc_size);
 
 our $errstr;
@@ -138,6 +139,12 @@ sub run {
     # Start doing logging if needed
     $self -> {"logger"} -> start_log($self -> {"settings"} -> {"config"} -> {"logfile"}) if($self -> {"settings"} -> {"config"} -> {"logfile"});
 
+    # Message queue handling
+    $self -> {"messages"} = Message::Queue -> new(logger   => $self -> {"logger"},
+                                                  dbh      => $self -> {"dbh"},
+                                                  settings => $self -> {"settings"})
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create message handler: ".$SystemModule::errstr);
+
     # Create the template handler object
     $self -> {"template"} = Template -> new(logger    => $self -> {"logger"},
                                             basedir   => $self -> {"settings"} -> {"config"} -> {"template_dir"} || "templates",
@@ -206,7 +213,8 @@ sub run {
                                           session  => $self -> {"session"},
                                           phpbb    => $self -> {"phpbb"}, # this will handily be undef if phpbb mode is disabled
                                           blockdir => $self -> {"settings"} -> {"paths"} -> {"blocks"} || "blocks",
-                                          system   => $self -> {"system"})
+                                          system   => $self -> {"system"},
+                                          messages => $self -> {"messages"})
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create module handling object: ".$Modules::errstr);
 
     if($self -> {"system"}) {
@@ -217,7 +225,8 @@ sub run {
                                     template => $self -> {"template"},
                                     session  => $self -> {"session"},
                                     phpbb    => $self -> {"phpbb"},
-                                    modules  => $self -> {"modules"})
+                                    modules  => $self -> {"modules"},
+                                    messages => $self -> {"messages"})
             or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create system object: ".$self -> {"system"} -> {"errstr"});
 
         $self -> {"appuser"} -> set_system($self -> {"system"}) if($self -> {"appuser"});
