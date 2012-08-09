@@ -76,7 +76,7 @@ sub new {
 sub add_message {
     my $self = shift;
     my $args = hash_or_hashref(@_);
-    my $args -> {"now"}  = time();
+    $args -> {"now"}  = time();
 
     $self -> clear_error();
 
@@ -85,7 +85,7 @@ sub add_message {
     $args -> {"send_at"} += $args -> {"delay"} if($args -> {"delay"});
 
     # FUTURE: potentially support other formats here. See also: https://www.youtube.com/watch?v=JENdgiAPD6c however.
-    my $args -> {"format"} = "plain";
+    $args -> {"format"} = "plain";
 
     # Force required fields
     return $self -> self_error("Email subject not specified") unless($args -> {"subject"});
