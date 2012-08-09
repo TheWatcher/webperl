@@ -40,18 +40,15 @@ use Module::Load;
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = {
-        @_,
-    };
+    my $self = $class -> SUPER::new(@_);
+
+    return undef if(!$self);
 
     # Ensure that we have objects that we need
-    return SystemModule::set_error("cgi object not set")      unless($self -> {"cgi"});
-    return SystemModule::set_error("dbh object not set")      unless($self -> {"dbh"});
-    return SystemModule::set_error("settings object not set") unless($self -> {"settings"});
-    return SystemModule::set_error("app object not set")      unless($self -> {"app"});
-    return SystemModule::set_error("logger object not set")   unless($self -> {"logger"});
+    return SystemModule::set_error("cgi object not set") unless($self -> {"cgi"});
+    return SystemModule::set_error("app object not set") unless($self -> {"app"});
 
-    return bless $self, $class;
+    return $self;
 }
 
 
@@ -152,4 +149,3 @@ sub load_method {
 }
 
 1;
-

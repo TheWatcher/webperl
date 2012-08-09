@@ -40,11 +40,8 @@ use base qw(SystemModule);
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = {
-        @_,
-    };
 
-    return bless $self, $class;
+    return $class -> SUPER::new(@_);
 }
 
 
