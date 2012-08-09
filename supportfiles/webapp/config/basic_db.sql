@@ -51,15 +51,16 @@ CREATE TABLE `blocks` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `email_queue`
+-- Table structure for table `message_queue`
 --
 
-CREATE TABLE `email_queue` (
+CREATE TABLE `message_queue` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   `created` int(10) unsigned NOT NULL COMMENT 'The unix timestamp of when this message was created',
   `creator_id` int(10) unsigned DEFAULT NULL COMMENT 'Who created this message (NULL = system)',
   `deleted` int(10) unsigned DEFAULT NULL COMMENT 'Timestamp of message deletion',
   `deleted_id` int(10) unsigned DEFAULT NULL COMMENT 'Who deleted the message?',
+  `message_ident` varchar(128) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Generic identifier, may be used for message lookup after addition',
   `subject` varchar(255) COLLATE utf8_unicode_ci NOT NULL COMMENT 'The message subject',
   `body` text COLLATE utf8_unicode_ci NOT NULL COMMENT 'The message body',
   `format` enum('text') COLLATE utf8_unicode_ci NOT NULL DEFAULT 'text' COMMENT 'Message format, for possible extension',
@@ -70,22 +71,25 @@ CREATE TABLE `email_queue` (
   PRIMARY KEY (`id`),
   KEY `created` (`created`),
   KEY `deleted` (`deleted`),
-  KEY `result` (`status`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Stores mails to be sent through Emailer:: modules';
+  KEY `result` (`status`),
+  KEY `message_ident` (`message_ident`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci COMMENT='Stores messages to be sent through Message:: modules';
+
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `email_recipients`
+-- Table structure for table `message_recipients`
 --
 
-CREATE TABLE `email_recipients` (
+CREATE TABLE `message_recipients` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `email_id` int(10) unsigned NOT NULL COMMENT 'ID of the email this is a recipient entry for',
+  `message_id` int(10) unsigned NOT NULL COMMENT 'ID of the message this is a recipient entry for',
   `recipient_id` int(10) unsigned NOT NULL COMMENT 'ID of the user sho should get the email',
   PRIMARY KEY (`id`),
-  KEY `email_id` (`email_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Stores the recipients of emails';
+  KEY `email_id` (`message_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Stores the recipients of messages';
+
 
 -- --------------------------------------------------------
 
