@@ -49,7 +49,7 @@ sub new {
 # ============================================================================
 #  Addition and deletion
 
-## @method $ add_message($args)
+## @method $ queue_message($args)
 # Add a message to the message queue. This will add a message to the queue table,
 # ready to be sent at a later time by Message::Sender. The supported arguments are
 # as follows:
@@ -73,7 +73,10 @@ sub new {
 #       between the message beng added and the first point at which it may be
 #       sent. Note that, if both this and send_at are specified, the delay is
 #       added to the value specified in send_at.
-sub add_message {
+#
+# @param args A hash, or a reference to a hash, of arguments defining the message.
+# @return true on success, undef on error.
+sub queue_message {
     my $self = shift;
     my $args = hash_or_hashref(@_);
     $args -> {"now"}  = time();
