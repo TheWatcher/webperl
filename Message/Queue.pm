@@ -184,7 +184,7 @@ sub _queue_message {
 }
 
 
-## @method private _add_recipient($messageid, $recipientid)
+## @method private $ _add_recipient($messageid, $recipientid)
 # Add a message recipient. This creates a new recipient row, associating the
 # specified recipient userid with a message.
 #
