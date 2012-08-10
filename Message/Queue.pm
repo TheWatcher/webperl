@@ -113,11 +113,11 @@ sub queue_message {
     return $self -> self_error("Email subject not specified") unless($args -> {"subject"});
     return $self -> self_error("Email body not specified") unless($args -> {"message"});
     return $self -> self_error("No recipients specified")
-        if(!$self -> {"recipients"} || ref($self -> {"recipients"}) ne "ARRAY" || !scalar(@{$self -> {"recipients"}}));
+        unless($args -> {"recipients"} && (ref($args -> {"recipients"}) eq "ARRAY") && scalar(@{$args -> {"recipients"}}));
 
     # If unique recipients are set, each recipient gets a copy of the message
     if($args -> {"unique_recip"}) {
-        foreach my $recip (@{$self -> {"recipients"}}) {
+        foreach my $recip (@{$args -> {"recipients"}}) {
             my $msgid = $self -> _queue_message($args)
                 or return undef;
 
@@ -130,7 +130,7 @@ sub queue_message {
         my $msgid = $self -> _queue_message($args)
                 or return undef;
 
-        foreach my $recip (@{$self -> {"recipients"}}) {
+        foreach my $recip (@{$args -> {"recipients"}}) {
             $self -> _add_recipient($msgid, $recip)
                 or return undef;
         }
