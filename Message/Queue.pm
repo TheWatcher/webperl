@@ -164,7 +164,7 @@ sub delete_message {
     if($args -> {"id"}) {
         return $self -> _delete_by_field("id", $args -> {"id"}, $args -> {"userid"}, $now);
     } elsif($args -> {"ident"}) {
-        return $self -> _delete_by_field("ident", $args -> {"ident"}, $args -> {"userid"}, $now);
+        return $self -> _delete_by_field("message_ident", $args -> {"ident"}, $args -> {"userid"}, $now);
     }
 
     return $self -> self_error("No id or ident passed to delete_message()");
