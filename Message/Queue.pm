@@ -41,13 +41,31 @@ use Utils qw(hash_or_hashref);
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
+    my $self     = $class -> SUPER::new(@_)
+        or return undef;
 
-    return $class -> SUPER::new(@_);
+    # Define fields the user is allowed to search on in _get_by_field()
+    $self -> {"get_fields"} = {"id"            => 1,
+                               "created"       => 1,
+                               "creator_id"    => 1,
+                               "deleted"       => 1,
+                               "deleted_id"    => 1,
+                               "message_ident" => 1,
+                               "status"        => 1,
+                               "send_after"    => 1,
+                               "sent_time"     => 1,
+                               "error_message" => 1
+    };
+
+    return $self;
 }
 
 
 # ============================================================================
 #  Addition and deletion
+
+# Note: no editing. If messages need to be revised, they should be deleted and a
+#       new message queued.
 
 ## @method $ queue_message($args)
 # Add a message to the message queue. This will add a message to the queue table,
@@ -57,7 +75,8 @@ sub new {
 # - subject (required) The email subject.
 # - message (required) The body content to show in the email.
 # - recipients (required) A reference to an array of userids. Each user will recieve
-#       a copy of the message.
+#       a copy of the message. If unique_recip is not set, the recipients may be
+#       visible to each other under some transports.
 # - unique_recip (optional) If set, copy of the message is made for each recipient,
 #       with one recipient per message (defaults to false).
 # - ident (optional) Allow a user-definable identifier string to be attached to
@@ -67,12 +86,12 @@ sub new {
 #       undef, the message is recorded as a system-generated one. Note that the
 #       interpretation of this field is controlled by Message::Sender - it may
 #       be used to determine the From: address, or it may be ignored.
-# - send_at (optional) Specify the unix timestamp at which the message should be
+# - send_after (optional) Specify the unix timestamp at which the message should be
 #       sent. If this is not specified, the creation time is used.
 # - delay (optional) If specified, this introduces a delay, specified in seconds,
 #       between the message beng added and the first point at which it may be
-#       sent. Note that, if both this and send_at are specified, the delay is
-#       added to the value specified in send_at.
+#       sent. Note that, if both this and send_after are specified, the delay is
+#       added to the value specified in send_after.
 #
 # @param args A hash, or a reference to a hash, of arguments defining the message.
 # @return true on success, undef on error.
@@ -84,8 +103,8 @@ sub queue_message {
     $self -> clear_error();
 
     # Sort out the send time, based on possible user specified send time and delay
-    $args -> {"send_at"} = $args -> {"now"} unless($args -> {"send_at"});
-    $args -> {"send_at"} += $args -> {"delay"} if($args -> {"delay"});
+    $args -> {"send_after"} = $args -> {"now"} unless($args -> {"send_after"});
+    $args -> {"send_after"} += $args -> {"delay"} if($args -> {"delay"});
 
     # FUTURE: potentially support other formats here. See also: https://www.youtube.com/watch?v=JENdgiAPD6c however.
     $args -> {"format"} = "plain";
@@ -149,6 +168,78 @@ sub delete_message {
     }
 
     return $self -> self_error("No id or ident passed to delete_message()");
+}
+
+
+# ============================================================================
+#  Retrieval
+
+## @method $ get_message($messageid, $permit_deleted)
+# Fetch the data for an individual message. This will retrieve the message data, and
+# the list of recipients of the message, and return the data in a hashref.
+#
+# @param messageid      The ID of the message to fetch the data for.
+# @param permit_deleted If true, deleted messages may be fetched as well. This should
+#                       not be set in most cases!
+# @return A reference to a hash containing the message data on success, undef
+#         otherwise.
+sub get_message {
+    my $self           = shift;
+    my $messageid      = shift;
+    my $permit_deleted = shift;
+
+    $self -> clear_error();
+
+    my $messages = $self -> _get_by_fields([{"id", "=", $messageid}], $permit_deleted)
+        or return undef;
+
+    return $self -> self_error("Unable to locate message $messageid: message does not exist")
+        if(!scalar(@{$messages}));
+
+    return $messages -> [0];
+}
+
+
+## @method $ get_messages($ident, $permit_deleted)
+# Fetch zero or more messages based on their message ident. This retrieves the data
+# for all messages that have the specified message ident, and returns the data as
+# a refernece to an array of message hashrefs.
+#
+# @param ident          The message ident to search for.
+# @param permit_deleted If true, deleted messages may be fetched as well. This should
+#                       not be set in most cases!
+# @return A reference to an array of hashrefs on success, undef on error. Note that
+#         if there are no matching messages, this returns a reference to an empty array.
+sub get_messages {
+    my $self           = shift;
+    my $ident          = shift;
+    my $permit_deleted = shift;
+
+    return $self -> _get_by_fields([{"message_ident", "=", $ident}], $permit_deleted);
+}
+
+
+## @method $ get_sendable_messages($include_failed)
+# Fetch a list of all messages that can be sent at this time. This will look up all
+# messages with a send_after that is less than or equal to the current time that
+# have not yet been sent.
+#
+# @param include_failed If true, messages that have failed are included in the
+#                       list of returned messages.
+# @return A reference to an array of hashrefs on success, undef on error. Note that
+#         if there are no matching messages, this returns a reference to an empty array.
+sub get_sendable_messages {
+    my $self           = shift;
+    my $include_failed = shift;
+    my $fieldspec = [ { "send_after", "<=", time() } ];
+
+    if($include_failed) {
+        push(@{$fieldspec}, {"orgroup" => [ { "status", "=", "pending" }, { "status", "=", "failed" } ]});
+    } else {
+        push(@{$fieldspec}, {"status", "=", "pending" } );
+    }
+
+    return $self -> _get_by_fields($fieldspec);
 }
 
 
@@ -230,7 +321,7 @@ sub _delete_by_field {
     $self -> clear_error();
 
     # Force valid field
-    $field = "id" unless($field eq "message_ident");
+    $field = "id" unless($field && ($field eq "id" || $field eq "message_ident"));
 
     my $nukeh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"message_queue"}."`
                                              SET deleted = ?, deleted_id = ?
@@ -243,5 +334,115 @@ sub _delete_by_field {
     return 0 if($result eq "0E0"); # need a special case for the zero rows, just in case...
     return $result;
 }
+
+
+## @method private $ _where_field($field, $bindarray)
+# A utility function to make the where clause calculation in _get_by_fields() less horrible.
+# This constructs a where clause expression (field op placeholder) and inserts a value
+# into the bind array if needed.
+#
+# @param field     A reference to a hash containing the field, operation, and value.
+# @param bindarray A reference to an array to store bind values in.
+# @return A string containing the where clause expression.
+sub _where_field {
+    my $self      = shift;
+    my $field     = shift;
+    my $bindarray = shift;
+
+    # fix up the field and op if needed
+    $field -> {"field"} = "id" unless($self -> {"get_fields"} -> {$field -> {"field"}});
+    $field -> {"op"}    = "="  unless($field -> {"op"} && ($field -> {"op"} eq "=" ||
+                                                           $field -> {"op"} =~ /^(NOT )? LIKE$/io ||
+                                                           $field -> {"op"} =~ /^[<>!]=?$/io ||
+                                                           $field -> {"op"} =~ /^IS( NOT)? NULL$/io));
+    my $where = $field -> {"field"}." ".$field -> {"op"};
+
+    if($field -> {"op"} !~ /^IS/) {
+        $where .= " ?";
+        push(@{$bindarray}, $field -> {"value"});
+    }
+
+    return $where;
+}
+
+
+## @method private $ _get_by_fields($fieldspec, $permit_deleted)
+# Fetch zero or more messages based on the value in a specified field. This retrieves
+# the data for all messages that have the specified value, and returns the data as
+# a reference to an array of message hashrefs.
+#
+# @param fieldspec      A reference to an array of field hashes, each entry must contain
+#                       three keys: field, op, and value. field names must appear in
+#                       $self -> {"get_fields"}. Each entry is ANDed to the where clause,
+#                       there is no support for OR
+# @param permit_deleted If true, deleted messages may be fetched as well. This should
+#                       not be set in most cases!
+# @return A reference to an array of hashrefs on success (note that if there are no
+#         matching messages, the array will be empty!), undef on error.
+sub _get_by_fields {
+    my $self           = shift;
+    my $fieldspec      = shift;
+    my $permit_deleted = shift;
+    my $results = [];
+
+    $self -> clear_error();
+
+    my $fields = scalar(@{$fieldspec});
+    return $self -> self_error("No fields specified in call to _get_by_fields()") if(!$fields);
+
+    # Build the where clause
+    my $where = "";
+    my @fetch_bind;
+    for(my $field = 0; $field < $fields; ++$field) {
+        # If the field contains a group of expressions to OR together, process it
+        if($fieldspec -> [$field] -> {"orgroup"}) {
+            my $group = "";
+
+            foreach my $grpfield (@{$fieldspec -> [$field] -> {"orgroup"}}) {
+                $group .= "OR " if($group);
+                $group .= $self -> _where_field($grpfield, \@fetch_bind);
+            }
+
+            $where .= $field ? "WHERE " : " AND ";
+            $where .= "($group)";
+
+        # Otherwise add the field on.
+        } else {
+            # Build the where clause fragment
+            $where .= $field ? " AND " : "WHERE ";
+            $where .= $self -> _where_field($fieldspec -> [$field], \@fetch_bind);
+        }
+    }
+
+    # Prepare some queries...
+    my $fetch = $self -> {"dbh"} -> prepare("SELECT *
+                                             FROM  `".$self -> {"settings"} -> {"database"} -> {"message_queue"}."`
+                                             $where".($permit_deleted ? "" : " AND deleted IS NULL"));
+
+    my $reciph = $self -> {"dbh"} -> prepare("SELECT recipient_id
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"message_recipients"}."`
+                                              WHERE message_id = ?");
+
+    $fetch -> execute(@fetch_bind)
+        or return $self -> self_error("Unable to perform message lookup: ". $self -> {"dbh"} -> errstr);
+
+    while(my $message = $fetch -> fetchrow_hashref()) {
+        $reciph -> execute($message -> {"id"})
+            or return $self -> self_error("Unable to perform message ".$message -> {"id"}." recipient lookup: ". $self -> {"dbh"} -> errstr);
+
+        $message -> {"recipients"} = [];
+        while(my $recipient = $reciph -> fetchrow_arrayref()) {
+            push(@{$message -> {"recipients"}}, $recipient -> [0]);
+        }
+
+        return $self -> self_error("Message ".$message -> {"id"}." has no recorded recipients. This should not happen.")
+            if(!scalar(@{$message -> {"recipients"}}));
+
+        push(@{$results}, $message);
+    }
+
+    return $results;
+}
+
 
 1;
