@@ -190,7 +190,7 @@ sub get_message {
 
     $self -> clear_error();
 
-    my $messages = $self -> _get_by_fields([{"id", "=", $messageid}], $permit_deleted)
+    my $messages = $self -> _get_by_fields([{field => "id", op => "=", value => $messageid}], $permit_deleted)
         or return undef;
 
     return $self -> self_error("Unable to locate message $messageid: message does not exist")
@@ -215,7 +215,7 @@ sub get_messages {
     my $ident          = shift;
     my $permit_deleted = shift;
 
-    return $self -> _get_by_fields([{"message_ident", "=", $ident}], $permit_deleted);
+    return $self -> _get_by_fields([{field => "message_ident", op => "=", value => $ident}], $permit_deleted);
 }
 
 
@@ -231,12 +231,12 @@ sub get_messages {
 sub get_sendable_messages {
     my $self           = shift;
     my $include_failed = shift;
-    my $fieldspec = [ { "send_after", "<=", time() } ];
+    my $fieldspec = [ { field => "send_after", op => "<=", value => time() } ];
 
     if($include_failed) {
-        push(@{$fieldspec}, {"orgroup" => [ { "status", "=", "pending" }, { "status", "=", "failed" } ]});
+        push(@{$fieldspec}, {"orgroup" => [ { field => "status", op => "=", value => "pending" }, { field => "status", op => "=", value => "failed" } ]});
     } else {
-        push(@{$fieldspec}, {"status", "=", "pending" } );
+        push(@{$fieldspec}, {field => "status", op => "=", value => "pending" } );
     }
 
     return $self -> _get_by_fields($fieldspec);
