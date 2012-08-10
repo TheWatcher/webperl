@@ -107,7 +107,7 @@ sub queue_message {
     $args -> {"send_after"} += $args -> {"delay"} if($args -> {"delay"});
 
     # FUTURE: potentially support other formats here. See also: https://www.youtube.com/watch?v=JENdgiAPD6c however.
-    $args -> {"format"} = "plain";
+    $args -> {"format"} = "text";
 
     # Force required fields
     return $self -> self_error("Email subject not specified") unless($args -> {"subject"});
