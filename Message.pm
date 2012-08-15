@@ -40,9 +40,29 @@ sub new {
     my $self = $class -> SUPER::new(@_)
         or return undef;
 
-    return SystemModule::set_error("No module object available.")   if(!$self -> {"module"});
-
     return $self;
+}
+
+
+## @method void DESTROY()
+# Destructor method to prevent a circular list formed from a reference to the modules
+# object from derailing normal destruction.
+sub DESTROY {
+    my $self = shift;
+
+    $self -> {"module"} = undef;
+}
+
+
+## @method void set_module_obj($module)
+# Set the reference to the system module loader. This allows deferred initialisation
+# of the module loader.
+#
+# @param module A reference to the system module handler object.
+sub set_module_obj {
+    my $self = shift;
+
+    $self -> {"module"} = shift;
 }
 
 
@@ -80,6 +100,9 @@ sub get_transports {
 sub load_transport_module {
     my $self = shift;
     my $args = hash_or_hashref(@_);
+
+    return $self -> self_error("Module loader not available at this time")
+        unless($self -> {"module"});
 
     # Work out which field is being searched on
     my $field;
