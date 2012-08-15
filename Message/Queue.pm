@@ -168,9 +168,9 @@ sub delete_message {
     $self -> clear_error();
 
     if($args -> {"id"}) {
-        return $self -> _delete_by_field("id", $args -> {"id"}, $args -> {"userid"}, $now);
+        return $self -> _delete_by_id($args -> {"id"}, $args -> {"userid"}, $now);
     } elsif($args -> {"ident"}) {
-        return $self -> _delete_by_field("message_ident", $args -> {"ident"}, $args -> {"userid"}, $now);
+        return $self -> _delete_by_ident($args -> {"ident"}, $args -> {"userid"}, $now);
     }
 
     return $self -> self_error("No id or ident passed to delete_message()");
@@ -481,64 +481,107 @@ sub _add_recipient {
 }
 
 
-## @method private $ _delete_by_field($field, $value, $userid, $deleted)
-# Attempt to delete messages where the specified field contains the value given.
-# Note that this *does not* remove the message from the table, it simply marks
-# it as deleted so that get_message() will not normally return it. This will not
-# delete messages that have been sent or viewed.
+## @method private $ _delete_by_ident($ident, $userid, $deleted);
+# Delete messages with the specified message ident. This may delete zero or more
+# messages, and will not delete messages that have been sent or viewed.
 #
-# @param field   The database table field to search for messages on.
-# @param value   When a given message has this value in the specified field, it is
-#                marked as deleted (aleady deleted messages are not changed)
-# @param userid  The user performing the delete. May be undef.
-# @param deleted The timestamp to place in the deleted field.
-# @return The number of rows deleted.
-sub _delete_by_field {
+# @param ident   Messages with this message ident will be deleted.
+# @param userid    The user performing the delete. May be undef.
+# @param deleted   The timestamp to place in the deleted field.
+# @return The number of messages deleted (which may be zero) on success, undef
+#         on error.
+sub _delete_by_ident {
     my $self    = shift;
-    my $field   = shift;
-    my $value   = shift;
+    my $ident   = shift;
     my $userid  = shift;
     my $deleted = shift;
 
     $self -> clear_error();
 
-    # Force valid field
-    $field = "id" unless($field && ($field eq "id" || $field eq "message_ident"));
+    $self -> {"logger"} -> log("messaging", $userid || 0, undef, "Attempting delete of messages with ident $ident");
 
-    $self -> {"logger"} -> log("messaging", $userid || 0, undef, "Attempting delete of message(s) with $field = '$value'");
+    my $messh = $self -> {"dbh"} -> prepare("SELECT id
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"message_queue"}."`
+                                             WHERE message_ident = ?");
+    $messh -> execute($ident)
+        or return $self -> self_error("Unable to perform message ident lookup: ". $self -> {"dbh"} -> errstr);
+
+    my $deleted = 0;
+    while(my $msgid = $messh -> fetchrow_arrayref()) {
+        my $result = $self -> _delete_by_id($msgid -> [0], $userid, $deleted);
+        return undef if(!defined($result));
+
+        $deleted += $result;
+    }
+
+    return $deleted;
+}
+
+
+## @method private $ _delete_by_id($messageid, $userid, $deleted)
+# Attempt to delete the message with the specified message id.
+# Note that this *does not* remove the message from the table, it simply marks
+# it as deleted so that get_message() will not normally return it. This will not
+# delete messages that have been sent or viewed.
+#
+# @param messageid The ID of the message to delete.
+# @param userid    The user performing the delete. May be undef.
+# @param deleted   The timestamp to place in the deleted field.
+# @return 1 of the message is deleted, 0 if the message can not be deleted
+#         because it has been sent or viewed, undef on error.
+sub _delete_by_id {
+    my $self      = shift;
+    my $messageid = shift;
+    my $userid    = shift;
+    my $deleted   = shift;
+
+    $self -> clear_error();
+
+    $self -> {"logger"} -> log("messaging", $userid || 0, undef, "Attempting delete of message $messageid");
 
     # Check that the message has no views
     my $viewh = $self -> {"dbh"} -> prepare("SELECT COUNT(*)
-                                             FROM `".$self -> {"settings"} -> {"database"} -> {"message_queue"}."` AS q,
-                                                  `".$self -> {"settings"} -> {"database"} -> {"message_recipients"}."` AS r
-                                             WHERE q.$field = ?
-                                             AND r.message_id = q.id
-                                             AND r.viewed IS NOT NULL");
-    $viewh -> execute($value)
-        or return $self -> self_error("Unable to perform message view check: ". $self -> {"dbh"} -> errstr);
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"message_recipients"}."`
+                                             WHERE message_id = ?
+                                             AND viewed IS NOT NULL");
+    $viewh -> execute($messageid)
+        or return $self -> self_error("Unable to perform message $messageid view check: ". $self -> {"dbh"} -> errstr);
 
     my $views = $viewh -> fetchrow_arrayref()
-        or return $self -> self_error("Unable to obtain message view count. This should not happen!");
+        or return $self -> self_error("Unable to obtain message $messageid view count. This should not happen!");
 
-    # If the view count is non-zero, the message or message group can not be deleted.
+    # If the view count is non-zero, the message can not be deleted.
     return 0 if($views -> [0]);
 
-    $self -> {"logger"} -> log("messaging", $userid || 0, undef, "Delete of message(s) with $field = '$value' passed view check");
+    # Check that the message has not been sent
+    my $senth = $self -> {"dbh"} -> prepare("SELECT COUNT(*)
+                                             FROM `".$self -> {"settings"} -> {"database"} -> {"message_status"}."`
+                                             WHERE message_id = ?
+                                             AND status = 'sent'");
+
+    $senth -> execute($messageid)
+        or return $self -> self_error("Unable to perform message $messageid sent check: ". $self -> {"dbh"} -> errstr);
+
+    my $sent = $senth -> fetchrow_arrayref()
+        or return $self -> self_error("Unable to obtain message $messageid sent count. This should not happen!");
+
+    # If the sent count is non-zero, the message can not be deleted.
+    return 0 if($sent -> [0]);
+
+    $self -> {"logger"} -> log("messaging", $userid || 0, undef, "Delete of message $messageid passed view and sent check");
 
     # Otherwise, nobody is marked as having seen the message, if it hasn't been sent, mark it as deleted
     my $nukeh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"message_queue"}."`
                                              SET deleted = ?, deleted_id = ?
                                              WHERE $field = ?
-                                             AND status != 'sent'
                                              AND deleted IS NULL");
     my $result = $nukeh -> execute($deleted, $userid, $value);
     return $self -> self_error("Unable to perform message delete: ". $self -> {"dbh"} -> errstr) if(!$result);
 
+    $self -> {"logger"} -> log("messaging", $userid || 0, undef, "Delete of message $messageid row updated count: $result");
+
     # Result should contain the number of rows updated.
     return 0 if($result eq "0E0"); # need a special case for the zero rows, just in case...
-
-    $self -> {"logger"} -> log("messaging", $userid || 0, undef, "Delete of message(s) with $field = '$value' marked $result messages");
-
     return $result;
 }
 
