@@ -22,6 +22,7 @@
 package Message;
 use strict;
 use base qw(SystemModule);
+use Utils qw(hash_or_hashref);
 
 # ============================================================================
 #  Constructor
@@ -36,8 +37,70 @@ use base qw(SystemModule);
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
+    my $self = $class -> SUPER::new(@_)
+        or return undef;
 
-    return $class -> SUPER::new(@_);
+    return SystemModule::set_error("No module object available.")   if(!$self -> {"module"});
+
+    return $self;
+}
+
+
+# ============================================================================
+#  Transport handling
+
+## @method $ get_transports($include_inactive)
+# Obtain a list of currently defined message transports. This will return an array of
+# transport hashes describing the currently defined transports.
+#
+# @param include_inactive Include all transports, even if they are marked as inactive.
+# @return A reference to an array of transport record hashrefs.
+sub get_transports {
+    my $self             = shift;
+    my $include_inactive = shift;
+
+    $self -> clear_error();
+
+    my $transh = $self -> {"dbh"} -> prepare("SELECT *
+                                              FROM `".$self -> {"settings"} -> {"database"} -> {"message_transports"}."`".
+                                             ($include_inactive ? "" : " WHERE enabled = 1"));
+    $transh -> execute()
+        or return $self -> self_error("Unable to perform message transport lookup: ". $self -> {"dbh"} -> errstr);
+
+    return $transh -> fetchall_arrayref({});
+}
+
+
+## @method $ load_transport_module($args)
+# Attempt to load an create an instance of a Message::Transport module.
+#
+# @param modulename The name of the transport module to load.
+# @return A reference to an instance of the requested transport module on success,
+#         undef on error.
+sub load_transport_module {
+    my $self = shift;
+    my $args = hash_or_hashref(@_);
+
+    # Work out which field is being searched on
+    my $field;
+    if($args -> {"id"}) {
+        $field = "id";
+    } elsif($args -> {"name"}) {
+        $field = "name";
+    } else {
+        return $self -> self_error("Incorrect arguments to load_transport_module: id or name not provided");
+    }
+
+    my $modh = $self -> {"dbh"} -> prepare("SELECT perl_module
+                                            FROM `".$self -> {"settings"} -> {"database"} -> {"message_transports"}."`
+                                            WHERE $field = ?");
+    $modh -> execute($args -> {$field})
+        or return $self -> self_error("Unable to execute transport module lookup: ".$self -> {"dbh"} -> errstr);
+
+    my $modname = $modh -> fetchrow_arrayref()
+        or return $self -> self_error("Unable to fetch module name for transport module: entry does not exist");
+
+    return $self -> {"module"} -> load_module($modname -> [0]);
 }
 
 1;
