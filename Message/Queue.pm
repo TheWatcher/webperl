@@ -506,15 +506,15 @@ sub _delete_by_ident {
     $messh -> execute($ident)
         or return $self -> self_error("Unable to perform message ident lookup: ". $self -> {"dbh"} -> errstr);
 
-    my $deleted = 0;
+    my $deletecount = 0;
     while(my $msgid = $messh -> fetchrow_arrayref()) {
         my $result = $self -> _delete_by_id($msgid -> [0], $userid, $deleted);
         return undef if(!defined($result));
 
-        $deleted += $result;
+        $deletecount += $result;
     }
 
-    return $deleted;
+    return $deletecount;
 }
 
 
@@ -573,9 +573,9 @@ sub _delete_by_id {
     # Otherwise, nobody is marked as having seen the message, if it hasn't been sent, mark it as deleted
     my $nukeh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"message_queue"}."`
                                              SET deleted = ?, deleted_id = ?
-                                             WHERE $field = ?
+                                             WHERE $id = ?
                                              AND deleted IS NULL");
-    my $result = $nukeh -> execute($deleted, $userid, $value);
+    my $result = $nukeh -> execute($deleted, $userid, $messageid);
     return $self -> self_error("Unable to perform message delete: ". $self -> {"dbh"} -> errstr) if(!$result);
 
     $self -> {"logger"} -> log("messaging", $userid || 0, undef, "Delete of message $messageid row updated count: $result");
