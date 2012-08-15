@@ -573,7 +573,7 @@ sub _delete_by_id {
     # Otherwise, nobody is marked as having seen the message, if it hasn't been sent, mark it as deleted
     my $nukeh = $self -> {"dbh"} -> prepare("UPDATE `".$self -> {"settings"} -> {"database"} -> {"message_queue"}."`
                                              SET deleted = ?, deleted_id = ?
-                                             WHERE $id = ?
+                                             WHERE id = ?
                                              AND deleted IS NULL");
     my $result = $nukeh -> execute($deleted, $userid, $messageid);
     return $self -> self_error("Unable to perform message delete: ". $self -> {"dbh"} -> errstr) if(!$result);
