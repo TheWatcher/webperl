@@ -217,6 +217,8 @@ sub run {
                                           messages => $self -> {"messages"})
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create module handling object: ".$Modules::errstr);
 
+    $self -> {"messages"} -> set_module_obj($self -> {"modules"});
+
     if($self -> {"system"}) {
         $self -> {"system"} -> init(logger   => $self -> {"logger"},
                                     cgi      => $self -> {"cgi"},
