@@ -54,17 +54,10 @@
 # modules will be given the standard value listed above in addition to any
 # values you specify in the argument hash.
 package Modules;
-
+use strict;
+use base qw(SystemModule);
 use DBI;
 use Module::Load;
-use SystemModule;
-use strict;
-
-our $errstr;
-
-BEGIN {
-    $errstr = '';
-}
 
 # ==============================================================================
 # Creation
@@ -93,39 +86,16 @@ BEGIN {
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = {
-        cgi       => undef,
-        dbh       => undef,
-        phpbb     => undef,
-        settings  => undef,
-        template  => undef,
-        session   => undef,
-        blockdir  => undef,
-        @_,
-    };
-
-    # If we get here and still don't have a database connection, we need to fall over
-    return set_error("No database connection available.") if(!$self -> {"dbh"});
-
-    # Check we also have a cgi object to play with
-    return set_error("No CGI object available.") if(!$self -> {"cgi"});
-
-    # Aaand settings....
-    return set_error("No settings object available.") if(!$self -> {"settings"});
-
-    # ... finally, template
-    return set_error("No template object available.") if(!$self -> {"template"});
-
-    my $obj = bless $self, $class;
+    my $self     = $class -> SUPER::new(@_)
+        or return undef;
 
     # update @INC if needed
-    $obj -> add_load_path($self -> {"blockdir"}) if($self -> {"blockdir"});
+    $self -> add_load_path($self -> {"blockdir"}) if($self -> {"blockdir"});
 
     # Set the template object's module reference
-    $obj -> {"template"} -> set_module_obj($obj);
+    $self -> {"template"} -> set_module_obj($obj) if($self -> {"template"});
 
-    # and we're done
-    return $obj
+    return $self;
 }
 
 
@@ -172,7 +142,7 @@ sub new_module {
     my $sth = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"settings"} -> {"database"} -> {"blocks"}."
                                            WHERE $mode");
     $sth -> execute($arg) or
-        $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "new_module: Unable to execute query: ". $self -> {"dbh"} -> errstr);
+        $self -> {"logger"} -> die_log("unknown", "new_module: Unable to execute query: ". $self -> {"dbh"} -> errstr);
 
     my $modrow = $sth -> fetchrow_hashref();
 
@@ -201,7 +171,7 @@ sub new_module_byblockid {
     my $sth = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"settings"} -> {"database"} -> {"blocks"}."
                                            WHERE id = ?");
     $sth -> execute($blockid) or
-        $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "new_module_byblockid: Unable to execute query: ". $self -> {"dbh"} -> errstr);
+        $self -> {"logger"} -> die_log("unknown", "new_module_byblockid: Unable to execute query: ". $self -> {"dbh"} -> errstr);
 
     my $modrow = $sth -> fetchrow_hashref();
 
@@ -290,7 +260,7 @@ sub _new_module_internal {
 
     my $modh = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"settings"} -> {"database"} -> {"modules"}." $where");
     $modh -> execute($argument)
-        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to execute module resolve query: ".$self -> {"dbh"} -> errstr);
+        or $self -> {"logger"} -> die_log("unknown", "Unable to execute module resolve query: ".$self -> {"dbh"} -> errstr);
 
     my $modrow = $modh -> fetchrow_hashref();
 
@@ -372,7 +342,7 @@ sub build_sidebar {
                                            WHERE TYPE = ? AND $filter
                                            ORDER BY position");
     $sth -> execute($side, $page) or
-        $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "build_sidebar: Unable to execute query: ". $self -> {"dbh"} -> errstr);
+        $self -> {"logger"} -> die_log("unknown", "build_sidebar: Unable to execute query: ". $self -> {"dbh"} -> errstr);
 
     my $result = "";
     while(my $row = $sth -> fetchrow_hashref()) {
@@ -405,7 +375,7 @@ sub get_block_id {
     my $blockh = $self -> {"dbh"} -> prepare("SELECT id FROM ".$self -> {"settings"} -> {"database"} -> {"blocks"}."
                                               WHERE name LIKE ?");
     $blockh -> execute($blockname)
-        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "get_block_id: Unable to execute query: ". $self -> {"dbh"} -> errstr);
+        or $self -> {"logger"} -> die_log("unknown", "get_block_id: Unable to execute query: ". $self -> {"dbh"} -> errstr);
 
     # Do we have the block?
     my $blockr = $blockh -> fetchrow_arrayref();
