@@ -350,14 +350,26 @@ sub deliver_queue {
     my $self       = shift;
     my $try_failed = shift;
 
+    $self -> {"logger"} -> log("messaging", 0, undef, "Starting queue delivery");
+
+    # Keep some counters...
+    my $counts = { "transports" => 0,
+                   "messages"   => 0,
+                   "success"    => 0,
+    };
+
     # Go through the list of transports, fetching the messages that can be sent by
     # that transport and try to send them.
     my $transports = $self -> get_transports();
     foreach my $transport (@{$transports}) {
+        ++$counts -> {"transports"};
+
         my $messages = $self -> get_sendable_messages($transport -> {"id"}, $try_failed)
             or return undef;
 
         if(scalar(@{$messages})) {
+            $counts -> {"messages"} += scalar(@{$messages});
+
             # Load the transport...
             $transport -> {"module"} = $self -> load_transport_module(id => $transport -> {"id"})
                 or return $self -> self_error("Transport loading failed: ".$self -> {"errstr"});
@@ -365,6 +377,8 @@ sub deliver_queue {
             # Try to deliver each sendable message
             foreach my $message (@{$messages}) {
                 my $sent = $transport -> {"module"} -> deliver($message);
+
+                ++$counts -> {"success"} if($sent);
 
                 # Store the send status for this transport
                 $self -> update_status($message -> {"id"},
@@ -375,6 +389,7 @@ sub deliver_queue {
             }
         }
     }
+    $self -> {"logger"} -> log("messaging", 0, undef, "Queue delivery finished, processed ".$counts -> {"messages"}." through ".$counts -> {"transports"}.". ".$counts -> {"success"}." messages sent, ".($counts -> {"messages"} - $counts -> {"success"})." failed.");
 }
 
 
