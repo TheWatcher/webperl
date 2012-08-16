@@ -389,7 +389,7 @@ sub deliver_queue {
             }
         }
     }
-    $self -> {"logger"} -> log("messaging", 0, undef, "Queue delivery finished, processed ".$counts -> {"messages"}." through ".$counts -> {"transports"}.". ".$counts -> {"success"}." messages sent, ".($counts -> {"messages"} - $counts -> {"success"})." failed.");
+    $self -> {"logger"} -> log("messaging", 0, undef, "Queue delivery finished, processed ".$counts -> {"messages"}." through ".$counts -> {"transports"}." transports. ".$counts -> {"success"}." messages sent, ".($counts -> {"messages"} - $counts -> {"success"})." failed.");
 }
 
 
