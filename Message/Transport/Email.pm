@@ -65,12 +65,7 @@ sub new {
 
     # set up persistent STMP if needed
     if($self -> {"persist"}) {
-        eval { $self -> {"smtp"} = Email::Sender::Transport::SMTP::Persistent -> new(host => $self -> {"host"},
-                                                                                     port => $self -> {"port"},
-                                                                                     ssl  => $self -> {"ssl"},
-                                                                                     sasl_username => $self -> {"username"},
-                                                                                     sasl_password => $self -> {"password"});
-        };
+        eval { $self -> {"smtp"} = Email::Sender::Transport::SMTP::Persistent -> new($self -> _build_smtp_args()); };
         return SystemModule::set_error("SMTP Initialisation failed: $@") if($@);
     }
 
@@ -101,12 +96,8 @@ sub deliver {
     my $message = shift;
 
     if(!$self -> {"persist"}) {
-        eval { $self -> {"smtp"} = Email::Sender::Transport::SMTP -> new(host => $self -> {"host"},
-                                                                         port => $self -> {"port"},
-                                                                         ssl  => $self -> {"ssl"},
-                                                                         sasl_username => $self -> {"username"},
-                                                                         sasl_password => $self -> {"password"});
-        };
+
+        eval { $self -> {"smtp"} = Email::Sender::Transport::SMTP -> new($self -> _build_smtp_args()); };
         return $self -> self_error("SMTP Initialisation failed: $@") if($@);
     }
 
@@ -149,6 +140,26 @@ sub deliver {
 
 # ============================================================================
 #  Support code
+
+## @method private % _build_smtp_args()
+# Build the argument hash to pass to the SMTP constructor.
+#
+# @return A hash of arguments to pass to the Email::Sender::Transport::SMTP constructor
+sub _build_smtp_args {
+    my $self = shift;
+
+    my %args = (host => $self -> {"host"},
+                port => $self -> {"port"},
+                ssl  => $self -> {"ssl"} || 0);
+
+    if($self -> {"username"} && $self -> {"password"}) {
+        $args{"sasl_username"} = $self -> {"username"};
+        $args{"sasl_password"} = $self -> {"password"};
+    }
+
+    return %args;
+}
+
 
 ## @method private $ _get_user_email($userid)
 # Obtain the email address set for the specified user. This class may be called outside
