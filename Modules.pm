@@ -93,7 +93,7 @@ sub new {
     $self -> add_load_path($self -> {"blockdir"}) if($self -> {"blockdir"});
 
     # Set the template object's module reference
-    $self -> {"template"} -> set_module_obj($obj) if($self -> {"template"});
+    $self -> {"template"} -> set_module_obj($self) if($self -> {"template"});
 
     return $self;
 }
