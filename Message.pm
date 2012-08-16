@@ -92,9 +92,13 @@ sub get_transports {
 
 
 ## @method $ load_transport_module($args)
-# Attempt to load an create an instance of a Message::Transport module.
+# Attempt to load an create an instance of a Message::Transport module. Valid arguments
+# are:
 #
-# @param modulename The name of the transport module to load.
+# - id, the ID of the transport to load.
+# - name, the name of the transport to laod.
+#
+# @param args A hash or arguments to define the module to load.
 # @return A reference to an instance of the requested transport module on success,
 #         undef on error.
 sub load_transport_module {

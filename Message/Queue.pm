@@ -359,7 +359,7 @@ sub deliver_queue {
 
         if(scalar(@{$messages})) {
             # Load the transport...
-            $transport -> {"module"} = $self -> load_transport_module($transport -> {"id"})
+            $transport -> {"module"} = $self -> load_transport_module(id => $transport -> {"id"})
                 or return $self -> self_error("Transport loading failed: ".$self -> {"errstr"});
 
             # Try to deliver each sendable message
