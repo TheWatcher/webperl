@@ -267,6 +267,7 @@ sub run {
 
     # Prevent circular references from messing up shutdown
     $self -> {"template"} -> set_module_obj(undef);
+    $self -> {"messages"} -> set_module_obj(undef);
     $self -> {"system"} -> clear() if($self -> {"system"});
     $self -> {"appuser"} -> set_system(undef) if($self -> {"appuser"});
 
