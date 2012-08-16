@@ -338,6 +338,47 @@ sub get_sendable_messages {
 
 
 # ============================================================================
+#  Delivery
+
+## @method $ deliver_queue($try_failed)
+# Attempt to deliver queued messages that have not yet been sent. This will invoke
+# the transport modules in turn, fetching sendable messages and trying to send them
+#
+# @param try_failed If this is set to true, transport modules will try to resend
+#                   messages that previously failed to send.
+sub deliver_queue {
+    my $self       = shift;
+    my $try_failed = shift;
+
+    # Go through the list of transports, fetching the messages that can be sent by
+    # that transport and try to send them.
+    my $transports = $self -> get_transports();
+    foreach my $transport (@{$transports}) {
+        my $messages = $self -> get_sendable_messages($transport -> {"id"}, $try_failed)
+            or return undef;
+
+        if(scalar(@{$messages})) {
+            # Load the transport...
+            $transport -> {"module"} = $self -> load_transport_module($transport -> {"id"})
+                or return $self -> self_error("Transport loading failed: ".$transport -> {"module"} -> {"errstr"});
+
+            # Try to deliver each sendable message
+            foreach my $message (@{$messages}) {
+                my $sent = $transport -> {"module"} -> deliver($message);
+
+                # Store the send status for this transport
+                $self -> update_status($message -> {"id"},
+                                       $transport -> {"id"},
+                                       $sent ? "sent" : "failed",
+                                       $sent ? undef : $transport -> {"errstr"})
+                    or return undef;
+            }
+        }
+    }
+}
+
+
+# ============================================================================
 #  Marking of various sorts
 
 ## @method $ update_status($messageid, $transportid, $status, $message)
