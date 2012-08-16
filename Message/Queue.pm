@@ -370,7 +370,7 @@ sub deliver_queue {
                 $self -> update_status($message -> {"id"},
                                        $transport -> {"id"},
                                        $sent ? "sent" : "failed",
-                                       $sent ? undef : $transport -> {"errstr"})
+                                       $sent ? undef : $transport -> {"module"} -> {"errstr"})
                     or return undef;
             }
         }
