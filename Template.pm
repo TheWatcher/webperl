@@ -684,6 +684,57 @@ sub wizard_box {
 }
 
 
+## @method $ build_optionlist($options, $default, $selectopts)
+# Generate a HTML option list based on the contents of the passed options.
+# This goes through the entries in the options list provided, processing the
+# entries into a list of html options.
+#
+# @param options    A reference to an array of hashrefs, each hash needs to contain
+#                   two keys: name and value, corresponding to the option name and value.
+# @param default    The default *value* to select in the list.
+# @param selectopts Options to set on the select element. If not provided, no select
+#                   element is generated. If provided, this should be a reference to
+#                   a hash containing select options (supported: name, id, multiple,
+#                   size, events). If events is specified, it should be a reference to
+#                   a hash containing event names (change, click, blur, etc) as
+#                   keys and the javascript operation to invoke as the value.
+# @return A string containing the option list, possibly wrapped in a select element.
+sub build_optionlist {
+    my $self       = shift;
+    my $options    = shift;
+    my $default    = shift;
+    my $selectopts = shift;
+
+    # May as well hard-code the option template.
+    my $opttem = "<option value=\"***value***\"***sel***>***name***</option>\n";
+
+    # Now build up the option string
+    my $optstr = "";
+    foreach my $option (@{$options}) {
+        $optstr .= $self -> process_template($opttem, {"***name***"  => $option -> {"name"},
+                                                       "***value***" => $option -> {"value"},
+                                                       "***sel***"   => (defined($default) && $default eq $option -> {"value"}) ? ' selected="selected"' : ''});
+    }
+
+    # Handle select options, if any.
+    if($selectopts) {
+        my $select = "<select";
+        $select .= ' id="'.$selectopts -> {"id"}.'"' if($selectopts -> {"id"});
+        $select .= ' name="'.$selectopts -> {"name"}.'"' if($selectopts -> {"name"});
+        $select .= ' size="'.$selectopts -> {"size"}.'"' if($selectopts -> {"size"});
+        $select .= ' multiple="'.$selectopts -> {"multiple"}.'"' if($selectopts -> {"multiple"});
+
+        if($selectopts -> {"events"}) {
+            foreach my $event (keys(%{$selectopts -> {"events"}})) {
+                $select .= ' on'.$event.'="'.$selectopts -> {"events"} -> {$event}.'"';
+            }
+        }
+        $optstr = $select.">\n$optstr</select>\n";
+    }
+
+    return $optstr;
+}
+
 # ============================================================================
 #  Emailing functions
 
