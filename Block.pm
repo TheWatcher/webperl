@@ -252,7 +252,7 @@ sub validate_options {
     # If the source is not a reference, we assue it is the table name to check
     } elsif(not ref($settings -> {"source"})) {
         my $checkh = $self -> {"dbh"} -> prepare("SELECT *
-                                                  FROM ".$settings -> {"source"}."
+                                                  FROM `".$settings -> {"source"}."`
                                                        ".$settings -> {"where"});
         # Check for the value in the table...
         $checkh -> execute($value)
