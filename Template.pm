@@ -183,6 +183,10 @@ BEGIN {
 #               to mark the location of an ordinal specifier. %o is ignored if it
 #               does not immediately follow a digit field. Defaults to "%a, %d %b %Y %H:%M:%S"
 # - `blockname` If set, allow blocks to be specified by name rather than id.
+# - `usecache`  If true, template files are cached as they are loaded. This will increase memory use, but
+#               can make template operations faster in situations where the same template needs to be used
+#               repeatedly, but explicity preloading can't be performed. Template files are reloaded if the
+#               file mtime has changed since the last load to avoid stale cache entries. This defaults to true.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
@@ -199,6 +203,7 @@ sub new {
                  "entities"    => $entities,
                  "utfentities" => $utfentities,
                  "blockname"   => 0,
+                 "usecache"    => 1,
                  @_,
     };
 
@@ -482,12 +487,22 @@ sub load_template {
             next;
         }
 
+        my $filemtime = (stat($filename))[9];
+
+        # If caching is enabled, and the times match, the file has been loaded before
+        return $self -> process_template($self -> {"cache"} -> {$name} -> {"template"}, $varmap, $nocharfix)
+            if($self -> {"usecache"} && $self -> {"cache"} -> {$name} -> {"mtime"} == $filemtime);
+
         # Try the load and process the template...
         if(open(TEMPLATE, "<:utf8", $filename)) {
             undef $/;
             my $lines = <TEMPLATE>;
             $/ = "\n";
             close(TEMPLATE);
+
+            # Cache the template if needed.
+            $self -> {"cache"} -> {$name} = { "template" => $lines, "mtime" => $filemtime }
+                if($self -> {"usecache"});
 
             # Do variable substitution
             $self -> process_template(\$lines, $varmap, $nocharfix);
