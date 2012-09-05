@@ -491,7 +491,7 @@ sub load_template {
 
         # If caching is enabled, and the times match, the file has been loaded before
         return $self -> process_template($self -> {"cache"} -> {$name} -> {"template"}, $varmap, $nocharfix)
-            if($self -> {"usecache"} && $self -> {"cache"} -> {$name} -> {"mtime"} == $filemtime);
+            if($self -> {"usecache"} && $self -> {"cache"} -> {$name} && $self -> {"cache"} -> {$name} -> {"mtime"} == $filemtime);
 
         # Try the load and process the template...
         if(open(TEMPLATE, "<:utf8", $filename)) {
