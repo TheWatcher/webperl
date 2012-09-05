@@ -930,6 +930,25 @@ sub html_clean {
 
 
 ## @method $ bytes_to_human($bytes, $long)
+# Convenience wrappper around humanise_bytes for backwards compatibility.
+#
+# @deprecated This function should not be used in new code - use humanise_bytes() instead.
+#
+# @param bytes The byte count to convert
+# @param long  If set to true, use 'Bytes' instead of B in the output. Defaults to false.
+# @return A string containing a human-readable version of the byte count.
+sub bytes_to_human {
+    my $self  = shift;
+    my $bytes = shift;
+    my $long  = shift;
+
+#    print STDERR "Call to deprecated bytes_to_human"; # Uncomment to enable deprecated code tracing
+
+    return $self -> bytes_to_human($bytes, $long);
+}
+
+
+## @method $ humanise_bytes($bytes, $long)
 # Produce a human-readable version of the provided byte count. If $bytes is
 # less than 1024 the string returned is in bytes. Between 1024 and 1048576 is
 # in KB, between 1048576 and 1073741824 is in MB, over 1073741824 is in GB
@@ -937,7 +956,7 @@ sub html_clean {
 # @param bytes The byte count to convert
 # @param long  If set to true, use 'Bytes' instead of B in the output. Defaults to false.
 # @return A string containing a human-readable version of the byte count.
-sub bytes_to_human {
+sub humanise_bytes {
     my $self  = shift;
     my $bytes = shift;
     my $long  = shift;
@@ -956,7 +975,7 @@ sub bytes_to_human {
 }
 
 
-## @fn $ humanise_seconds($seconds, $short)
+## @method $ humanise_seconds($seconds, $short)
 # Convert a number of seconds to days/hours/minutes/seconds. This will take
 # the specified number of seconds and output a string containing the number
 # of days, hours, minutes, and seconds it corresponds to.
