@@ -944,7 +944,7 @@ sub bytes_to_human {
 
 #    print STDERR "Call to deprecated bytes_to_human"; # Uncomment to enable deprecated code tracing
 
-    return $self -> bytes_to_human($bytes, $long);
+    return $self -> humanise_bytes($bytes, $long);
 }
 
 
