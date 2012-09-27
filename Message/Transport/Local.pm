@@ -22,7 +22,7 @@
 # delivered.
 package Message::Transport::Local;
 use strict;
-use base qw(Message);
+use base qw(Message::Transport);
 
 # ============================================================================
 #  Delivery

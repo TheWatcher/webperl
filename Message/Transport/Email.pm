@@ -21,7 +21,7 @@
 #
 package Message::Transport::Email;
 use strict;
-use base qw(Message);
+use base qw(Message::Transport);
 use Encode;
 use Email::MIME;
 use Email::Sender::Simple qw(sendmail);
