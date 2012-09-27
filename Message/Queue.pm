@@ -311,6 +311,8 @@ sub get_sendable_messages {
     my $transportid    = shift;
     my $include_failed = shift;
 
+    my $transport
+
     # Sendable messages are messsages that have a send_after field value less than the current
     # time, and a status of "pending" (or "failed") for the specified transport....
     my $sendh = $self -> {"dbh"} -> prepare("SELECT m.id

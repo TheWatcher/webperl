@@ -86,6 +86,21 @@ sub DESTROY {
 # ============================================================================
 #  Delivery
 
+## @method $ allow_disable()
+# If this transport can be disabled for users, this returns true. Otherwise it
+# will return false - the default is false, and subclasses must override this
+# function if they want to allow users to disable delivery.
+#
+# @return true if the transport supports being disabled per-user, false otherwise.
+sub allow_disable {
+    my $self = shift;
+
+    # If there is no transport usercontrol table, disabling can't be supported
+    return 0 unless($self -> {"settings"} -> {"database"} -> {"message_userctrl"});
+    return 1;
+}
+
+
 ## @method $ deliver($message)
 # Attempt to deliver the specified message to its recipients.
 #
@@ -111,12 +126,16 @@ sub deliver {
 
     # And the recipients
     foreach my $recipient (@{$message -> {"recipients"}}) {
+        # Skip users who shouldn't get emails
+        next unless($self -> use_transport($recipient -> {"recipient_id"}));
+
         my $recip = $self -> _get_user_email($recipient -> {"recipient_id"})
             or return undef;
 
         $to .= "," if($to);
         $to .= $recip;
     }
+    return 1 if(!$to); # Nothing to do if there are no recipients.
 
     my $email = Email::MIME -> create(header_str => [ From => $from,
                                                       To   => $to,
@@ -168,7 +187,8 @@ sub _build_smtp_args {
 # to obtain the address.
 #
 # @param userid The ID of the user to fetch the email address for.
-# @return The user's email address on success, undef on error.
+# @return The user's email address or the empty string if the user has opted not to be notified
+#         via their email, undef on error.
 sub _get_user_email {
     my $self   = shift;
     my $userid = shift;

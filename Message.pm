@@ -118,16 +118,16 @@ sub load_transport_module {
         return $self -> self_error("Incorrect arguments to load_transport_module: id or name not provided");
     }
 
-    my $modh = $self -> {"dbh"} -> prepare("SELECT perl_module
+    my $modh = $self -> {"dbh"} -> prepare("SELECT id, perl_module
                                             FROM `".$self -> {"settings"} -> {"database"} -> {"message_transports"}."`
                                             WHERE $field = ?");
     $modh -> execute($args -> {$field})
         or return $self -> self_error("Unable to execute transport module lookup: ".$self -> {"dbh"} -> errstr);
 
-    my $modname = $modh -> fetchrow_arrayref()
+    my $transport = $modh -> fetchrow_hashref()
         or return $self -> self_error("Unable to fetch module name for transport module: entry does not exist");
 
-    return $self -> {"module"} -> load_module($modname -> [0]);
+    return $self -> {"module"} -> load_module($transport -> {"perl_module"}, {"transport_id" => $transport -> {"id"}});
 }
 
 

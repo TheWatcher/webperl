@@ -41,4 +41,47 @@ sub deliver {
     return $self -> self_error("Attempt to send message '".$message -> {"id"}."' through transport ".ref($self)." with no deliver() mechanism.");
 }
 
+
+## @method $ allow_disable()
+# If this transport can be disabled for users, this returns true. Otherwise it
+# will return false - the default is false, and subclasses must override this
+# function if they want to allow users to disable delivery.
+#
+# @return true if the transport supports being disabled per-user, false otherwise.
+sub allow_disable {
+    my $self = shift;
+
+    return 0;
+}
+
+
+## @method $ use_transport($userid)
+# Determine whether the user wants to use the current transport. By default, all
+# transports are set to be used for all users.
+#
+# @param userid The ID of the user to check.
+# @return true if the user wants to receive messages through this transport, false
+#         if they don't, undef on error.
+sub use_transport {
+    my $self   = shift;
+    my $userid = shift;
+
+    # If there is no transport user control table, all transports work
+    return 1 unless($self -> {"settings"} -> {"database"} -> {"message_userctrl"});
+
+    my $enableh = $self -> {"dbh"} -> prepare("SELECT enabled
+                                               FROM `".$self -> {"settings"} -> {"database"} -> {"message_userctrl"}."`
+                                               WHERE transport_id = ?
+                                               AND user_id = ?");
+    $enableh -> execute($self -> {"trasport_id"}, $userid)
+        or return $self -> self_error("Unable to execute user transport control lookup: ".$self -> {"dbh"} -> errstr);
+
+    # If there's no entry for this user for this transport, assume the user should get messages
+    my $enabled = $enableh -> fetchrow_arrayref()
+        or return 1;
+
+    return $enabled -> [0];
+}
+
+
 1;
