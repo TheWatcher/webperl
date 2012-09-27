@@ -73,7 +73,7 @@ sub use_transport {
                                                FROM `".$self -> {"settings"} -> {"database"} -> {"message_userctrl"}."`
                                                WHERE transport_id = ?
                                                AND user_id = ?");
-    $enableh -> execute($self -> {"trasport_id"}, $userid)
+    $enableh -> execute($self -> {"transport_id"}, $userid)
         or return $self -> self_error("Unable to execute user transport control lookup: ".$self -> {"dbh"} -> errstr);
 
     # If there's no entry for this user for this transport, assume the user should get messages
