@@ -127,7 +127,7 @@ sub load_transport_module {
     my $transport = $modh -> fetchrow_hashref()
         or return $self -> self_error("Unable to fetch module name for transport module: entry does not exist");
 
-    return $self -> {"module"} -> load_module($transport -> {"perl_module"}, {"transport_id" => $transport -> {"id"}});
+    return $self -> {"module"} -> load_module($transport -> {"perl_module"}, "transport_id" => $transport -> {"id"});
 }
 
 
