@@ -324,7 +324,7 @@ sub load_cgi {
 
     # Set up post stuff
     $CGI::POST_MAX = $self -> {"post_max"} * 1048576;
-    $cgi -> upload_hook($self -> {"upload_hook") if($self -> {"upload_hook"});
+    $cgi -> upload_hook($self -> {"upload_hook"}) if($self -> {"upload_hook"});
 
     return $cgi;
 }
