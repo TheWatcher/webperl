@@ -84,6 +84,7 @@ BEGIN {
 # - `system`, an optional reference to a System object. If specified, the init() method
 #   in this module is called with a hash of arguments containing the database handle,
 #   cgi object, settings, session handler, template handler, and module loader.
+# - `upload_hook`, an optional reference to a function to use as a CGI upload hook.
 #
 # @param args A hash of arguments to initialise the Application object with.
 # @return A new Application object.
@@ -120,7 +121,7 @@ sub run {
         or $self -> {"logger"} -> die_log("Not avilable", "Application: Unable to obtain configuration file: ".$ConfigMicro::errstr);
 
     # Create a new CGI object to generate page content through
-    $self -> {"cgi"} = $self -> load_cgi($self -> {"settings"} -> {"setup"} -> {"disable_compression"});
+    $self -> {"cgi"} = $self -> load_cgi($self -> {"settings"} -> {"setup"} -> {"disable_compression"}, $self -> {"upload_hook"});
 
     # Database initialisation. Errors in this will kill program.
     $self -> {"dbh"} = DBI->connect($self -> {"settings"} -> {"database"} -> {"database"},
@@ -279,7 +280,7 @@ sub run {
 # ============================================================================
 #  Internal code
 
-## @method private $ load_cgi($no_compression)
+## @method private $ load_cgi($no_compression, $upload_hook)
 # Dynamically load a module to handle CGI interaction. This will attempt to
 # load the best available module for CGI handling based on the modules installed
 # on the server: if `CGI::Compress::Gzip` is installed it will use that, otherwise
@@ -294,10 +295,12 @@ sub run {
 #                       version of CGI, even if CGI::Compress::Gzip is available.
 #                       This defaults to false (the compressed CGI is used if
 #                       it is available).
+# @param upload_hook    Optional reference to a function to call as an upload hook.
 # @return A reference to a cgi object. This will die on error.
 sub load_cgi {
     my $self           = shift;
     my $no_compression = shift;
+    my $upload_hook    = shift;
     my $cgi;
 
     # If the user isn't forcing uncompressed cgi, try to load the compressed version
@@ -316,6 +319,8 @@ sub load_cgi {
 
     # In either event, fall over if object creation failed
     die "Unable to load cgi" if(!$cgi);
+
+    $cgi -> upload_hook($upload_hook) if($upload_hook);
 
     return $cgi;
 }
