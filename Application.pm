@@ -124,7 +124,7 @@ sub run {
         or $self -> {"logger"} -> die_log("Not avilable", "Application: Unable to obtain configuration file: ".$ConfigMicro::errstr);
 
     # Create a new CGI object to generate page content through
-    $self -> {"cgi"} = $self -> load_cgi($self -> {"settings"} -> {"setup"} -> {"disable_compression"}, $self -> {"upload_hook"});
+    $self -> {"cgi"} = $self -> load_cgi($self -> {"settings"} -> {"setup"} -> {"disable_compression"});
 
     # Database initialisation. Errors in this will kill program.
     $self -> {"dbh"} = DBI->connect($self -> {"settings"} -> {"database"} -> {"database"},
@@ -283,7 +283,7 @@ sub run {
 # ============================================================================
 #  Internal code
 
-## @method private $ load_cgi($no_compression, $upload_hook)
+## @method private $ load_cgi($no_compression)
 # Dynamically load a module to handle CGI interaction. This will attempt to
 # load the best available module for CGI handling based on the modules installed
 # on the server: if `CGI::Compress::Gzip` is installed it will use that, otherwise
@@ -298,7 +298,6 @@ sub run {
 #                       version of CGI, even if CGI::Compress::Gzip is available.
 #                       This defaults to false (the compressed CGI is used if
 #                       it is available).
-# @param upload_hook    Optional reference to a function to call as an upload hook.
 # @return A reference to a cgi object. This will die on error.
 sub load_cgi {
     my $self           = shift;
@@ -325,7 +324,7 @@ sub load_cgi {
 
     # Set up post stuff
     $CGI::POST_MAX = $self -> {"post_max"} * 1048576;
-    $cgi -> upload_hook($upload_hook) if($upload_hook);
+    $cgi -> upload_hook($self -> {"upload_hook") if($self -> {"upload_hook"});
 
     return $cgi;
 }
