@@ -85,6 +85,8 @@ BEGIN {
 #   in this module is called with a hash of arguments containing the database handle,
 #   cgi object, settings, session handler, template handler, and module loader.
 # - `upload_hook`, an optional reference to a function to use as a CGI upload hook.
+# - `post_max`, the maximum size of uploaded data in MB. If not set, the default is to
+#   limit posts to 128MB.
 #
 # @param args A hash of arguments to initialise the Application object with.
 # @return A new Application object.
@@ -92,8 +94,9 @@ sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
     my $self     = {
-        config       => "config/site.cfg",
-        use_phpbb    => 0,
+        config    => "config/site.cfg",
+        use_phpbb => 0,
+        post_max  => 128,
         @_,
     };
 
@@ -320,6 +323,8 @@ sub load_cgi {
     # In either event, fall over if object creation failed
     die "Unable to load cgi" if(!$cgi);
 
+    # Set up post stuff
+    $CGI::POST_MAX = $self -> {"post_max"} * 1048576;
     $cgi -> upload_hook($upload_hook) if($upload_hook);
 
     return $cgi;
