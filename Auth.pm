@@ -35,6 +35,8 @@ package Auth;
 use strict;
 use base qw(SystemModule);
 
+use HTML::Entities;
+
 # Custom module imports
 use AuthMethods;
 
@@ -214,6 +216,9 @@ sub valid_user {
     my $password   = shift;
     my $valid      = 0;
     my $methodimpl;
+
+    # clean up the password
+    $password = decode_entities($password);
 
     $self -> clear_error();
 
