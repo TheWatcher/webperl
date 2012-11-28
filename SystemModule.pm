@@ -41,6 +41,8 @@ BEGIN {
 # * dbh       - The database handle to use for queries.
 # * settings  - The system settings object
 # * logger    - The system logger object.
+# * minimal   - Defaults to false. If set to true, the other arguments are
+#               treated as optional.
 #
 # @param args A hash of key value pairs to initialise the object with.
 # @return A new SystemModule object, or undef if a problem occured.
@@ -51,14 +53,15 @@ sub new {
         dbh          => undef,
         settings     => undef,
         logger       => undef,
+        minimal      => 0,
         max_refcount => 2147483648,
         @_,
     };
 
     # Check that the required objects are present
-    return set_error("No database connection available.") if(!$self -> {"dbh"});
-    return set_error("No settings object available.") if(!$self -> {"settings"});
-    return set_error("No logger object available.") if(!$self -> {"logger"});
+    return set_error("No database connection available.") if(!$self -> {"dbh"} && !$self -> {"minimal"});
+    return set_error("No settings object available.") if(!$self -> {"settings"} && !$self -> {"minimal"});
+    return set_error("No logger object available.") if(!$self -> {"logger"} && !$self -> {"minimal"});
 
     return bless $self, $class;
 }
@@ -114,6 +117,16 @@ sub clear_error {
     my $self = shift;
 
     $self -> self_error(undef);
+}
+
+
+## @method $ errstr()
+# Return the current value set in the object's errstr value. This is a
+# convenience function to help make code a little cleaner.
+sub errstr {
+    my $self = shift;
+
+    return $self -> {"errstr"};
 }
 
 1;
