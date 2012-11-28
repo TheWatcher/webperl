@@ -26,10 +26,6 @@
 #
 # This class requires an entry in the settings table with the name 'Auth:unique_id',
 # and settings as required by SessionHandler.
-#
-# @todo This class could be made into a SystemModule subclass, and inherit its error
-#       handling methods. Doing so would mean updating AuthMethod and its subclasses,
-#       AuthMethods, and SessionHandler, but would be more consistent.
 package Auth;
 
 use strict;
