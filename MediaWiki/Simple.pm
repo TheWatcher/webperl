@@ -51,6 +51,8 @@ sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
     my $self     = $class -> SUPER::new(minimal    => 1,
+                                        # These are human translations of warnings returned by the upload API. They can
+                                        # by localised if needed by replacing this hashref in the args.
                                         warningstr => { "badfilename"            => "The filename has been changed to '%a'",
                                                         "filetyle-unwanted-type" => "The file specified an unwanted file type",
                                                         "large-file"             => "The file submitted was too large",
@@ -95,6 +97,7 @@ sub login {
                                               lgpassword => $password })
         or $self -> self_error("Unable to log into the wiki. Error from the API was: ".$self -> {"wikih"} -> {"error"} -> {"code"}.': '.$self -> {"wikih"} -> {"error"} -> {"details"});
 
+    # Realistically, this is overkill - the above should handle failures, but check here anyway.
     return (defined($login -> {"lgusername"}) && ($login -> {"lgusername"} eq $username) &&
             defined($login -> {"result"})     && ($login -> {"result"} eq 'Success'));
 }
@@ -123,13 +126,20 @@ sub logout {
 # @param title   The title of the page to edit/create.
 # @param content The wiki text to set for the page.
 # @param summary An optional summary of the edit.
-# @return true if the page was edited successfully, undef on error.
+# @return true if the page was edited successfully, false on failure, undef on error.
 sub edit {
     my $self    = shift;
     my $title   = shift;
     my $content = shift;
     my $summary = shift;
 
+    $self -> clear_error();
+
+    return $self -> self_error("Unable to edit wiki page: no title specified")
+        unless($title);
+
+    # The summary needs to be added to the edit arguments separately if it is specified,
+    # just leaving it as undef in the args as a default can break the API.
     my $args = { action => 'edit',
                  title  => $title,
                  text   => $content,
@@ -139,6 +149,7 @@ sub edit {
     my $result = $self -> {"wikih"} -> edit($args)
         or $self -> self_error("Unable to edit page '$title'. Error from the API was: ".$self -> {"wikih"} -> {"error"} -> {"code"}.': '.$self -> {"wikih"} -> {"error"} -> {"details"});
 
+    # The above should catch any actual errors, but check for success anyway
     return (defined($result -> {"edit"} -> {"result"}) && $result -> {"edit"} -> {"result"} eq "Success");
 }
 
@@ -469,21 +480,23 @@ sub upload {
     my $query = { action         => 'upload',
                   filename       => $title,
                   file           => [$filename, $title] };
-
-    $query -> {"ignorewarnings"} = 1 if($ignorewarn);
-
-    $query -> {"comment"} = $comment if($comment);
-    $query -> {"text"}    = $text    if($text);
+    $query -> {"ignorewarnings"} = 1        if($ignorewarn);
+    $query -> {"comment"}        = $comment if($comment);
+    $query -> {"text"}           = $text    if($text);
 
     my $res = $self -> {"wikih"} -> edit($query)
         or return ($self -> self_error("Unable to perform upload. API error was: ".$self -> {"wikih"} -> {"error"} -> {"code"}.": ".$self -> {"wikih"} -> {"error"} -> {"details"}), undef);
 
+    # This should never happen, all non-error results should have a 'result' field,
+    # but I don't trust the API enough to not check it...
     return $self -> self_error("Unable to perform upload: no result defined.");
         unless(defined($res -> {"upload"} -> {"result"}));
 
+    # All went well (or warnings are ignored), so return the filename with namespace
     return ("File:".$res -> {"upload"} -> {"filename"})
         if($res -> {"upload"} -> {"result"} eq "Success");
 
+    # Failed due to warnings.
     if($res -> {"upload"} -> {"result"} eq "Warning") {
         $self -> self_error("Warnings prevented upload: ".$self -> warnings_to_str($res -> {"upload"} -> {"warnings"}));
         return '';
@@ -526,7 +539,9 @@ sub valid_namespace {
 
     $self -> clear_error();
 
-    # Set defaults as needed
+    # Set defaults as needed. Note that, in practice, the minimum is actually -37628 (MediaWiki
+    # uses a signed 16 bit value for namespace ids), but negatives are generally used for special
+    # namespaces, so this pretends they don't exist. This may come back to bite me.
     $minid = 0     if(!defined($minid));
     $maxid = 32767 if(!defined($maxid));
 
@@ -538,7 +553,7 @@ sub valid_namespace {
                                                  siprop => 'namespaces' })
         or return $self -> self_error("Unable to obtain namespace list from wiki. API error was: ".$self -> {"wikih"} -> {"error"} -> {"code"}.": ".$self -> {"wikih"} -> {"error"} -> {"details"});
 
-    # There may not be a response from the server, so it needs to be checked first...
+    # There may be no response from the server, so it needs to be checked first...
     if($namespaces -> {"query"} -> {"namespaces"}) {
 
         # As far as I know there's no specific way to ask the wiki if a specific namespace
@@ -613,13 +628,18 @@ sub warnings_to_str {
     my $warnings = shift || return ''; # Do nothing if there are no warnings
     my @entries;
 
+    # Process each warning in the specified hash into a human-readable string
+    # in the entries array...
     foreach my $warn (keys(%{$warnings})) {
         my $args = "";
+        # Some warnings have useful values set that should be able to be substituted
+        # into the human-readable warning string, so handle them here.
         given($warn) {
             when("duplicate")   { $args = join(", ", @{$warnings -> {$warn}}); }
             when("badfilename") { $args = $warnings -> {$warn}; }
         }
 
+        # Handle substitution of arguments as needed.
         my $msg = $self -> {"warningstr"} -> {$warn};
         $msg =~ s/%a/$args/g;
 
