@@ -252,7 +252,7 @@ sub parse {
 }
 
 
-## @fn $ transclude($pagename, $templatestr)
+## @method $ transclude($pagename, $templatestr)
 # Call on the mediawiki api to convert the specified template string, doing any
 # transclusion necessary.
 #
@@ -434,7 +434,7 @@ sub download_direct {
 }
 
 
-## @method $ upload($filename, $title, $comment, $text)
+## @method $ upload($filename, $title, $comment, $text, $ignorewarn)
 # Upload a file to the wiki. This allows a local file to be sent to the wiki, with
 # an optional comment and initial page text. Note that this will ignore warnings,
 # so existing files will be overwritten.
@@ -600,7 +600,7 @@ sub make_anchor {
 #  Ghastly internals
 
 
-## @method $ warnings_to_str($warnings)
+## @method private $ warnings_to_str($warnings)
 # Given a hash of upload warnings, convert the warnings to a string suitable for
 # returning to the user in a human-readable format.
 #
