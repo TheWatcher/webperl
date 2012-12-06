@@ -358,29 +358,5 @@ sub set_db_config {
 }
 
 
-# ============================================================================
-#  Error functions
-
-## @cmethod private $ set_error($errstr)
-# Set the class-wide errstr variable to an error message, and return undef. This
-# function supports error reporting in the constructor and other class methods.
-#
-# @param errstr The error message to store in the class errstr variable.
-# @return Always returns undef.
-sub set_error { $errstr = shift; return undef; }
-
-
-## @method private $ self_error($errstr)
-# Set the object's errstr value to an error message, and return undef. This
-# function supports error reporting in various methods throughout the class.
-#
-# @param errstr The error message to store in the object's errstr.
-# @return Always returns undef.
-sub self_error {
-    my $self = shift;
-    $self -> {"errstr"} = shift;
-
-    return undef;
-}
 
 1;
