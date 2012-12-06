@@ -29,6 +29,7 @@
 package BlockSelector;
 
 use strict;
+use base qw(SystemModule);
 
 
 # ============================================================================
@@ -43,9 +44,9 @@ use strict;
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = {
-        @_,
-    };
+    my $self = $class -> SUPER::new(minimal => 1, # minimal tells SystemModule to skip object checks
+                                    @_)
+        or return undef;
 
     return bless $self, $class;
 }

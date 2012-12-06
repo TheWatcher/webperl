@@ -65,8 +65,8 @@ sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
     my $self     = $class -> SUPER::new("logtable" => "",
-                                        @_);
-    return undef if(!$self);
+                                        @_)
+        or return undef;
 
     # Set up the logger, if needed (Application usually does this long before the Block constructor
     # gets called, but even if it has, doing it again won't hurt anything).

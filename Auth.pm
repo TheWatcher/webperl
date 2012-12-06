@@ -55,13 +55,11 @@ use AuthMethods;
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    # Note this doesn't use the superclass constructor, as it may be called before
-    # the objects the superclass checks for are acutally available
-    my $self     = {
-        @_,
-    };
+    my $self     = $class -> SUPER::new(minimal => 1, # minimal tells SystemModule to skip object checks
+                                        @_)
+        or return undef;
 
-    return bless $self, $class;
+    return $self;
 }
 
 

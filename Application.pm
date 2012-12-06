@@ -233,7 +233,7 @@ sub run {
                                     phpbb    => $self -> {"phpbb"},
                                     modules  => $self -> {"modules"},
                                     messages => $self -> {"messages"})
-            or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create system object: ".$self -> {"system"} -> {"errstr"});
+            or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create system object: ".$self -> {"system"} -> errstr());
 
         $self -> {"appuser"} -> set_system($self -> {"system"}) if($self -> {"appuser"});
     }
@@ -244,11 +244,11 @@ sub run {
 
     # Obtain the page moduleid, fall back on the default if this fails
     my $pageblock = $self -> {"block_selector"} -> get_block($self -> {"dbh"}, $self -> {"cgi"}, $self -> {"settings"}, $self -> {"logger"}, $self -> {"session"})
-        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to determine page block: ".$self -> {"block_selector"} -> {"errstr"});
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to determine page block: ".$self -> {"block_selector"} -> errstr());
 
     # Obtain an instance of the page module
     my $pageobj = $self -> {"modules"} -> new_module($pageblock)
-        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to load page module $pageblock: ".$self -> {"modules"} -> {"errstr"});
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to load page module $pageblock: ".$self -> {"modules"} -> errstr());
 
     # And call the page generation function of the page module
     my $content = $pageobj -> page_display();

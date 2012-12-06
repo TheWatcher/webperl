@@ -61,15 +61,10 @@
 # allow modifications made to configuration settings to be saved back into the table.
 package ConfigMicro;
 
-require 5.005;
-use DBI;
 use strict;
+use base qw(SystemModule); # Extend SystemModule to get error handling
+use DBI;
 
-our $errstr;
-
-BEGIN {
-	$errstr = '';
-}
 
 # ============================================================================
 #  Constructor and basic file-based config functions
@@ -87,22 +82,19 @@ sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
     my $filename = shift;
-
-    # Object constructors don't get much more minimal than this...
-    my $self = { "__privdata" => { "modified" => 0 },
-                 @_,
-    };
-
-    my $obj = bless $self, $class;
+    my $self     = $class -> SUPER::new(minimal      => 1, # minimal tells SystemModule to skip object checks
+                                        "__privdata" => { "modified" => 0 },
+                                        @_)
+        or return undef;
 
     # Return here if we have no filename to load from
-    return $obj if(!$filename);
+    return $self if(!$filename);
 
     # Otherwise, try to read the file
-    return $obj if($obj -> read($filename));
+    return $self if($self -> read($filename));
 
     # Get here and things have gone wahoonie-shaped
-    return set_error($obj -> {"errstr"});
+    return set_error($self -> {"errstr"});
 }
 
 

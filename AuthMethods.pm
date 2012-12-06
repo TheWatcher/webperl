@@ -40,9 +40,8 @@ use Module::Load;
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self = $class -> SUPER::new(@_);
-
-    return undef if(!$self);
+    my $self = $class -> SUPER::new(@_)
+        or return undef;
 
     # Ensure that we have objects that we need
     return SystemModule::set_error("cgi object not set") unless($self -> {"cgi"});
