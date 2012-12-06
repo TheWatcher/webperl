@@ -5,13 +5,21 @@ username = USERNAME
 password = PASSWORD
 
 # Core webperl tables.
-auth_methods   = auth_methods
-auth_params    = auth_methods_params
-blocks         = blocks
-modules        = modules
-sessions       = sessions
-keys           = session_keys
-settings       = settings
-users          = users
+auth_methods       = auth_methods
+auth_params        = auth_methods_params
+blocks             = blocks
+logging            = log
+message_queue      = messages_queue
+message_sender     = messages_sender
+message_recipients = messages_recipients
+message_transports = messages_transports
+message_status     = messages_transports_status
+message_userctrl   = messages_transports_userctrl
+modules            = modules
+sessions           = sessions
+session_variables  = session_variables
+keys               = session_keys
+settings           = settings
+users              = users
 
 # Add any other table mappings you need here
