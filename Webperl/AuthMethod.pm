@@ -21,7 +21,7 @@
 # mainly present for documentation purposes - it doesn't actually provide
 # any meaningful implementation of an authentication method, and the
 # actually interesting stuff should happen in subclasses of it.
-package AuthMethod;
+package Webperl::AuthMethod;
 
 use strict;
 

@@ -16,15 +16,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## @class Message::Queue
+## @class
 # This class allows messages to be added to the message queue, or retrieved from
 # it in a format suitable for passing to Message::Sender.
 #
 #
-package Message::Queue;
+package Webperl::Message::Queue;
+
 use strict;
-use base qw(Message);
-use Utils qw(hash_or_hashref);
+use base qw(Webperl::Message);
+use Webperl::Utils qw(hash_or_hashref);
 
 # ============================================================================
 #  Constructor

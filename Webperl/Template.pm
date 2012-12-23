@@ -114,10 +114,10 @@
 # - `{V_[commonpath]}` is replaced by the path from the base of the web
 #    application to the common template directory (useful for image and other resource
 #    paths inside the common template). This will always have a trailing '/'.
-package Template;
+package Webperl::Template;
 
 use POSIX qw(strftime);
-use Utils qw(path_join superchomp);
+use Webperl::Utils qw(path_join superchomp);
 use strict;
 
 our ($errstr, $utfentities, $entities, $ords, @timescales);

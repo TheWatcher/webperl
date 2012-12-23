@@ -26,10 +26,10 @@
 # and valid, or falls back on a default block id otherwise. Other
 # applications may wish to extend this behaviour, or replace it entirely
 # by subclassing this class and overriding the get_block() method.
-package BlockSelector;
+package Webperl::BlockSelector;
 
 use strict;
-use base qw(SystemModule);
+use base qw(Webperl::SystemModule);
 
 
 # ============================================================================

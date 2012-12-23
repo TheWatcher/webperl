@@ -27,13 +27,13 @@
 # need the full features of MediaWiki::Bot, you can obtain a reference to a
 # MediaWiki::API object to issue API requests directly to by calling the wiki()
 # function.
-package MediaWiki::Simple;
+package Webperl::MediaWiki::Simple;
 
 use v5.12;
-use base qw(SystemModule);
+use base qw(Webperl::SystemModule);
 use Data::Dumper;
 use MediaWiki::API;
-use Utils qw(path_join);
+use Webperl::Utils qw(path_join);
 
 # ============================================================================
 #  Constructor

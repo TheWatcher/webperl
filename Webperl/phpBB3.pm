@@ -28,7 +28,7 @@
 # into a phpBB3 account.
 #
 #
-package phpBB3;
+package Webperl::phpBB3;
 
 use strict;
 
@@ -39,7 +39,7 @@ use Time::HiRes qw(gettimeofday);
 use WWW::Mechanize; # Needed to register via phpBB's registration form
 
 # Custom module imports
-use Utils qw(path_join);
+use Webperl::Utils qw(path_join);
 
 # Globals...
 our ($ANONYMOUS, $errstr, %fmt_map);

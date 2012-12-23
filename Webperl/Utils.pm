@@ -22,7 +22,7 @@
 # System-wide utility functions. The functions in this file may be useful at
 # any point throughout the system, so they are collected here to prevent the
 # need for multiple copies around various modules.
-package Utils;
+package Webperl::Utils;
 require Exporter;
 use File::Spec;
 use File::Path;

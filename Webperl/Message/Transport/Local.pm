@@ -16,13 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## @class Message::Transport::Local
+## @class
 # This class implements the local delivery transport. Local delivery actually involves
 # no work whatsoever - any messages that are queued for local deliver can always be
 # delivered.
-package Message::Transport::Local;
+package Webperl::Message::Transport::Local;
+
 use strict;
-use base qw(Message::Transport);
+use base qw(Webperl::Message::Transport);
 
 # ============================================================================
 #  Delivery

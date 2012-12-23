@@ -22,7 +22,7 @@
 # together the various functions needed for displaying log messages and errors
 # at various levels of verbosity, in an attempt to cut down on duplicate
 # parameter passing throughout the rest of the system.
-package Logger;
+package Webperl::Logger;
 
 use strict;
 require Exporter;

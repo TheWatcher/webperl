@@ -36,10 +36,10 @@
 # * adminpass - The password to use when logging in as the admin user.
 # * reuseconn - If set to a true value, the connection to the LDAPS is reused
 #               for authentication after finding the user's dn.
-package AuthMethod::LDAPS;
+package Webperl::AuthMethod::LDAPS;
 
 use strict;
-use base qw(AuthMethod); # This class extends AuthMethod
+use base qw(Webperl::AuthMethod); # This class extends AuthMethod
 use Net::LDAPS;
 
 ## @cmethod $ new(%args)
@@ -59,9 +59,9 @@ sub new {
     return $class -> SUPER::get_error() if(!$self);
 
     # check that required settings are set...
-    return "AuthMethod::LDAPS missing 'server' argument in new()" if(!$self -> {"server"});
-    return "AuthMethod::LDAPS missing 'base' argument in new()" if(!$self -> {"base"});
-    return "AuthMethod::LDAPS missing 'searchfield' argument in new()" if(!$self -> {"searchfield"});
+    return "Webperl::AuthMethod::LDAPS missing 'server' argument in new()" if(!$self -> {"server"});
+    return "Webperl::AuthMethod::LDAPS missing 'base' argument in new()" if(!$self -> {"base"});
+    return "Webperl::AuthMethod::LDAPS missing 'searchfield' argument in new()" if(!$self -> {"searchfield"});
 
     return $self;
 }

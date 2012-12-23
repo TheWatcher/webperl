@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## @class ConfigMicro
+## @class
 # A simple configuration class intended to allow ini files to be read and saved. This
 # class reads the contents of an .ini style file, and stores the sections and
 # key/value pairs in the object's hash. A typical configuration file could look like
@@ -59,10 +59,10 @@
 # load_db_config() method in any ConfigMicro object allows a table containing key/value
 # pairs to be read into a configuration section. save_db_config() and set_db_config()
 # allow modifications made to configuration settings to be saved back into the table.
-package ConfigMicro;
+package Webperl::ConfigMicro;
 
 use strict;
-use base qw(SystemModule); # Extend SystemModule to get error handling
+use base qw(Webperl::SystemModule); # Extend SystemModule to get error handling
 use DBI;
 
 
@@ -70,14 +70,14 @@ use DBI;
 #  Constructor and basic file-based config functions
 
 ## @cmethod $ new(%args)
-# Create a new ConfigMicro object. This creates an object that provides functions
+# Create a new Webperl::ConfigMicro object. This creates an object that provides functions
 # for loading and saving configurations, and pulling config data from a database.
 # Meaningful options for this are:
 # filename - The name of the configuration file to read initial settings from. This
 #            is optional, and if not specified you will get an empty object back.
 # You may also pass in one or more initial configuration settings.
 # @param args A hash of key, value pairs to initialise the object with.
-# @return A new ConfigMicro object, or undef if a problem occured.
+# @return A new Webperl::ConfigMicro object, or undef if a problem occured.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;

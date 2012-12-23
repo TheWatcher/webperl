@@ -29,12 +29,12 @@
 # which may be generated solely by the Block subclass, or by the subclass
 # loading other Blocks and using their inline block fragments to construct the
 # overall page content.
-package Block;
+package Webperl::Block;
 use strict;
-use base qw(SystemModule);
+use base qw(Webperl::SystemModule);
 
-use HTMLValidator;
-use Utils qw(is_defined_numeric);
+use Webperl::HTMLValidator;
+use Webperl::Utils qw(is_defined_numeric);
 use Encode;
 use HTML::Entities;
 

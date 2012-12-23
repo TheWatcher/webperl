@@ -21,10 +21,10 @@
 # The base class for appplication-specific module loading. Subclasses of
 # this class allow applications to load and initialise any system-specific
 # modules.
-package System;
+package Webperl::System;
 
 use strict;
-use base qw(SystemModule);
+use base qw(Webperl::SystemModule);
 
 # ============================================================================
 #  Constructor and initialiser

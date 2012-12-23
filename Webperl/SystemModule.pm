@@ -22,7 +22,7 @@
 # Subclasses will generally only need to override the constructor, usually
 # chaining it with `$class -> SUPER::new(..., @_);`. If attempting to call
 # set_error() in a subclass, remember to use SystemModule::set_error().
-package SystemModule;
+package Webperl::SystemModule;
 
 use strict;
 

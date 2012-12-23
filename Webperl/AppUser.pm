@@ -46,10 +46,10 @@
 # to call the overridden methods this class via `$self -> SUPER::pre_authenticate()`
 # or `$self -> SUPER::pre_authenticate()` to extend the default behaviour with
 # system-specifics rather than entirely replacing it.
-package AppUser;
+package Webperl::AppUser;
 
 use strict;
-use base qw(SystemModule); # Extend SystemModule to get error handling
+use base qw(Webperl::SystemModule); # Extend SystemModule to get error handling
 
 use constant ANONYMOUS_ID => 1; # Default anonymous user id.
 use constant ADMIN_TYPE   => 3; # User type for admin users.
@@ -57,8 +57,8 @@ use constant ADMIN_TYPE   => 3; # User type for admin users.
 # ============================================================================
 #  Constructor
 
-## @cmethod AppUser new(%args)
-# Create a new AppUser object. This will create an AppUser object that may be
+## @cmethod Webperl::AppUser new(%args)
+# Create a new Webperl::AppUser object. This will create a Webperl::AppUser object that may be
 # passed to the Auth class to provide application-specific user handling.
 #
 # @param args A hash of arguments to initialise the AppUser object with.

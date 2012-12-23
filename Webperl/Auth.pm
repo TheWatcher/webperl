@@ -26,15 +26,15 @@
 #
 # This class requires an entry in the settings table with the name 'Auth:unique_id',
 # and settings as required by SessionHandler.
-package Auth;
+package Webperl::Auth;
 
 use strict;
-use base qw(SystemModule);
+use base qw(Webperl::SystemModule);
 
 use HTML::Entities;
 
 # Custom module imports
-use AuthMethods;
+use Webperl::AuthMethods;
 
 # ============================================================================
 #  Constructor
@@ -92,12 +92,12 @@ sub init {
     return "logger object not set" unless($self -> {"logger"});
 
     # Create the authmethods object to handle invocation of individual methods
-    $self -> {"methods"} = AuthMethods -> new(cgi      => $self -> {"cgi"},
-                                              dbh      => $self -> {"dbh"},
-                                              settings => $self -> {"settings"},
-                                              app      => $self -> {"app"},
-                                              logger   => $self -> {"logger"})
-        or return "Unable to create AuthMethods object: ".$AuthMethods::errstr;
+    $self -> {"methods"} = Webperl::AuthMethods -> new(cgi      => $self -> {"cgi"},
+                                                       dbh      => $self -> {"dbh"},
+                                                       settings => $self -> {"settings"},
+                                                       app      => $self -> {"app"},
+                                                       logger   => $self -> {"logger"})
+        or return "Unable to create Webperl::AuthMethods object: ".$Webperl::AuthMethods::errstr;
 
     $self -> {"ANONYMOUS"} = $self -> {"app"} -> anonymous_user();
     $self -> {"ADMINTYPE"} = $self -> {"app"} -> adminuser_type();

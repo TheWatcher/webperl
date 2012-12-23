@@ -16,13 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## @class Message::Transport
+## @class
 # This is the 'base' class for the Message::Transport modules. It provides
 # any functionality that needs to be shared between the Message::Transport::*
 # modules.
-package Message::Transport;
+package Webperl::Message::Transport;
+
 use strict;
-use base qw(Message);
+use base qw(Webperl::Message);
 
 # ============================================================================
 #  Delivery

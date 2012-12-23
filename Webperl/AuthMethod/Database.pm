@@ -35,10 +35,10 @@
 #
 # * bcrypt_cost - the number of iterations of hashing to perform. This
 #                 defaults to COST_DEFAULT if not specified.
-package AuthMethod::Database;
+package Webperl::AuthMethod::Database;
 
 use strict;
-use base qw(AuthMethod); # This class extends AuthMethod
+use base qw(Webperl::AuthMethod); # This class extends AuthMethod
 use Crypt::Eksblowfish::Bcrypt qw(bcrypt en_base64);
 
 use constant COST_DEFAULT => 14; # The default cost to use if bcrypt_cost is not set.
@@ -67,9 +67,9 @@ sub new {
     $self -> {"bcrypt_cost"} = COST_DEFAULT;
 
     # check that required settings are set...
-    return "AuthMethod::Database missing 'table' argument in new()" if(!$self -> {"table"});
-    return "AuthMethod::Database missing 'userfield' argument in new()" if(!$self -> {"userfield"});
-    return "AuthMethod::Database missing 'passfield' argument in new()" if(!$self -> {"passfield"});
+    return "Webperl::AuthMethod::Database missing 'table' argument in new()" if(!$self -> {"table"});
+    return "Webperl::AuthMethod::Database missing 'userfield' argument in new()" if(!$self -> {"userfield"});
+    return "Webperl::AuthMethod::Database missing 'passfield' argument in new()" if(!$self -> {"passfield"});
 
     return $self;
 }

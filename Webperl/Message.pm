@@ -19,10 +19,10 @@
 ## @class Message
 # This is the 'base' class for the Message modules. It provides any functionality
 # that needs to be shared between the Message::* modules.
-package Message;
+package Webperl::Message;
 use strict;
-use base qw(SystemModule);
-use Utils qw(hash_or_hashref);
+use base qw(Webperl::SystemModule);
+use Webperl::Utils qw(hash_or_hashref);
 
 # ============================================================================
 #  Constructor

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## @class Modules
+## @class
 # A class to simplify runtime loading of modules. This class simplifies the
 # process of loading modules implementing system functionality at runtime: it
 # is primarily designed to load webapp block modules, but it can be used to
@@ -53,11 +53,12 @@
 # the contents of the Modules object's $self added to it, so that your loaded
 # modules will be given the standard value listed above in addition to any
 # values you specify in the argument hash.
-package Modules;
+package Webperl::Modules;
+
 use strict;
-use base qw(SystemModule);
-use DBI;
+use base qw(Webperl::SystemModule);
 use Module::Load;
+use Webperl::Utils qw(path_join);
 
 # ==============================================================================
 # Creation
@@ -111,6 +112,10 @@ sub new {
 sub add_load_path {
     my $self = shift;
     my $path = shift;
+
+    # If the load path is relative, assume it is relative to the script base path
+    $path = path_join($self -> {"settings"} -> {"config"} -> {"base"}, $path)
+        unless($path =~ m|^/|);
 
     unshift(@INC, $path);
 }

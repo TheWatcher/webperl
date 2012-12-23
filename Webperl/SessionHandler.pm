@@ -124,18 +124,14 @@
 #       KEY `session_id` (`session_id`),
 #       KEY `sess_name_map` (`session_id`,`var_name`)
 #     ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Session-related variables';
-package SessionHandler;
+package Webperl::SessionHandler;
 
-require 5.005;
 use strict;
 
 # Standard module imports
-use DBI;
 use Digest::MD5 qw(md5_hex);
 use Compress::Bzip2;
 use MIME::Base64;
-
-use Data::Dumper;
 
 # Globals...
 our $errstr;

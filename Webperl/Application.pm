@@ -23,11 +23,11 @@
 # the developer needs to do is:
 #
 #     use lib "/path/to/webperl";
-#     use lib "modules";
-#     use Application;
-#     use AppUser::MySystem; # Implemented in modules/AppUser/MySystem.pm
+#     use lib "/your/webapp/modules";
+#     use Webperl::Application;
+#     use Webperl::AppUser::MySystem; # Implemented in modules/Webperl/AppUser/MySystem.pm
 #
-#     my $app = Application -> new(appuser => AppUser::MySystem -> new());
+#     my $app = Application -> new(appuser => Webperl::AppUser::MySystem -> new());
 #     $app -> run();
 #
 # In general, you will also want to load CGI::Carp and set it up, to handle
@@ -36,7 +36,7 @@
 # up as needed, this just simplifies the process. See the @ref overview Overview
 # documentation for more details about the operation of this class.
 #
-package Application;
+package Webperl::Application;
 
 use strict;
 
@@ -47,15 +47,15 @@ use Module::Load;
 use Time::HiRes qw(time);
 
 # Webperl modules
-use Auth;
-use BlockSelector;
-use ConfigMicro;
-use Logger;
-use Template;
-use SessionHandler;
-use Modules;
-use Message::Queue;
-use Utils qw(path_join is_defined_numeric get_proc_size);
+use Webperl::Auth;
+use Webperl::BlockSelector;
+use Webperl::ConfigMicro;
+use Webperl::Logger;
+use Webperl::Template;
+use Webperl::SessionHandler;
+use Webperl::Modules;
+use Webperl::Message::Queue;
+use Webperl::Utils qw(path_join is_defined_numeric get_proc_size);
 
 our $errstr;
 
@@ -67,29 +67,31 @@ BEGIN {
 # ============================================================================
 #  Constructor
 
-## @cmethod Application new(%args)
-# Create a new Application object. This will create an Application object that
-# can be used to generate the pages of a web application. Supported arguments
-# are:
+## @cmethod Webperl::Application new(%args)
+# Create a new Webperl::Application object. This will create a Webperl::Application
+# object that can be used to generate the pages of a web application. Supported
+# arguments are:
 #
 # - `config`, the location of the application config file, defaults to `config/site.cfg`.
+#   If a relative path is provided, it is assumed to be relative to the index.cgi
 # - `use_phpbb`, if set, the phpBB3 support module is loaded (and takes over auth: the
 #   `auth` argument is ignored if `use_phpbb` is set).
-# - `appuser`, a reference to an AppUser subclass object to do application-specific
+# - `appuser`, a reference to a Webperl::AppUser subclass object to do application-specific
 #   user tasks during auth. Can be omitted if use_phpbb is set.
 # - `auth`, an optional reference to an auth object. If not specified, and `use_phpbb`
-#   is not set, an Auth object is made for you.
-# - `block_selector`, an optional reference to a BlockSelector subclass. If not specified,
-#   the default BlockSelector is used instead to provide standard block selection behaviour.
-# - `system`, an optional reference to a System object. If specified, the init() method
-#   in this module is called with a hash of arguments containing the database handle,
+#   is not set, a Webperl::Auth object is made for you.
+# - `block_selector`, an optional reference to a Webperl::BlockSelector subclass. If not
+#   specified, the default Webperl::BlockSelector is used instead to provide standard
+#   block selection behaviour.
+# - `system`, an optional reference to a Webperl::System object. If specified, the init()
+#   method in this module is called with a hash of arguments containing the database handle,
 #   cgi object, settings, session handler, template handler, and module loader.
 # - `upload_hook`, an optional reference to a function to use as a CGI upload hook.
 # - `post_max`, the maximum size of uploaded data in MB. If not set, the default is to
 #   limit posts to 128MB.
 #
-# @param args A hash of arguments to initialise the Application object with.
-# @return A new Application object.
+# @param args A hash of arguments to initialise the Webperl::Application object with.
+# @return A new Webperl::Application object.
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
@@ -116,11 +118,11 @@ sub run {
 
     $self -> {"starttime"} = time();
 
-    $self -> {"logger"} = Logger -> new()
+    $self -> {"logger"} = Webperl::Logger -> new()
         or die "FATAL: Unable to create logger object";
 
     # Load the system config
-    $self -> {"settings"} = ConfigMicro -> new($self -> {"config"})
+    $self -> {"settings"} = Webperl::ConfigMicro -> new($self -> {"config"})
         or $self -> {"logger"} -> die_log("Not avilable", "Application: Unable to obtain configuration file: ".$ConfigMicro::errstr);
 
     # Create a new CGI object to generate page content through
@@ -144,31 +146,31 @@ sub run {
     $self -> {"logger"} -> start_log($self -> {"settings"} -> {"config"} -> {"logfile"}) if($self -> {"settings"} -> {"config"} -> {"logfile"});
 
     # Message queue handling
-    $self -> {"messages"} = Message::Queue -> new(logger   => $self -> {"logger"},
-                                                  dbh      => $self -> {"dbh"},
-                                                  settings => $self -> {"settings"})
+    $self -> {"messages"} = Webperl::Message::Queue -> new(logger   => $self -> {"logger"},
+                                                           dbh      => $self -> {"dbh"},
+                                                           settings => $self -> {"settings"})
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create message handler: ".$SystemModule::errstr);
 
     # Create the template handler object
-    $self -> {"template"} = Template -> new(logger    => $self -> {"logger"},
-                                            basedir   => $self -> {"settings"} -> {"config"} -> {"template_dir"} || "templates",
-                                            timefmt   => $self -> {"settings"} -> {"config"} -> {"timefmt"},
-                                            blockname => 1,
-                                            mailcmd   => '/usr/sbin/sendmail -t -f '.$self -> {"settings"} -> {"config"} -> {"Core:envelope_address"},
-                                            settings  => $self -> {"settings"})
+    $self -> {"template"} = Webperl::Template -> new(logger    => $self -> {"logger"},
+                                                     basedir   => $self -> {"settings"} -> {"config"} -> {"template_dir"} || "templates",
+                                                     timefmt   => $self -> {"settings"} -> {"config"} -> {"timefmt"},
+                                                     blockname => 1,
+                                                     mailcmd   => '/usr/sbin/sendmail -t -f '.$self -> {"settings"} -> {"config"} -> {"Core:envelope_address"},
+                                                     settings  => $self -> {"settings"})
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create template handling object: ".$Template::errstr);
 
     # If phpbb mode is enabled, it takes over auth.
     if($self -> {"use_phpbb"}) {
-        load phpBB3;
-        $self -> {"phpbb"} = phpBB3 -> new(logger   => $self -> {"logger"},
-                                           prefix   => $self -> {"settings"} -> {"database"} -> {"phpbb_prefix"},
-                                           cgi      => $self -> {"cgi"},
-                                           data_src => $self -> {"settings"} -> {"database"} -> {"phpbb_database"},
-                                           username => $self -> {"settings"} -> {"database"} -> {"phpbb_username"},
-                                           password => $self -> {"settings"} -> {"database"} -> {"phpbb_password"},
-                                           codepath => path_join($self -> {"settings"} -> {"config"} -> {"base"}, "templates", "default"),
-                                           url      => $self -> {"settings"} -> {"config"} -> {"forumurl"})
+        load Webperl::phpBB3;
+        $self -> {"phpbb"} = Webperl::phpBB3 -> new(logger   => $self -> {"logger"},
+                                                    prefix   => $self -> {"settings"} -> {"database"} -> {"phpbb_prefix"},
+                                                    cgi      => $self -> {"cgi"},
+                                                    data_src => $self -> {"settings"} -> {"database"} -> {"phpbb_database"},
+                                                    username => $self -> {"settings"} -> {"database"} -> {"phpbb_username"},
+                                                    password => $self -> {"settings"} -> {"database"} -> {"phpbb_password"},
+                                                    codepath => path_join($self -> {"settings"} -> {"config"} -> {"base"}, "templates", "default"),
+                                                    url      => $self -> {"settings"} -> {"config"} -> {"forumurl"})
             or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to create phpbb object: ".$phpBB3::errstr);
 
         $self -> {"auth"} = $self -> {"phpbb"};
@@ -179,19 +181,19 @@ sub run {
         $self -> {"appuser"} -> init($self -> {"cgi"}, $self -> {"dbh"}, $self -> {"settings"}, $self -> {"logger"});
 
         # If the auth object is not set, make one
-        $self -> {"auth"} = Auth -> new() if(!$self -> {"auth"});
+        $self -> {"auth"} = Webperl::Auth -> new() if(!$self -> {"auth"});
 
         # Initialise the auth object
         $self -> {"auth"} -> init($self -> {"cgi"}, $self -> {"dbh"}, $self -> {"appuser"}, $self -> {"settings"}, $self -> {"logger"});
     }
 
     # Start the session engine...
-    $self -> {"session"} = SessionHandler -> new(logger   => $self -> {"logger"},
-                                                 cgi      => $self -> {"cgi"},
-                                                 dbh      => $self -> {"dbh"},
-                                                 auth     => $self -> {"auth"},
-                                                 template => $self -> {"template"},
-                                                 settings => $self -> {"settings"})
+    $self -> {"session"} = Webperl::SessionHandler -> new(logger   => $self -> {"logger"},
+                                                          cgi      => $self -> {"cgi"},
+                                                          dbh      => $self -> {"dbh"},
+                                                          auth     => $self -> {"auth"},
+                                                          template => $self -> {"template"},
+                                                          settings => $self -> {"settings"})
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create session object: ".$SessionHandler::errstr);
 
     # At this point, there's potentially a real user associated with the session. If appropriate,
@@ -209,16 +211,16 @@ sub run {
     }
 
     # And now we can make the module handler
-    $self -> {"modules"} = Modules -> new(logger   => $self -> {"logger"},
-                                          cgi      => $self -> {"cgi"},
-                                          dbh      => $self -> {"dbh"},
-                                          settings => $self -> {"settings"},
-                                          template => $self -> {"template"},
-                                          session  => $self -> {"session"},
-                                          phpbb    => $self -> {"phpbb"}, # this will handily be undef if phpbb mode is disabled
-                                          blockdir => $self -> {"settings"} -> {"paths"} -> {"blocks"} || "blocks",
-                                          system   => $self -> {"system"},
-                                          messages => $self -> {"messages"})
+    $self -> {"modules"} = Webperl::Modules -> new(logger   => $self -> {"logger"},
+                                                   cgi      => $self -> {"cgi"},
+                                                   dbh      => $self -> {"dbh"},
+                                                   settings => $self -> {"settings"},
+                                                   template => $self -> {"template"},
+                                                   session  => $self -> {"session"},
+                                                   phpbb    => $self -> {"phpbb"}, # this will handily be undef if phpbb mode is disabled
+                                                   blockdir => $self -> {"settings"} -> {"paths"} -> {"blocks"} || "blocks",
+                                                   system   => $self -> {"system"},
+                                                   messages => $self -> {"messages"})
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create module handling object: ".$Modules::errstr);
 
     $self -> {"messages"} -> set_module_obj($self -> {"modules"});
@@ -239,7 +241,7 @@ sub run {
     }
 
     # Has a block selector been specified? If not, make a default one
-    $self -> {"block_selector"} = BlockSelector -> new()
+    $self -> {"block_selector"} = Webperl::BlockSelector -> new()
         if(!defined($self -> {"block_selector"}));
 
     # Obtain the page moduleid, fall back on the default if this fails

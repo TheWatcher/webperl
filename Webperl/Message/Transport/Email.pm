@@ -16,12 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## @class Message::Transport::Email
+## @class
 # This class implements the email transport system; lasciate ogne speranza, voi ch'intrate.
 #
-package Message::Transport::Email;
+package Webperl::Message::Transport::Email;
+
 use strict;
-use base qw(Message::Transport);
+use base qw(Webperl::Message::Transport);
 use Encode;
 use Email::MIME;
 use Email::Sender::Simple qw(sendmail);

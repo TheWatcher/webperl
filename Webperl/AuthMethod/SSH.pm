@@ -34,10 +34,10 @@
 #             specified (values less than 5 are only recommended on fast
 #             networks and when talking to servers that respond rapidly).
 # * binary - the location of the ssh binary. Defaults to /usr/bin/ssh.
-package AuthMethod::SSH;
+package Webperl::AuthMethod::SSH;
 
 use strict;
-use base qw(AuthMethod); # This class extends AuthMethod
+use base qw(Webperl::AuthMethod); # This class extends AuthMethod
 use Net::SSH::Expect;
 
 # Custom module imports
@@ -61,7 +61,7 @@ sub new {
     return $class -> SUPER::get_error() if(!$self);
 
     # check that required settings are set...
-    return "AuthMethod::SSH missing 'server' argument in new()" if(!$self -> {"server"});
+    return "Webperl::AuthMethod::SSH missing 'server' argument in new()" if(!$self -> {"server"});
 
     # Check whether the timeout and binary settings are, well, set...
     $self -> {"timeout"} = 5 unless(defined($self -> {"timeout"}));

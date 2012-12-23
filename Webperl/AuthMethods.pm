@@ -22,10 +22,10 @@
 # on information stored in the auth_methods and auth_params tables to
 # load AuthMethod subclasses, initialise them, and pass them back to
 # the caller to use.
-package AuthMethods;
+package Webperl::AuthMethods;
 
 use strict;
-use base qw(SystemModule);
+use base qw(Webperl::SystemModule);
 use Module::Load;
 
 # ============================================================================
