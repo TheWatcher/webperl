@@ -104,7 +104,7 @@ sub self_error {
 
     # Log the error in the database if possible.
     $self -> {"logger"} -> log("error", 0, undef, $self -> {"errstr"})
-        if($self -> {"errstr"});
+        if($self -> {"logger"} && $self -> {"errstr"});
 
     return undef;
 }
