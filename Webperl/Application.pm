@@ -67,7 +67,7 @@ BEGIN {
 # ============================================================================
 #  Constructor
 
-## @cmethod Webperl::Application new(%args)
+## @cmethod $ new(%args)
 # Create a new Webperl::Application object. This will create a Webperl::Application
 # object that can be used to generate the pages of a web application. Supported
 # arguments are:

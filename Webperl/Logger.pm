@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## @class Logger
+## @class
 # A class to handle logging operations throughout a system. This collects
 # together the various functions needed for displaying log messages and errors
 # at various levels of verbosity, in an attempt to cut down on duplicate

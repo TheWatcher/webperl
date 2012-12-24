@@ -16,10 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## @class Message
+## @class
 # This is the 'base' class for the Message modules. It provides any functionality
 # that needs to be shared between the Message::* modules.
 package Webperl::Message;
+
 use strict;
 use base qw(Webperl::SystemModule);
 use Webperl::Utils qw(hash_or_hashref);

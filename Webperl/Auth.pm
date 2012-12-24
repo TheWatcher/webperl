@@ -39,7 +39,7 @@ use Webperl::AuthMethods;
 # ============================================================================
 #  Constructor
 
-## @cmethod Auth new(%args)
+## @cmethod $ new(%args)
 # Create a new Auth object. This will create an Auth object that may be (for example)
 # passed to SessionHandler to provide user authentication. The arguments to this
 # constructor may include:

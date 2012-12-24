@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## @class Template
+## @class
 # A simple Template class with internationalisation support. Note that
 # this class does not cache templates or any fancy stuff like that - it
 # just provides a simple interface to generate content based on

@@ -57,7 +57,7 @@ use constant ADMIN_TYPE   => 3; # User type for admin users.
 # ============================================================================
 #  Constructor
 
-## @cmethod Webperl::AppUser new(%args)
+## @cmethod $ new(%args)
 # Create a new Webperl::AppUser object. This will create a Webperl::AppUser object that may be
 # passed to the Auth class to provide application-specific user handling.
 #

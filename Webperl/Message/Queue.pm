@@ -19,8 +19,6 @@
 ## @class
 # This class allows messages to be added to the message queue, or retrieved from
 # it in a format suitable for passing to Message::Sender.
-#
-#
 package Webperl::Message::Queue;
 
 use strict;

@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## @class MediaWiki::Simple
+## @class
 # This module is a simplified wrapper around MediaWiki::API, allowing access to a
 # subset of the MediaWiki API facilities through a simple interface. It should be
 # noted that this *not* intended as a replacement for more comprehensive higher-level

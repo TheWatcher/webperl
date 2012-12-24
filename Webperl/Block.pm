@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-## @class Block
+## @class
 # The Block class serves as the base class for all plugin block modules in
 # the system. It provides the basic constructor required to initialise a
 # plugin properly, stub functions for the two key content generation
