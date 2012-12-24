@@ -1,4 +1,4 @@
-# @file Simple.pm
+# @file
 #
 # @author Chris Page &lt;chris@starforge.co.uk&gt;
 
