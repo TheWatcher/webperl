@@ -349,7 +349,7 @@ sub self_or_default {
     # If not called as a Logger object, shove the singleton into the argument list
     unless(defined($_[0]) && (ref($_[0]) eq 'Logger' || UNIVERSAL::isa($_[0], 'Logger'))) {
         # Make a new singleton if one hasn't been made already
-        $log_singleton = Logger -> new() unless(defined($log_singleton));
+        $log_singleton = Webperl::Logger -> new() unless(defined($log_singleton));
 
         unshift(@_, $log_singleton);
     }
