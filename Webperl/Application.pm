@@ -74,6 +74,8 @@ BEGIN {
 #
 # - `config`, the location of the application config file, defaults to `config/site.cfg`.
 #   If a relative path is provided, it is assumed to be relative to the index.cgi
+# - `scriptpath`, the path to the directory containing index.cgi. This is needed for
+#   scripts running inside mod_perl that may not have cwd set correctly.
 # - `use_phpbb`, if set, the phpBB3 support module is loaded (and takes over auth: the
 #   `auth` argument is ignored if `use_phpbb` is set).
 # - `appuser`, a reference to a Webperl::AppUser subclass object to do application-specific
@@ -101,6 +103,10 @@ sub new {
         post_max  => 128,
         @_,
     };
+
+    # Make the config file absolute if possible, if it isn't already
+    $self -> {"config"} = path_join($self -> {"scriptpath"}, $self -> {"config"})
+        if($self -> {"scriptpath"} && $self -> {"config"} !~ m|^/|);
 
     return bless $self, $class;
 }
