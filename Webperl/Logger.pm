@@ -344,10 +344,10 @@ sub die_log {
 #         the caller expects a reference rather than a list.
 sub self_or_default {
     # Called as 'Logger' -> something.
-    return @_ if(defined($_[0]) && (!ref($_[0])) && ($_[0] eq 'Logger'));
+    return @_ if(defined($_[0]) && (!ref($_[0])) && ($_[0] eq 'Webperl::Logger'));
 
     # If not called as a Logger object, shove the singleton into the argument list
-    unless(defined($_[0]) && (ref($_[0]) eq 'Logger' || UNIVERSAL::isa($_[0], 'Logger'))) {
+    unless(defined($_[0]) && (ref($_[0]) eq 'Webperl::Logger' || UNIVERSAL::isa($_[0], 'Webperl::Logger'))) {
         # Make a new singleton if one hasn't been made already
         $log_singleton = Webperl::Logger -> new() unless(defined($log_singleton));
 
