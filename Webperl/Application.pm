@@ -200,7 +200,7 @@ sub run {
                                                           auth     => $self -> {"auth"},
                                                           template => $self -> {"template"},
                                                           settings => $self -> {"settings"})
-        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create session object: ".$SessionHandler::errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create session object: ".$Webperl::SessionHandler::errstr);
 
     # At this point, there's potentially a real user associated with the session. If appropriate,
     # update the template theme and language
@@ -227,7 +227,7 @@ sub run {
                                                    blockdir => $self -> {"settings"} -> {"paths"} -> {"blocks"} || "blocks",
                                                    system   => $self -> {"system"},
                                                    messages => $self -> {"messages"})
-        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create module handling object: ".$Modules::errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create module handling object: ".$Webperl::Modules::errstr);
 
     $self -> {"messages"} -> set_module_obj($self -> {"modules"});
 
