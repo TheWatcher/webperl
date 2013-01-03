@@ -592,8 +592,8 @@ sub admin_session {
 # @param value The value to set for the variable. This must be a scalar value,
 #              references are not supported. If this is undef, the variable
 #              is deleted.
-# @return The previous contents of the variable, or undef if the variable had
-#         not been previously set.
+# @return The previous contents of the variable, "" if the variable had
+#         not been previously set, undef on error.
 sub set_variable {
     my $self  = shift;
     my $name  = shift;
@@ -606,16 +606,15 @@ sub set_variable {
     $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unsupported reference passed to set_variable")
         if(ref($value));
 
-    # Does the variable exist already?
+    # Get a value for the old contents, if any.
     my $oldvalue = $self -> get_variable($name);
-    if(defined($oldvalue)) {
-        # Yes, remove the old value
-        my $hukeh = $self -> {"dbh"} -> prepare("DELETE FROM ".$self -> {"settings"} -> {"database"} -> {"session_variables"}."
-                                                 WHERE session_id = ?
-                                                 AND var_name LIKE ?");
-        $hukeh -> execute($self -> {"sessid"}, $name)
-            or return $self -> self_error("Unable to look up session variable\nError was: ".$self -> {"dbh"} -> errstr);
-    }
+
+    # Yes, remove the old value if it exists.
+    my $hukeh = $self -> {"dbh"} -> prepare("DELETE FROM ".$self -> {"settings"} -> {"database"} -> {"session_variables"}."
+                                             WHERE session_id = ?
+                                             AND var_name LIKE ?");
+    $hukeh -> execute($self -> {"sessid"}, $name)
+        or return $self -> self_error("Unable to look up session variable\nError was: ".$self -> {"dbh"} -> errstr);
 
     # If a new value has been specified, insert it
     if(defined($value)) {
@@ -630,20 +629,25 @@ sub set_variable {
 }
 
 
-## @method $ get_variable($name)
+## @method $ get_variable($name, $default)
 # Obtain the value for the specified session variable. This returns the value set
 # for the session variable with the given name associated with the current session,
-# or undef if the value is not set. Note that, if the value has somehow been set
-# to undef (which should not be possible through set_value!), this will return the
-# empty string instead! Undef is only returned iff the named variable does not
-# appear in the session's variable list.
+# or the provided default (or "" if no default has been specified) if the value
+# is not set. Note that, if the value has somehow been set to undef (which should
+# not be possible through set_value!), this will return the default (or "" if no
+# default is set)
 #
-# @param name The name of the session variable to get. Variable names must be 80
-#             characters or less, but are otherwise unconstrained.
-# @return The contents of the variable, or undef if it does not exist.
+# @param name    The name of the session variable to get. Variable names must be 80
+#                characters or less, but are otherwise unconstrained.
+# @param default An optional default value to return if a value has not been set
+#                in the session data.
+# @return The contents of the variable, the default if one is set and the variable
+#         is not, or undef on error.
 sub get_variable {
-    my $self = shift;
-    my $name = shift;
+    my $self    = shift;
+    my $name    = shift;
+    my $default = shift || "";
+
     $self -> self_error("");
 
     my $geth = $self -> {"dbh"} -> prepare("SELECT var_value FROM ".$self -> {"settings"} -> {"database"} -> {"session_variables"}."
@@ -654,7 +658,7 @@ sub get_variable {
 
     my $valrow = $geth -> fetchrow_arrayref();
 
-    return $valrow ? ($valrow -> [0] || "") : undef;
+    return $valrow ? ($valrow -> [0] || $default) : $default;
 }
 
 
