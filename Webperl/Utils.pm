@@ -24,6 +24,8 @@
 # need for multiple copies around various modules.
 package Webperl::Utils;
 require Exporter;
+use Carp qw(croak);
+use CGI::Util qw(escape);
 use File::Spec;
 use File::Path;
 use POSIX qw(strftime);
@@ -31,7 +33,7 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join resolve_path check_directory load_file save_file superchomp trimspace lead_zero string_in_array blind_untaint title_case sentence_case is_defined_numeric rfc822_date get_proc_size find_bin untaint_path read_pid write_pid hash_or_hashref);
+our @EXPORT_OK = qw(path_join resolve_path check_directory load_file save_file superchomp trimspace lead_zero string_in_array blind_untaint title_case sentence_case is_defined_numeric rfc822_date get_proc_size find_bin untaint_path read_pid write_pid hash_or_hashref join_complex);
 
 
 # ============================================================================
@@ -45,7 +47,8 @@ our @EXPORT_OK = qw(path_join resolve_path check_directory load_file save_file s
 # <b>does not</b> end in /, but nothing is done to ensure that the string
 # returned actually contains a valid path.
 #
-# @param fragments The path fragments to join together.
+# @param fragments An array of path fragments to join together. Items in the
+#                  array that are undef or "" are skipped.
 # @return A string containing the path fragments joined with forward slashes.
 sub path_join {
     my @fragments = @_;
@@ -55,7 +58,7 @@ sub path_join {
     my @parts;
     foreach my $bit (@fragments) {
         # Skip empty fragments.
-        next unless($bit);
+        next if(!defined($bit) || $bit eq "");
 
         # Determine whether the first real path has a leading slash.
         $leadslash = $bit =~ m|^/| unless(defined($leadslash));
@@ -338,6 +341,70 @@ sub sentence_case(\$) {
 }
 
 
+
+## @fn $ join_complex($value, %settings)
+# Join the contents of a hashref or an arrayref into a string, or pass a provided
+# string through. This is a convenience function that allows some features of the
+# system to accept either a reference to a hash or array of values, or a value,
+# and it will return either a joined version of the hash or arrayref or the value
+# as needed.
+#
+# @note If a hashref is passed to this function, the values in the hash are assumed
+#       to be simple scalars. It can not sensibly handle, for example, a hash of
+#       arrayrefs of something more fiddly.
+#
+# @param value    Either a string, or a reference to an array or hashref to join into
+#                 a string.
+# @param settings A hash of settings to use when joining arrays or hashrefs. This
+#                 should contain:
+# - `joinstr`, the string to use when joining elements in an arrayref, or between
+#   each pair of key/value pairs when joining hashes.
+# - `pairstr`, the string to place between the key and value when joining hashes.
+# - `escape`, if set to true (default is false), keys and values in hashes are
+#   escaped with CGI::Util::escape
+#
+# @return A string containing the value, or joined array or hash as appropriate. If
+#         the sepcified valus is undef, not a scalar, or array or hash reference,
+#         this returns undef.
+sub join_complex {
+    my $value    = shift;
+    my %settings = @_;
+
+    # Yes, this could be more easily done with given/when, but that would force
+    # 5.10+, and Webperl can't assume that is safe.
+    if(!defined($value)) {
+        return undef;
+
+    } elsif(!ref($value)) {
+        return $value;
+
+    } elsif(ref($value) eq "ARRAY") {
+        croak "join_complex not given a joinstr when joining an array" unless(defined($settings{"joinstr"}));
+
+        return join($settings{"joinstr"}, @{$value});
+    } elsif(ref($value) eq "HASH") {
+        croak "join_complex not given a joinstr when joining a hash" unless(defined($settings{"joinstr"}));
+        croak "join_complex not given a pairstr when joining a hash" unless(defined($settings{"pairstr"}));
+
+        my @pairs;
+        foreach my $key (sort keys(%{$value})) {
+            croak "join_complex encountered an unsupported reference value during hash processing" if(ref($value -> {$key}));
+
+            my $val = $value -> {$key};
+            if($settings{"escape"}) {
+                $key = escape($key);
+                $val = escape($val);
+            }
+
+            push(@pairs, $key.$settings{"pairstr"}.$val);
+        }
+
+        return join($settings{"joinstr"}, @pairs);
+    }
+    return undef;
+}
+
+
 # ============================================================================
 #  CGI Convenience functions
 
@@ -428,7 +495,7 @@ sub get_proc_size {
 
     # Try to open and read the process' stat file
     open(STAT, "/proc/$$/stat")
-        or die "Unable to read stat file for current process ($$)\n";
+        or croak "Unable to read stat file for current process ($$)";
     my $stat = <STAT>;
     close(STAT);
 
@@ -495,7 +562,7 @@ sub write_pid {
     my $filename = shift;
 
     open(PIDFILE, "> $filename")
-        or die "FATAL: Unable to open PID file for writing: $!\n";
+        or croak "FATAL: Unable to open PID file for writing: $!";
 
     print PIDFILE $$;
 
@@ -513,7 +580,7 @@ sub read_pid {
     my $filename = shift;
 
     open(PIDFILE, "< $filename")
-        or die "FATAL: Unable to open PID file for reading: $!\n";
+        or croak "FATAL: Unable to open PID file for reading: $!";
 
     my $pid = <PIDFILE>;
     close(PIDFILE);
@@ -522,7 +589,7 @@ sub read_pid {
 
     my ($realpid) = $pid =~ /^(\d+)$/;
 
-    die "FATAL: PID file does not appear to contain a valid process id.\n"
+    croak "FATAL: PID file does not appear to contain a valid process id."
         unless($realpid);
 
     return $realpid;
