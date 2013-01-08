@@ -35,6 +35,7 @@ use HTML::Entities;
 
 # Custom module imports
 use Webperl::AuthMethods;
+use Webperl::AuthMethod;
 
 # ============================================================================
 #  Constructor
@@ -271,6 +272,28 @@ sub valid_user {
 
     # Authentication failed.
     return $self -> self_error("Invalid username or password specified.");
+}
+
+
+## @method $ get_user_authmethod_module($username)
+# Given a username, obtain a reference to an AuthMethod implementation for the user's
+# authmethod. If the user has no authmethod set, this will return a reference to an
+# object of the base AuthMethod class rather than a fully-featured subclass.
+#
+# @param username The username of the user to obtain the AuthMethod for.
+# @return A reference to the user's AuthMethod object on success, undef on error.
+sub get_user_authmethod_module {
+    my $self     = shift;
+    my $username = shift;
+
+    # Does the user have an authmethod set?
+    my $authmethod = $self -> {"app"} -> get_user_authmethod($username);
+
+    return $self -> {"methods"} -> load_method($authmethod)
+        if($authmethod);
+
+    # If the user doesn't have an AuthMethod set, fall back on the base class.
+    return AuthMethod -> new();
 }
 
 1;
