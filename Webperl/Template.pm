@@ -114,6 +114,8 @@
 # - `{V_[commonpath]}` is replaced by the path from the base of the web
 #    application to the common template directory (useful for image and other resource
 #    paths inside the common template). This will always have a trailing '/'.
+# - `{V_[sitename]}` is replaced by the name of the site in the 'site_name'
+#    configuration value.
 package Webperl::Template;
 
 use POSIX qw(strftime);
@@ -574,6 +576,7 @@ sub process_template {
     $$textref =~ s/{V_\[scriptpath\]}/$self->{scriptpath}/g;
     $$textref =~ s/{V_\[templatepath\]}/$self->{templatepath}/g;
     $$textref =~ s/{V_\[commonpath\]}/$self->{commonpath}/g;
+    $$textref =~ s/{V_\[sitename\]}/$self->{settings}->{config}->{site_name}/g;
 
     # Do any module marker replacements if we can
     if($self -> {"modules"}) {
