@@ -303,7 +303,7 @@ sub get_user_authmethod_module {
         if($authmethod);
 
     # If the user doesn't have an AuthMethod set, fall back on the base class.
-    return AuthMethod -> new();
+    return WebPerl::AuthMethod -> new();
 }
 
 1;
