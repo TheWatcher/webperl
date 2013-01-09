@@ -265,6 +265,16 @@ sub valid_user {
         if($self -> {"app"} -> post_authenticate($username, $password, $self)) {
             $self -> {"app"} -> set_user_authmethod($username, $authmethod);
 
+            my $user = $self -> {"app"} -> get_user($username);
+
+            # Determine whether the user's authentication method requires account activation
+            my $methodimpl = $self -> {"methods"} -> load_method($authmethod);
+            return $self -> self_error("AuthMethod implementation failure during post-auth.") if(!$methodimpl);
+
+            # If it doesn't require activation, and the user isn't active yet, activate them
+            $self -> {"app"} -> activate_user($user -> {"user_id"})
+                unless($methodimpl -> require_activate() || $self -> {"app"} -> activated($user -> {"user_id"}));
+
             return $self -> {"app"} -> get_user($username);
         }
         return undef;

@@ -73,4 +73,54 @@ sub authenticate {
     return 0;
 }
 
+
+## @method $ require_activate()
+# Determine whether the AuthMethod module requires that user accounts
+# be activated before they can be used.
+#
+# @return true if the AuthMethod requires activation, false if it does not.
+sub require_activate {
+    my $self = shift;
+
+    # By default, AuthMethods do not require account activation
+    return 0;
+}
+
+
+## @method $ noactivate_message()
+# Generate a message (or, better yet, a language variable marker) to show to users
+# who attempt to activate an account that uses an AuthMethod that does not require it.
+#
+# @return A message to show to the user when redundantly attempting to activate.
+sub noactivate_message {
+    my $self = shift;
+
+    return $self -> {"noactivate_message"} || $self -> {"settings"} -> {"config"} -> {"AuthMethod::noactivate_message"};
+}
+
+
+## @method $ supports_recovery()
+# Determine whether the AuthMethod allows users to recover their account details
+# within the system.
+#
+# @return True if the AuthMethod supports in-system account recovery, false if it does not.
+sub supports_recovery {
+    my $self = shift;
+
+    # By default, AuthMethods do not support recovery
+    return 0;
+}
+
+
+## @method $ norecover_message()
+# Generate a message to show users who attempt to recover their account using an AuthMethod
+# that does not support in-system recovery.
+#
+# @return A message to show to the user attempting an unsupported recovery operation.
+sub norecover_message {
+    my $self = shift;
+
+    return $self -> {"norecover_message"} || $self -> {"settings"} -> {"config"} -> {"AuthMethod::norecover_message"};
+}
+
 1;

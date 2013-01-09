@@ -137,6 +137,30 @@ sub hash_password {
 }
 
 
+## @method $ require_activate()
+# Determine whether the AuthMethod module requires that user accounts
+# be activated before they can be used.
+#
+# @return true if the AuthMethod requires activation, false if it does not.
+sub require_activate {
+    my $self = shift;
+
+    return 1;
+}
+
+
+## @method $ supports_recovery()
+# Determine whether the AuthMethod allows users to recover their account details
+# within the system.
+#
+# @return True if the AuthMethod supports in-system account recovery, false if it does not.
+sub supports_recovery {
+    my $self = shift;
+
+    return 1;
+}
+
+
 # ============================================================================
 #  Ghastly internals
 

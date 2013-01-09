@@ -244,6 +244,78 @@ sub set_user_authmethod {
 }
 
 
+## @method $ activated($userid)
+# Determine whether the user account specified has been activated.
+#
+# @param userid The ID of the user account to check the activation status of.
+# @return true if the user has been activated (actually, the unix timestamp of
+#         their activation), 0 if the user has not been activated/does not exist,
+#         or undef on error.
+sub activated {
+    my $self = shift;
+    my $userid  = shift;
+
+    $self -> clear_error();
+
+    my $acth = $self -> {"dbh"} -> prepare("SELECT activated FROM ".$self -> {"settings"} -> {"database"} -> {"users"}."
+                                            WHERE user_id = ?");
+    $acth -> execute($userid)
+        or return $self -> self_error("Unable to perform user activation check: ". $self -> {"dbh"} -> errstr);
+
+    my $act = $acth -> fetchrow_arrayref();
+    return $act ? $act -> [0] : 0;
+}
+
+
+## @method $ activate_user_byid($userid)
+# Activate the user account with the specified id. This clears the user's
+# activation code, and sets the activation timestamp.
+#
+# @param userid The ID of the user account to activate.
+# @return true on success, undef on error.
+sub activate_user_byid {
+    my $self   = shift;
+    my $userid = shift;
+
+    $self -> clear_error();
+
+    my $activate = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"users"}."
+                                                SET activated = UNIX_TIMESTAMP(), act_code = NULL
+                                                WHERE user_id = ?");
+    my $rows = $activate -> execute($userid);
+    return $self -> self_error("Unable to perform user update: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("User update failed, no rows modified - bad userid?") if($rows eq "0E0");
+
+    return 1;
+}
+
+
+## @method $ activate_user($actcode)
+# Activate the user account with the specified code. This clears the user's
+# activation code, and sets the activation timestamp.
+#
+# @param actcode The activation code to look for and clear.
+# @return A reference to the user's data on success, undef on error.
+sub activate_user {
+    my $self    = shift;
+    my $actcode = shift;
+
+    $self -> clear_error();
+
+    # Look up a user with the specified code
+    my $userh = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"settings"} -> {"database"} -> {"users"}."
+                                             WHERE act_code = ?");
+    $userh -> execute($actcode)
+        or return $self -> self_error("Unable to perform user lookup: ". $self -> {"dbh"} -> errstr);
+
+    my $user = $userh -> fetchrow_hashref()
+        or return $self -> self_error("The specified activation code is not set for any users.");
+
+    # Activate the user, and return their data if successful.
+    return $self -> activate_user_byid($user -> {"user_id"}) ? $user : undef;
+}
+
+
 # ============================================================================
 #  Pre- and Post-auth functions.
 
@@ -299,6 +371,8 @@ sub post_authenticate {
     my $username = shift;
     my $auth     = shift;
 
+    $self -> clear_error();
+
     # Determine whether the user exists. If not, create the user.
     my $user = $self -> get_user($username);
     if(!$user) {
@@ -350,6 +424,8 @@ sub _get_user {
     my $value    = shift;
     my $onlyreal = shift;
     my $uselike  = shift;
+
+    $self -> clear_error();
 
     my $userh = $self -> {"dbh"} -> prepare("SELECT * FROM ".$self -> {"settings"} -> {"database"} -> {"users"}."
                                              WHERE $field ".($uselike ? "LIKE" : "=")." ?".
