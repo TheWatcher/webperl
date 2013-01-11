@@ -294,7 +294,7 @@ sub pre_authenticate {
 }
 
 
-## @method $ post_authenticate($username, $password, $auth)
+## @method $ post_authenticate($username, $password, $auth, $authmethod)
 # Perform any system-specific post-authentication tasks on the specified
 # user's data. This function allows each system to tailor post-auth tasks
 # to the requirements of the system. This function is only called if
