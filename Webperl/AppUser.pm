@@ -319,6 +319,7 @@ sub pre_authenticate {
 sub post_authenticate {
     my $self       = shift;
     my $username   = shift;
+    my $password   = shift;
     my $auth       = shift;
     my $authmethod = shift;
 
