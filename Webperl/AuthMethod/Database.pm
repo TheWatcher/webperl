@@ -141,9 +141,12 @@ sub create_user {
     my $userid = $self -> {"dbh"} -> {"mysql_insertid"};
     return $self -> self_error("Unable to obtain id for user '$username'") if(!$userid);
 
-    my $user = $self -> get_user_byid($userid);
+    $userh = $self -> {"dbh"} -> prepare("SELECT * FROM  ".$self -> {"settings"} -> {"database"} -> {"users"}."
+                                          WHERE user_id = ?");
+    $userh -> execute($userid)
+        or return $self -> self_error("Unable to fetch user record: ".$self -> {"dbh"} -> errstr);
 
-    return ($user, $password);
+    return ($userh -> fetchrow_hashref(), $password);
 }
 
 
