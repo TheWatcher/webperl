@@ -126,7 +126,7 @@ sub create_user {
     my $password = join("", map { ("a".."z", "A".."Z", 0..9)[rand 62] } 1..10);
 
     # Hash the password using the method AuthMethod::Database uses internally
-    my $cryptpass = Webperl::AuthMethod::Database::hash_password({"bcrypt_cost" => 14}, $password);
+    my $cryptpass = $self -> hash_password($password);
 
     # Do the insert
     my $userh = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"settings"} -> {"database"} -> {"users"}."
@@ -267,7 +267,7 @@ sub reset_password_actcode {
     my $password = join("", map { ("a".."z", "A".."Z", 0..9)[rand 62] } 1..10);
 
     # Hash the password using the method AuthMethod::Database uses internally
-    my $cryptpass = $self -> hash_password({"bcrypt_cost" => 14}, $password);
+    my $cryptpass = $self -> hash_password($password);
 
     my $reseth = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"users"}."
                                               SET password = ?, act_code = ?
@@ -292,7 +292,7 @@ sub reset_password {
     my $password = join("", map { ("a".."z", "A".."Z", 0..9)[rand 62] } 1..10);
 
     # Hash the password using the method AuthMethod::Database uses internally
-    my $cryptpass = $self -> hash_password({"bcrypt_cost" => 14}, $password);
+    my $cryptpass = $self -> hash_password($password);
 
     my $reseth = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"users"}."
                                               SET password = ?
@@ -317,7 +317,7 @@ sub set_password {
     my $password = shift;
 
     # Hash the password using the method AuthMethod::Database uses internally
-    my $cryptpass = $self -> hash_password({"bcrypt_cost" => 14}, $password);
+    my $cryptpass = $self -> hash_password($password);
 
     my $reseth = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"users"}."
                                               SET password = ?
