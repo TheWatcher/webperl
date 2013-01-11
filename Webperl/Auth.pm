@@ -335,7 +335,7 @@ sub require_activate {
         or return undef;
 
     return $methodimpl -> require_activate()
-        or return $self -> self_error($methodimpl -> errstr();
+        or return $self -> self_error($methodimpl -> errstr());
 }
 
 
@@ -374,7 +374,7 @@ sub activated {
         or return undef;
 
     return $methodimpl -> activated($user -> {"user_id"})
-        or return $self -> self_error($methodimpl -> errstr();
+        or return $self -> self_error($methodimpl -> errstr());
 }
 
 
@@ -418,7 +418,7 @@ sub supports_recovery {
         or return undef;
 
     return $methodimpl -> supports_recovery()
-        or return $self -> self_error($methodimpl -> errstr();
+        or return $self -> self_error($methodimpl -> errstr());
 }
 
 
@@ -436,7 +436,7 @@ sub norecover_message {
         or return undef;
 
     return $methodimpl -> norecover_message()
-        or return $self -> self_error($methodimpl -> errstr();
+        or return $self -> self_error($methodimpl -> errstr());
 }
 
 
@@ -456,7 +456,7 @@ sub reset_password_actcode {
         or return undef;
 
     return $methodimpl -> reset_password_actcode($user -> {"user_id"})
-        or return $self -> self_error($methodimpl -> errstr();
+        or return $self -> self_error($methodimpl -> errstr());
 }
 
 
@@ -476,7 +476,7 @@ sub reset_password {
         or return undef;
 
     return $methodimpl -> reset_password($user -> {"user_id"})
-        or return $self -> self_error($methodimpl -> errstr();
+        or return $self -> self_error($methodimpl -> errstr());
 }
 
 
@@ -498,7 +498,7 @@ sub set_password {
         or return undef;
 
     return $methodimpl -> set_password($user -> {"user_id"}, $password)
-        or return $self -> self_error($methodimpl -> errstr();
+        or return $self -> self_error($methodimpl -> errstr());
 }
 
 
@@ -518,7 +518,7 @@ sub generate_actcode {
         or return undef;
 
     return $methodimpl -> generate_actcode($user -> {"user_id"})
-        or return $self -> self_error($methodimpl -> errstr();
+        or return $self -> self_error($methodimpl -> errstr());
 }
 
 
