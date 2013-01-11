@@ -231,7 +231,8 @@ sub valid_user {
 
     # Try the user's set authmethod if possible
     if($authmethod) {
-        $methodimpl = $self -> {"methods"} -> load_method($authmethod);
+        $methodimpl = $self -> get_authmethod_module($authmethod)
+            or return undef;
 
         # Check whether the user can authenticate if the implementation was found
         $valid = $methodimpl -> authenticate($username, $password, $self)
@@ -244,8 +245,8 @@ sub valid_user {
     # methods instead.
     if(!$valid && (!$authmethod || !$methodimpl || $self -> {"settings"} -> {"Auth:enable_fallback"})) {
         foreach my $trymethod (@{$methods}) {
-            my $methodimpl = $self -> {"methods"} -> load_method($trymethod)
-                or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Auth implementation load failed: ".$self -> {"methods"} -> {"errstr"});
+            my $methodimpl = $self -> get_authmethod_module($trymethod)
+                or return undef;
 
             $valid = $methodimpl -> authenticate($username, $password, $self);
 
@@ -260,25 +261,8 @@ sub valid_user {
     # If one of the auth methods succeeded in validating the user, record it
     # invoke the app standard post-auth for the user, and return the user's
     # database record.
-    if($valid) {
-        # If postauth fails, treat the user as invalid
-        if($self -> {"app"} -> post_authenticate($username, $password, $self)) {
-            $self -> {"app"} -> set_user_authmethod($username, $authmethod);
-
-            my $user = $self -> {"app"} -> get_user($username);
-
-            # Determine whether the user's authentication method requires account activation
-            my $methodimpl = $self -> {"methods"} -> load_method($authmethod);
-            return $self -> self_error("AuthMethod implementation failure during post-auth.") if(!$methodimpl);
-
-            # If it doesn't require activation, and the user isn't active yet, activate them
-            $self -> {"app"} -> activate_user($user -> {"user_id"})
-                unless($methodimpl -> require_activate() || $self -> {"app"} -> activated($user -> {"user_id"}));
-
-            return $self -> {"app"} -> get_user($username);
-        }
-        return undef;
-    }
+    return $self -> {"app"} -> post_authenticate($username, $password, $self, $authmethod)
+        if($valid);
 
     # Authentication failed.
     return $self -> self_error("Invalid username or password specified.");
@@ -299,11 +283,233 @@ sub get_user_authmethod_module {
     # Does the user have an authmethod set?
     my $authmethod = $self -> {"app"} -> get_user_authmethod($username);
 
-    return $self -> {"methods"} -> load_method($authmethod)
+    return $self -> get_authmethod_module($authmethod)
         if($authmethod);
 
     # If the user doesn't have an AuthMethod set, fall back on the base class.
     return Webperl::AuthMethod -> new();
 }
+
+
+## @method $ get_authmethod_module($moduleid)
+# A convenience wrapper around calls to AuthMethods::load_method to help reduce
+# exposure throughout the rest of the system somewhat.
+#
+# @param moduleid The ID of the AuthMethod module to load.
+# @return A reference to an AuthMethod on success, undef on error.
+sub get_authmethod_module {
+    my $self     = shift;
+    my $moduleid = shift;
+
+    $self -> clear_error();
+
+    return $self -> {"methods"} -> load_method($moduleid)
+        or return $self -> self_error("Auth implementation load failed: ".$self -> {"methods"} -> errstr());
+}
+
+
+
+# ============================================================================
+#  AuthMethod abstraction
+
+# These functions exist to insulate the rest of the system from the actual
+# authemthod set for a user, and the implementation of the various user ops.
+# Direct user access is still supported through AppUser and other modules as
+# needed, but credential management and checking should be done through
+# these functions to ensure that auth-specific code doesn't leak.
+
+# Note that this doesn't cover user creation, as these can not establish
+# which authmodule to use until the user has been created...
+
+## @method $ require_activate($username)
+# Determine whether the user's AuthMethod module requires that user accounts
+# be activated before they can be used.
+#
+# @param username The name of the user to check for authentication requirement.
+# @return true if the AuthMethod requires activation, false if it does not.
+sub require_activate {
+    my $self     = shift;
+    my $username = shift;
+
+    my $methodimpl = $self -> get_user_authmethod_module($username)
+        or return undef;
+
+    return $methodimpl -> require_activate();
+}
+
+
+## @method $ noactivate_message($username)
+# Generate a message (or, better yet, a language variable marker) to show to users
+# who attempt to activate an account that uses an AuthMethod that does not require it.
+#
+# @param username The name of the user trying to activate
+# @return A message to show to the user when redundantly attempting to activate.
+sub noactivate_message {
+    my $self     = shift;
+    my $username = shift;
+
+    my $methodimpl = $self -> get_user_authmethod_module($username)
+        or return undef;
+
+    return $methodimpl -> noactivate_message();
+}
+
+
+## @method $ activated($username)
+# Determine whether the user account specified has been activated.
+#
+# @param username The name of the user to check
+# @return true if the user has been activated (actually, the unix timestamp of
+#         their activation), 0 if the user has not been activated/does not exist,
+#         or undef on error.
+sub activated {
+    my $self     = shift;
+    my $username = shift;
+
+    my $methodimpl = $self -> get_user_authmethod_module($username)
+        or return undef;
+
+    my $user = $self -> get_user($username)
+        or return undef;
+
+    return $methodimpl -> activated($user -> {"user_id"});
+}
+
+
+## @method $ activate_user($actcode)
+# Activate the user account with the specified code. This clears the user's
+# activation code, and sets the activation timestamp.
+#
+# @param actcode The activation code to look for and clear.
+# @return A reference to the user's data on success, undef on error.
+sub activate_user {
+    my $self    = shift;
+    my $actcode = shift;
+
+    $self -> clear_error();
+
+    # Look up a user with the specified code
+    my $user = $self -> {"app"} -> get_user_byactcode($actcode)
+        or return $self -> self_error("The specified activation code is not set for any users.");
+
+    my $methodimpl = $self -> get_user_authmethod_module($user -> {"username"})
+        or return undef;
+
+    # Activate the user, and return their data if successful.
+    return $methodimpl -> activate_user($user -> {"user_id"});
+}
+
+
+## @method $ supports_recovery($username)
+# Determine whether the user's AuthMethod allows users to recover their account details
+# within the system.
+#
+# @param username The name of the user to check for recovery support for.
+# @return True if the AuthMethod supports in-system account recovery, false if it does not.
+sub supports_recovery {
+    my $self = shift;
+    my $username = shift;
+
+    my $methodimpl = $self -> get_user_authmethod_module($username)
+        or return undef;
+
+    return $methodimpl -> supports_recovery();
+}
+
+
+## @method $ norecover_message($username)
+# Generate a message to show users who attempt to recover their account using an AuthMethod
+# that does not support in-system recovery.
+#
+# @param username The name of the user to obtain the 'recovery unsupported' message for
+# @return A message to show to the user attempting an unsupported recovery operation.
+sub norecover_message {
+    my $self     = shift;
+    my $username = shift;
+
+    my $methodimpl = $self -> get_user_authmethod_module($username)
+        or return undef;
+
+    return $methodimpl -> norecover_message();
+}
+
+
+## @method @ reset_password_actcode($username)
+# Forcibly reset the user's password and activation code to new random values.
+#
+# @param username The username of the user to reset the password and act code for
+# @return The new password and activation code set for the user, undef on error.
+sub reset_password_actcode {
+    my $self     = shift;
+    my $username = shift;
+
+    my $methodimpl = $self -> get_user_authmethod_module($username)
+        or return undef;
+
+    my $user = $self -> get_user($username)
+        or return undef;
+
+    return $methodimpl -> reset_password_actcode($user -> {"user_id"});
+}
+
+
+## @method $ reset_password($username)
+# Forcibly reset the user's password to a new random value.
+#
+# @param username The username of the user to reset the password for
+# @return The (unencrypted) new password set for the user, undef on error.
+sub reset_password {
+    my $self     = shift;
+    my $username = shift;
+
+    my $methodimpl = $self -> get_user_authmethod_module($username)
+        or return undef;
+
+    my $user = $self -> get_user($username)
+        or return undef;
+
+    return $methodimpl -> reset_password($user -> {"user_id"});
+}
+
+
+## @method $ set_password($username, $password)
+# Set the user's password to the specified value.
+#
+# @param username   The ID of the user to set the password for
+# @param password The password to set for the user.
+# @return True on success, undef on error.
+sub set_password {
+    my $self     = shift;
+    my $username = shift;
+    my $password = shift;
+
+    my $methodimpl = $self -> get_user_authmethod_module($username)
+        or return undef;
+
+    my $user = $self -> get_user($username)
+        or return undef;
+
+    return $methodimpl -> set_password($user -> {"user_id"}, $password);
+}
+
+
+## @method $ generate_actcode($username)
+# Generate a new activation code for the specified user.
+#
+# @param username The username of the user to generate a new act code for.
+# @return The new activation code for the user
+sub generate_actcode {
+    my $self   = shift;
+    my $username = shift;
+
+    my $methodimpl = $self -> get_user_authmethod_module($username)
+        or return undef;
+
+    my $user = $self -> get_user($username)
+        or return undef;
+
+    return $methodimpl -> generate_actcode($user -> {"user_id"});
+}
+
 
 1;
