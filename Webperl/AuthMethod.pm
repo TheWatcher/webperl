@@ -129,7 +129,7 @@ sub activated {
 # activation code, and sets the activation timestamp.
 #
 # @param userid The ID of the user account to activate.
-# @return true on success, undef on error.
+# @return True on success, undef on error.
 sub activate_user {
     my $self   = shift;
     my $userid = shift;

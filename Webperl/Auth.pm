@@ -334,7 +334,8 @@ sub require_activate {
     my $methodimpl = $self -> get_user_authmethod_module($username)
         or return undef;
 
-    return $methodimpl -> require_activate();
+    return $methodimpl -> require_activate()
+        or return $self -> self_error($methodimpl -> errstr();
 }
 
 
@@ -372,7 +373,8 @@ sub activated {
     my $user = $self -> get_user($username)
         or return undef;
 
-    return $methodimpl -> activated($user -> {"user_id"});
+    return $methodimpl -> activated($user -> {"user_id"})
+        or return $self -> self_error($methodimpl -> errstr();
 }
 
 
@@ -396,7 +398,9 @@ sub activate_user {
         or return undef;
 
     # Activate the user, and return their data if successful.
-    return $methodimpl -> activate_user($user -> {"user_id"});
+    return $user if($methodimpl -> activate_user($user -> {"user_id"}));
+
+    return $self -> self_error($methodimpl -> errstr();
 }
 
 
@@ -413,7 +417,8 @@ sub supports_recovery {
     my $methodimpl = $self -> get_user_authmethod_module($username)
         or return undef;
 
-    return $methodimpl -> supports_recovery();
+    return $methodimpl -> supports_recovery()
+        or return $self -> self_error($methodimpl -> errstr();
 }
 
 
@@ -430,7 +435,8 @@ sub norecover_message {
     my $methodimpl = $self -> get_user_authmethod_module($username)
         or return undef;
 
-    return $methodimpl -> norecover_message();
+    return $methodimpl -> norecover_message()
+        or return $self -> self_error($methodimpl -> errstr();
 }
 
 
@@ -449,7 +455,8 @@ sub reset_password_actcode {
     my $user = $self -> get_user($username)
         or return undef;
 
-    return $methodimpl -> reset_password_actcode($user -> {"user_id"});
+    return $methodimpl -> reset_password_actcode($user -> {"user_id"})
+        or return $self -> self_error($methodimpl -> errstr();
 }
 
 
@@ -468,7 +475,8 @@ sub reset_password {
     my $user = $self -> get_user($username)
         or return undef;
 
-    return $methodimpl -> reset_password($user -> {"user_id"});
+    return $methodimpl -> reset_password($user -> {"user_id"})
+        or return $self -> self_error($methodimpl -> errstr();
 }
 
 
@@ -489,7 +497,8 @@ sub set_password {
     my $user = $self -> get_user($username)
         or return undef;
 
-    return $methodimpl -> set_password($user -> {"user_id"}, $password);
+    return $methodimpl -> set_password($user -> {"user_id"}, $password)
+        or return $self -> self_error($methodimpl -> errstr();
 }
 
 
@@ -508,7 +517,8 @@ sub generate_actcode {
     my $user = $self -> get_user($username)
         or return undef;
 
-    return $methodimpl -> generate_actcode($user -> {"user_id"});
+    return $methodimpl -> generate_actcode($user -> {"user_id"})
+        or return $self -> self_error($methodimpl -> errstr();
 }
 
 
