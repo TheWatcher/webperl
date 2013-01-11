@@ -400,7 +400,7 @@ sub activate_user {
     # Activate the user, and return their data if successful.
     return $user if($methodimpl -> activate_user($user -> {"user_id"}));
 
-    return $self -> self_error($methodimpl -> errstr();
+    return $self -> self_error($methodimpl -> errstr());
 }
 
 
