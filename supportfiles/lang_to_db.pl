@@ -1,5 +1,11 @@
 #!/usr/bin/perl -w
 
+## @file
+# A support script to import a directory tree of language files into a webapp's
+# 'language' database table. This allows the webapp author to write .lang files
+# containing the language variables for the application, and then run this
+# script to import the files into the database for faster access.
+
 use strict;
 use lib "/var/www/webperl";
 
