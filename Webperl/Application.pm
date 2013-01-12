@@ -129,7 +129,7 @@ sub run {
 
     # Load the system config
     $self -> {"settings"} = Webperl::ConfigMicro -> new($self -> {"config"})
-        or $self -> {"logger"} -> die_log("Not avilable", "Application: Unable to obtain configuration file: ".$ConfigMicro::errstr);
+        or $self -> {"logger"} -> die_log("Not avilable", "Application: Unable to obtain configuration file: ".$Webperl::SystemModule::errstr);
 
     # Create a new CGI object to generate page content through
     $self -> {"cgi"} = $self -> load_cgi($self -> {"settings"} -> {"setup"} -> {"disable_compression"});
@@ -155,16 +155,17 @@ sub run {
     $self -> {"messages"} = Webperl::Message::Queue -> new(logger   => $self -> {"logger"},
                                                            dbh      => $self -> {"dbh"},
                                                            settings => $self -> {"settings"})
-        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create message handler: ".$SystemModule::errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create message handler: ".$Webperl::SystemModule::errstr);
 
     # Create the template handler object
     $self -> {"template"} = Webperl::Template -> new(logger    => $self -> {"logger"},
+                                                     dbh       => $self -> {"dbh"},
                                                      basedir   => $self -> {"settings"} -> {"config"} -> {"template_dir"} || "templates",
                                                      timefmt   => $self -> {"settings"} -> {"config"} -> {"timefmt"},
                                                      blockname => 1,
                                                      mailcmd   => '/usr/sbin/sendmail -t -f '.$self -> {"settings"} -> {"config"} -> {"Core:envelope_address"},
                                                      settings  => $self -> {"settings"})
-        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create template handling object: ".$Template::errstr);
+        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create template handling object: ".$Webperl::Template::errstr);
 
     # If phpbb mode is enabled, it takes over auth.
     if($self -> {"use_phpbb"}) {
@@ -177,7 +178,7 @@ sub run {
                                                     password => $self -> {"settings"} -> {"database"} -> {"phpbb_password"},
                                                     codepath => path_join($self -> {"settings"} -> {"config"} -> {"base"}, "templates", "default"),
                                                     url      => $self -> {"settings"} -> {"config"} -> {"forumurl"})
-            or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to create phpbb object: ".$phpBB3::errstr);
+            or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to create phpbb object: ".$Webperl::phpBB3::errstr);
 
         $self -> {"auth"} = $self -> {"phpbb"};
 
