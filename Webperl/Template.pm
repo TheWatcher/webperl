@@ -194,18 +194,18 @@ sub new {
     my $class    = ref($invocant) || $invocant;
 
     # Object constructors don't get much more minimal than this...
-    my $self = { "basedir"     => "templates",
-                 "langdir"     => "lang",
-                 "lang"        => "en",
-                 "theme"       => "default",
-                 "fallback"    => "common",
-                 "timefmt"     => '%a, %d %b %Y %H:%M:%S',
-                 "mailfmt"     => '%a, %d %b %Y %H:%M:%S %z',
-                 "mailcmd"     => '/usr/sbin/sendmail -t -f chris@starforge.co.uk',#pevesupport@cs.man.ac.uk', # Change -f as needed!
-                 "entities"    => $entities,
-                 "utfentities" => $utfentities,
-                 "blockname"   => 0,
-                 "usecache"    => 1,
+    my $self = { "basedir"      => "templates",
+                 "lang"         => "en",
+                 "fallbacklang" => "en",
+                 "theme"        => "default",
+                 "fallback"     => "common",
+                 "timefmt"      => '%a, %d %b %Y %H:%M:%S',
+                 "mailfmt"      => '%a, %d %b %Y %H:%M:%S %z',
+                 "mailcmd"      => '/usr/sbin/sendmail -t -f chris@starforge.co.uk',#pevesupport@cs.man.ac.uk', # Change -f as needed!
+                 "entities"     => $entities,
+                 "utfentities"  => $utfentities,
+                 "blockname"    => 0,
+                 "usecache"     => 1,
                  @_,
     };
 
@@ -214,10 +214,6 @@ sub new {
     $self -> {"mailfmt"} = '%a, %d %b %Y %H:%M:%S %z' unless($self -> {"mailfmt"});
 
     my $obj = bless $self, $class;
-
-    # Load the language definitions
-    $obj -> load_language() or return undef
-        if($self -> {"langdir"} && $self -> {"lang"});
 
     # Update the theme and paths
     $self -> set_template_dir($self -> {"theme"});
@@ -250,99 +246,21 @@ sub set_module_obj {
 # ============================================================================
 #  Templating functions
 
-## @method $ set_language($lang)
-# Set the current language to the specified value. This will update the language
-# variables loaded in the system to the values set in the language files in the
-# specified language directory. This *will not erase* any previously loaded language
-# definitions - if you need to do that, call this with `lang` set to `undef` first, and
-# then call it with the new language.
+## @method void set_language($lang)
+# Set the current language to the specified value.
 #
 # @param lang The new language directory to load language files from. If set to
 #             `undef` or `''`, this will clear the language data loaded already.
-# @return true if the language files were loaded successfully, false otherwise.
 sub set_language {
     my $self = shift;
     $self -> {"lang"} = shift;
-
-    # If the lang name has been cleared, drop the words hash.
-    if(!$self -> {"lang"}) {
-        $self -> {"words"} = {};
-        return 1;
-    }
-
-    # Otherwise, load the new language...
-    return $self -> load_language(1); # force overwite, we expect it to happen now.
-}
-
-
-## @method $ load_language($force_overwrite)
-# Load all of the language files in the appropriate language directory into a hash.
-# This will attempt to load all .lang files inside the langdir/lang/ directory,
-# attempting to parse VARNAME = string into a hash using VARNAME as the key and string
-# as the value. The hash is build up inside the Template object rather than returned.
-#
-# @param force_overwrite If true, redefinition of language variables will not result
-#                        in warning messages in the logs.
-# @return true if the language files loaded correctly, undef otherwise.
-sub load_language {
-    my $self            = shift;
-    my $force_overwrite = shift;
-
-    # First work out which directory we are dealing with
-    my $langdir = path_join($self -> {"langdir"}, $self -> {"lang"});
-
-    # open it, so we can process files therein
-    opendir(LANG, $langdir)
-        or return set_error("Unable to open language directory '$langdir' for reading: $!");
-
-    while(my $name = readdir(LANG)) {
-        # Skip anything that doesn't identify itself as a .lang file
-        next unless($name =~ /\.lang$/);
-
-        my $filename = path_join($langdir, $name);
-
-        # Attempt to open and parse the lang file
-        if(open(WORDFILE, "<:utf8", $filename)) {
-            while(my $line = <WORDFILE>) {
-                superchomp($line);
-
-                # skip comments
-                next if($line =~ /^\s*#/);
-
-                # Pull out the key and value, and
-                my ($key, $value) = $line =~ /^\s*(\w+)\s*=\s*(.*)$/;
-                next unless(defined($key) && defined($value));
-
-                # Unslash any \"s
-                $value =~ s/\\\"/\"/go;
-
-                # warn if we are about to redefine a word
-                $self -> {"logger"} -> warn_log("Unknown", "$key already exists in language hash!")
-                    if($self -> {"words"} -> {$key} && !$force_overwrite);
-
-                $self -> {"words"} -> {$key} = $value;
-            }
-
-            close(WORDFILE);
-        }  else {
-            $self -> {"logger"} -> warn_log("Unknown", "Unable to open language file $filename: $!");
-        }
-    }
-
-    closedir(LANG);
-
-    # Did we get any language data at all?
-    return set_error("Unable to load any lanugage data. Check your language selection!")
-        if(!defined($self -> {"words"}));
-
-    return 1;
 }
 
 
 ## @method $ replace_langvar($varname, $default, $varhash)
 # Replace the specified language variable with the appropriate text string. This
 # takes a language variable name and returns the value stored for that variable,
-# if there is on. If there is no value available, and the default is provided,
+# if there is one. If there is no value available, and the default is provided,
 # that is returned. If all else fails this just returns "&lt;$varname&gt;"
 #
 # @param varname The name of the language variable to obtain a value for.
@@ -364,32 +282,48 @@ sub replace_langvar {
         $varhash = $default;
 
         # Make the default value be the variable name in red to hilight problems
-        $default = "<span style=\"color: red\">$varname</span>";
+        $default = "<span style=\"color: red\">&lt;$varname&gt;</span>";
     } elsif(!defined($default)) {
-        $default = "<span style=\"color: red\">$varname</span>";
+        $default = "<span style=\"color: red\">&lt;$varname&gt;</span>";
     }
 
     # strip the leadin L_ if present
     $varname =~ s/^L_//o;
 
-    if(defined($self -> {"words"} -> {$varname})) {
-        my $txtstr = $self -> {"words"} -> {$varname};
+    if($self -> {"settings"} -> {"database"} -> {"language"}) {
+        my $langh = $self -> {"dbh"} -> prepare("SELECT message FROM ".$self -> {"settings"} -> {"database"} -> {"language"}."
+                                                 WHERE name LIKE ?
+                                                 AND lang LIKE ?");
 
-        # If we have a hash of variables to substitute, do the substitute
-        if($varhash) {
-            foreach my $key (keys(%$varhash)) {
-                my $value = defined($varhash -> {$key}) ? $varhash -> {$key} : ""; # make sure we get no undefined problems...
-                $txtstr =~ s/\Q$key\E/$value/g;
+        # Try looking for the language variable in both the active language, and the fallback
+        foreach my $lang ($self -> {"lang"}, $self -> {"fallbacklang"}) {
+            if(!$langh -> execute($varname, $lang)) {
+                $self -> {"logger"} -> log("error", 0, "", "Langvar lookup failed: ".$self -> {"dbh"} -> errstr);
+                return $default;
             }
-        }
 
-        # Do any module marker replacements if we can
-        if($self -> {"modules"}) {
-            $txtstr =~ s/{B_\[(\w+?)\]}/$self->replace_blockname($1)/ge;
-        }
+            # If a matching language variable has been found, process it and return it
+            my $row = $langh -> fetchrow_arrayref();
+            if($row) {
+                my $txtstr = $row -> [0];
 
-        return $txtstr;
-    }
+                # If we have a hash of variables to substitute, do the substitute
+                if($varhash) {
+                    foreach my $key (keys(%$varhash)) {
+                        my $value = defined($varhash -> {$key}) ? $varhash -> {$key} : ""; # make sure we get no undefined problems...
+                        $txtstr =~ s/\Q$key\E/$value/g;
+                    }
+                }
+
+                # Do any module marker replacements if we can
+                if($self -> {"modules"}) {
+                    $txtstr =~ s/{B_\[(\w+?)\]}/$self->replace_blockname($1)/ge;
+                }
+
+                return $txtstr;
+            }
+        } # foreach my $lang ($self -> {"lang"}, $self -> {"fallbacklang"}) {
+    } # if($self -> {"settings"} -> {"database"} -> {"language"}) {
 
     return $default;
 }
