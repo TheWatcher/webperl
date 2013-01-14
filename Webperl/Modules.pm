@@ -158,7 +158,7 @@ sub new_module {
                                     $modrow -> {"args"})
         if($modrow);
 
-    return undef;
+    return $self -> self_error("Request for unknown module '$arg'");
 }
 
 
