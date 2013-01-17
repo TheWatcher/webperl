@@ -642,7 +642,9 @@ sub wizard_box {
 # entries into a list of html options.
 #
 # @param options    A reference to an array of hashrefs, each hash needs to contain
-#                   two keys: name and value, corresponding to the option name and value.
+#                   at least two keys: name and value, corresponding to the option
+#                   name and value. You may also optionally include a 'title' in the
+#                   hash to use as the option title.
 # @param default    The default *value* to select in the list.
 # @param selectopts Options to set on the select element. If not provided, no select
 #                   element is generated. If provided, this should be a reference to
@@ -658,14 +660,15 @@ sub build_optionlist {
     my $selectopts = shift;
 
     # May as well hard-code the option template.
-    my $opttem = "<option value=\"***value***\"***sel***>***name***</option>\n";
+    my $opttem = "<option value=\"***value***\"***sel******title***>***name***</option>\n";
 
     # Now build up the option string
     my $optstr = "";
     foreach my $option (@{$options}) {
         $optstr .= $self -> process_template($opttem, {"***name***"  => $option -> {"name"},
                                                        "***value***" => $option -> {"value"},
-                                                       "***sel***"   => (defined($default) && $default eq $option -> {"value"}) ? ' selected="selected"' : ''});
+                                                       "***sel***"   => (defined($default) && $default eq $option -> {"value"}) ? ' selected="selected"' : '',
+                                                       "***title***" => defined($option -> {"title"}) ? ' title="'.$option -> {"title"}.'"' : ''});
     }
 
     # Handle select options, if any.
@@ -686,6 +689,7 @@ sub build_optionlist {
 
     return $optstr;
 }
+
 
 # ============================================================================
 #  Emailing functions
