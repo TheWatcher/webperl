@@ -315,10 +315,7 @@ sub replace_langvar {
                     }
                 }
 
-                # Do any module marker replacements if we can
-                if($self -> {"modules"}) {
-                    $txtstr =~ s/{B_\[(\w+?)\]}/$self->replace_blockname($1)/ge;
-                }
+                $self -> fix_variables(\$textstr);
 
                 return $txtstr;
             }
@@ -506,16 +503,7 @@ sub process_template {
         $count += $$textref =~ s/{L_(\w+?)}/$self->replace_langvar($1)/ge;
     } while($count);
 
-    # Fix 'standard' variables
-    $$textref =~ s/{V_\[scriptpath\]}/$self->{scriptpath}/g;
-    $$textref =~ s/{V_\[templatepath\]}/$self->{templatepath}/g;
-    $$textref =~ s/{V_\[commonpath\]}/$self->{commonpath}/g;
-    $$textref =~ s/{V_\[sitename\]}/$self->{settings}->{config}->{site_name}/g;
-
-    # Do any module marker replacements if we can
-    if($self -> {"modules"}) {
-        $$textref =~ s/{B_\[(\w+?)\]}/$self->replace_blockname($1)/ge;
-    }
+    $self -> fix_variables($textref);
 
     unless($nocharfix) {
         # Convert some common utf-8 characters
@@ -532,6 +520,28 @@ sub process_template {
     # Return nothing if the text was a reference to begin with, otherwise
     # return the text itself.
     return ref($text) ? undef : $text;
+}
+
+
+## @method $ fix_variables($textref)
+# Fix up {V_[name]} and {B_[name]} markers in the specified text. This will replace
+# the variable and block markers in the specified text with the expanded equivalents.
+#
+# @param textref A reference to a string to process.
+sub fix_variables {
+    my $self = shift;
+    my $textref = shift;
+
+    # Fix 'standard' variables
+    $$textref =~ s/{V_\[scriptpath\]}/$self->{scriptpath}/g;
+    $$textref =~ s/{V_\[templatepath\]}/$self->{templatepath}/g;
+    $$textref =~ s/{V_\[commonpath\]}/$self->{commonpath}/g;
+    $$textref =~ s/{V_\[sitename\]}/$self->{settings}->{config}->{site_name}/g;
+
+    # Do any module marker replacements if we can
+    if($self -> {"modules"}) {
+        $$textref =~ s/{B_\[(\w+?)\]}/$self->replace_blockname($1)/ge;
+    }
 }
 
 
