@@ -315,7 +315,7 @@ sub replace_langvar {
                     }
                 }
 
-                $self -> fix_variables(\$textstr);
+                $self -> fix_variables(\$txtstr);
 
                 return $txtstr;
             }
