@@ -120,6 +120,8 @@ package Webperl::Template;
 
 use POSIX qw(strftime);
 use Webperl::Utils qw(path_join superchomp);
+use Carp qw(longmess);
+
 use strict;
 
 our ($errstr, $utfentities, $entities, $ords, @timescales);
@@ -710,6 +712,14 @@ sub build_optionlist {
 # as normal, and prepend an email header using the to and cc fields in the args (bcc
 # is not supported).
 #
+# @deprecated This function should not be used in new code: it is horribly inflexible,
+#             relies heavily on sendmail-based functionality, and is not really part of
+#             the template engine's job anyway. New code should use the facilities
+#             provided by Webperl::Message::Queue - you should send email by calling
+#             Webperl::Message::Queue::queue_message(), using Webperl::Template::load_template()
+#             to load and process the message body before passing it into `queue_message()`
+#             in the `message` argument.
+#
 # @param template The name of the template to load and send.
 # @param args     A reference to a hash containing values to substitute in the template.
 #                 This MUST include 'from', 'to', and 'subject' values!
@@ -719,6 +729,8 @@ sub email_template {
     my $template = shift;
     my $args     = shift;
     my $email;
+
+    print STDERR longmess("Call to deprecated Webperl::Template::email_template()");
 
     # Check we have required fields
     return "No from field specified in email template arguments."    if(!$args -> {"***from***"});
@@ -748,11 +760,21 @@ sub email_template {
 # specified email over a pipe to sendmail, sending it to the recipient(s). The
 # email should be complete, including any headers.
 #
+# @deprecated This function should not be used in new code: it is horribly inflexible,
+#             relies heavily on sendmail-based functionality, and is not really part of
+#             the template engine's job anyway. New code should use the facilities
+#             provided by Webperl::Message::Queue - you should send email by calling
+#             Webperl::Message::Queue::queue_message(), using Webperl::Template::load_template()
+#             to load and process the message body before passing it into `queue_message()`
+#             in the `message` argument.
+#
 # @param email The email to send.
 # @return undef if the mail was sent, otherwise an error message is returned.
 sub send_email_sendmail {
     my $self = shift;
     my $email = shift;
+
+    print STDERR longmess("Call to deprecated Webperl::Template::send_email_sendmail()");
 
     open(SENDMAIL, "|".$self -> {"mailcmd"})
         or return "send_email_sendmail: unable to open sendmail pipe: $!";
