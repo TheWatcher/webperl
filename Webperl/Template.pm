@@ -245,6 +245,7 @@ sub set_module_obj {
     $self -> {"modules"} = shift;
 }
 
+
 # ============================================================================
 #  Templating functions
 
