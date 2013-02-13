@@ -384,6 +384,36 @@ sub log {
 # ============================================================================
 #  Display functions
 
+## @method $ build_password_policy($template)
+# Build a string describing the password policy for the current user. This
+# interrogates the user's AuthMethod to determine the password policy in place
+# for the user (if any), and generates a string describing it in a format
+# suitable to present to users.
+#
+# @param template The name of the template to use for each policy fragment.
+# @return A string containing the password policy enforced for the logged-in
+#         user. If there is no policy in place, or the user is not logged in,
+#         this returns an empty string.
+sub build_password_policy {
+    my $self = shift;
+
+    # Anonymous user can have no policy
+    return '' if($self -> {"session"} -> anonymous_session());
+
+    # Fetch the policy, and give up if there isn't one.
+    my $policy = $self -> {"session"} -> {"auth"} -> get_policy()
+        or return '';
+
+    my $policystr = "";
+    foreach my $name (@{$policy -> {"policy_order"}}) {
+        $policystr .= $self -> {"template"} -> load_template($template, {"***policy***" => "{L_LOGIN_".uc($name)."}",
+                                                                         "***value***"  => $policy -> {$name}});
+    }
+
+    return $policystr;
+}
+
+
 ## @method @ build_error_box($message)
 # Generate the contents of a system error message to send back to the user.
 # This wraps the template message_box() function as a means to make error
