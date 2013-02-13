@@ -410,7 +410,7 @@ sub build_password_policy {
 
     my $policystr = "";
     foreach my $name (@{$policy -> {"policy_order"}}) {
-        next if(!$policy -> {"name"});
+        next if(!$policy -> {$name});
         $policystr .= $self -> {"template"} -> load_template($template, {"***policy***" => "{L_LOGIN_".uc($name)."}",
                                                                          "***value***"  => $policy -> {$name}});
     }
