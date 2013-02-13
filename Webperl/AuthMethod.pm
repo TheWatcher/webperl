@@ -51,6 +51,17 @@ sub new {
                                  "failcount_message"  => $self -> {"nofailcount_message"}  || $self -> {"settings"} -> {"config"} -> {"AuthMethod::nofailcount_message"},
                                 };
 
+    # Set the default order of policy rules reported to the user
+    $self -> {"set_policy_order"} = ['policy_min_length',
+                                     'policy_min_lowercase',
+                                     'policy_min_uppercase',
+                                     'policy_min_digits',
+                                     'policy_min_other',
+                                     'policy_min_entropy',
+                                     'policy_use_cracklib',
+                                     'policy_max_passwordage',
+                                     'policy_max_loginfail' ];
+
     return $self;
 }
 
@@ -228,7 +239,7 @@ sub set_password {
 #
 # If a password expiration policy is in use, `policy_max_passwordage` should be set
 # in the auth_method_params for the applicable authmethods. The parameter should contain
-# the maximum age of any given password in seconds. If not set, expiration is not
+# the maximum age of any given password in days. If not set, expiration is not
 # enforced.
 #
 # @param userid The ID of the user to check for password change requirement.
@@ -373,7 +384,12 @@ sub get_policy {
     # And a hash slice from those keys.
     @policy{@policy_keys} = @$self{@policy_keys};
 
-    return scalar(%policy) ? \%policy : undef;
+    if(scalar(%policy)) {
+        $policy{"policy_order"} = $self -> {"set_policy_order"};
+        return \%policy;
+    }
+
+    return undef;
 }
 
 
