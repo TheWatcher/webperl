@@ -27,6 +27,35 @@ use strict;
 use base qw(Webperl::SystemModule);
 
 # ============================================================================
+#  Constructor
+
+## @cmethod $ new(%args)
+# Construct a new AuthMethod object. This will create a new AuthMethod object
+# initialised with the provided arguments.
+#
+# @param args A hash of arguments to initialise the AuthMethod object with.
+# @return A new AuthMethod object.
+sub new {
+    my $invocant = shift;
+    my $class    = ref($invocant) || $invocant;
+    my $self = $class -> SUPER::new(@_)
+        or return undef;
+
+    $self -> {"capabilities"} = {"activate"           => 0,
+                                 "activate_message"   => $self -> {"noactivate_message"}   || $self -> {"settings"} -> {"config"} -> {"AuthMethod::noactivate_message"},
+                                 "recover"            => 0,
+                                 "recover_message"    => $self -> {"norecover_message"}    || $self -> {"settings"} -> {"config"} -> {"AuthMethod::norecover_message"},
+                                 "passchange"         => 0,
+                                 "passchange_message" => $self -> {"nopasschange_message"} || $self -> {"settings"} -> {"config"} -> {"AuthMethod::nopasschange_message"},
+                                 "failcount"          => 0,
+                                 "failcount_message"  => $self -> {"nofailcount_message"}  || $self -> {"settings"} -> {"config"} -> {"AuthMethod::nofailcount_message"},
+                                };
+
+    return $self;
+}
+
+
+# ============================================================================
 #  Interface code
 
 ## @method $ create_user($username, $authmethod)
@@ -84,28 +113,39 @@ sub authenticate {
 }
 
 
-## @method $ require_activate()
-# Determine whether the AuthMethod module requires that user accounts
-# be activated before they can be used.
+## @method $ capabilities($capability)
+# Interrogate the capabilities of the authentication method. This will either
+# return a reference to a hash containing the capability information for the
+# auth method or, if a valid capability argument is specified, this returns
+# the value for that capability.
 #
-# @return true if the AuthMethod requires activation, false if it does not.
-sub require_activate {
-    my $self = shift;
+# @param capability The optional name of the capability to obtain the value for.
+# @return If no 'capabilities' argument is provided, a reference to a hash
+#         containing all of the authmethod's capabilities. If a capability is
+#         specified, this returns the value for it, or undef if the requested
+#         capability is unknown.
+sub capabilities {
+    my $self       = shift;
+    my $capability = shift;
 
-    # By default, AuthMethods do not require account activation
-    return 0;
+    return($self -> {"capabilities"} -> {$capability})
+        if($capability && $self -> {"capabilities"});
+
+    return $self -> {"capabilities"};
 }
 
 
-## @method $ noactivate_message()
-# Generate a message (or, better yet, a language variable marker) to show to users
-# who attempt to activate an account that uses an AuthMethod that does not require it.
+## @method $ generate_actcode($userid)
+# Generate a new activation code for the specified user.
 #
-# @return A message to show to the user when redundantly attempting to activate.
-sub noactivate_message {
-    my $self = shift;
+# @param userid The ID of the user to reset the actcode for
+# @return The new activation code for the user
+sub generate_actcode {
+    my $self   = shift;
+    my $userid = shift;
 
-    return $self -> {"noactivate_message"} || $self -> {"settings"} -> {"config"} -> {"AuthMethod::noactivate_message"};
+    # do nothing as activation is not required
+    return $self -> self_error($self -> capabilities("activate_message"));
 }
 
 
@@ -135,32 +175,7 @@ sub activate_user {
     my $userid = shift;
 
     # Activation will always fail if not needed
-    return $self -> self_error("Unsupported activation requested");
-}
-
-
-## @method $ supports_recovery()
-# Determine whether the AuthMethod allows users to recover their account details
-# within the system.
-#
-# @return True if the AuthMethod supports in-system account recovery, false if it does not.
-sub supports_recovery {
-    my $self = shift;
-
-    # By default, AuthMethods do not support recovery
-    return 0;
-}
-
-
-## @method $ norecover_message()
-# Generate a message to show users who attempt to recover their account using an AuthMethod
-# that does not support in-system recovery.
-#
-# @return A message to show to the user attempting an unsupported recovery operation.
-sub norecover_message {
-    my $self = shift;
-
-    return $self -> {"norecover_message"} || $self -> {"settings"} -> {"config"} -> {"AuthMethod::norecover_message"};
+    return $self -> self_error($self -> capabilities("activate_message"));
 }
 
 
@@ -174,7 +189,7 @@ sub reset_password_actcode {
     my $userid = shift;
 
     # Do nothing, as by default activation and password change are not supported
-    return $self -> self_error("Unsupported password and activation code change requested");
+    return $self -> self_error($self -> capabilities("recover_message"));
 }
 
 
@@ -188,7 +203,7 @@ sub reset_password {
     my $userid = shift;
 
     # Do nothing as password changes are not supported
-    return $self -> self_error("Unsupported password change requested");
+    return $self -> self_error($self -> capabilities("passchange_message"));
 }
 
 
@@ -203,21 +218,141 @@ sub set_password {
     my $userid = shift;
 
     # Do nothing as password changes are not supported
-    return $self -> self_error("Unsupported password change requested");
+    return $self -> self_error($self -> capabilities("passchange_message"));
 }
 
 
-## @method $ generate_actcode($userid)
-# Generate a new activation code for the specified user.
+## @method $ force_passchange($userid)
+# Determine whether the user needs to reset their password (either because they are
+# using a temporary system-allocated password, or the password policy requires it).
 #
-# @param userid The ID of the user to reset the actcode for
-# @return The new activation code for the user
-sub generate_actcode {
+# If a password expiration policy is in use, `policy_max_passwordage` should be set
+# in the auth_method_params for the applicable authmethods. The parameter should contain
+# the maximum age of any given password in seconds. If not set, expiration is not
+# enforced.
+#
+# @param userid The ID of the user to check for password change requirement.
+# @return A string indicating why the user must change their password if they need
+#         to, the empty string if they do not, undef on error.
+sub force_passchange {
     my $self   = shift;
     my $userid = shift;
 
-    # do nothing as activation is not required
-    return $self -> self_error("Unsupported activation code change requested");
+    # By default, AuthMethods do not support password changing, so they can't force it.
+    return ''
+}
+
+
+## @method @ mark_loginfail($userid)
+# Increment the login failure count for the specified user. The following configuration
+# parameter (which should be set for each applicable authmethod in the auth_method_params
+# table) is used to control the login failure marking process:
+#
+# - `policy_max_loginfail`, the number of login failures a user may have before their
+#   account is deactivated.
+#
+# @warning Login failure limiting should not be performed unless account activation
+#          and password changes are supported. Otherwise the system has no means of
+#          preventing attempts to log in past the limit.
+#
+# @param userid The ID of the user to increment the login failure counter for.
+# @return An array containing two values: The first is the number of login failures
+#         recorded for the user, the second is the number of allowed failures. If
+#         the second value is zero, no failure limiting is being performed. If an error
+#         occurs or the user does not exist, both values are undef.
+sub mark_loginfail {
+    my $self   = shift;
+    my $userid = shift;
+
+    # login failure counting is not supported by default, so users never get deactivated.
+    return (0, 0);
+}
+
+
+## @method $ apply_policy($password)
+# Apply the configured password policy to the specified password string.
+# The following configuration parameters (which should be set for each applicable
+# authmethod in the auth_method_params table) are used to control the policy. If
+# no value is set for a given parameter, the policy is assumed to not care about
+# the parameter:
+#
+# - `policy_min_length`, passwords must be at least this number of characters long.
+# - `policy_min_lowercase`, at least this number of lowercase characters must be present.
+# - `policy_min_uppercase`, at least this many uppercase characters must be included.
+# - `policy_min_digits`, the minimum number of digits that must be used.
+# - `policy_min_other`, the number of non-alphanumeric characters that must be present.
+# - `policy_min_entropy`, the minimum password entropy (as calculated by Data::Password::Entropy)
+#                         to allow for passwords. See
+# - `policy_use_cracklib`, if true, passwords are checked using cracklib.
+#
+# @param password The password string to check against the password policy.
+# @return undef if the password passes the password policy, otherwise a reference to
+#         a hash, the keys forming the names of the policy rules failed, and the values
+#         being array references containing the settings for the policy rule and the value
+#         detected.
+sub apply_policy {
+    my $self     = shift;
+    my $password = shift;
+    my $failures = {};
+
+    $failures -> {"policy_min_length"} = [ $self -> {"policy_min_length"}, length($password) ]
+        if($self -> {"policy_min_length"} && length($password) < $self -> {"policy_min_length"});
+
+    my $lowercount = $password =~ tr/a-z//;
+    $failures -> {"policy_min_lowercase"} = [ $self -> {"policy_min_lowercase"}, $lowercount ]
+        if($self -> {"policy_min_lowercase"} && $lowercount < $self -> {"policy_min_lowercase"});
+
+    my $uppercount = $password =~ tr/A-Z//;
+    $failures -> {"policy_min_uppercase"} = [ $self -> {"policy_min_uppercase"}, $uppercount ]
+        if($self -> {"policy_min_uppercase"} && $uppercount < $self -> {"policy_min_uppercase"});
+
+    my $digitcount = $password =~ tr/0-9//;
+    $failures -> {"policy_min_digits"} = [ $self -> {"policy_min_digits"}, $digitcount ]
+        if($self -> {"policy_min_digits"} && $digitcount < $self -> {"policy_min_digits"});
+
+    my $othercount = length($password) - ($lowercount + $uppercount + $digitcount);
+    $othercount = 0 if($othercount < 0); # Impossibru! But check it anyway.
+    $failures -> {"policy_min_others"} = [ $self -> {"policy_min_others"}, $othercount ]
+        if($self -> {"policy_min_others"} && $othercount < $self -> {"policy_min_others"});
+
+    # Check against Data::Password::Entropy if possible
+    if($self -> {"policy_min_entropy"}) {
+        # Load the entropy module at runtime, so that systems that don't test entropy don't need it...
+        eval {
+            require Data::Password::Entropy;
+            Data::Password::Entropy -> import();
+        };
+
+        # Handle attempted load that fails. This is transparent to users, which may be a bad thing....
+        if($@) {
+            $self -> {"logger"} -> log("error", 0, undef, "policy_min_entropy is set, but unable to load Data::Password::Entropy!");
+        } else {
+            my $entropy = password_entropy($password);
+            $failures -> {"policy_min_entropy"} = [ $self -> {"policy_min_entropy"}, $entropy ]
+                if($entropy < $self -> {"policy_min_entropy"});
+        }
+    }
+
+    # Potentially invoke cracklib
+    if($self -> {"policy_use_cracklib"}) {
+        # Load the cracklib module at runtime, so that systems that don't test against it don't need it...
+        eval {
+            require Crypt::Cracklib;
+            Crypt::Cracklib -> import();
+        };
+
+        # Handle attempted load that fails. This is transparent to users, which may be a bad thing....
+        if($@) {
+            $self -> {"logger"} -> log("error", 0, undef, "policy_use_cracklib is set, but unable to load Crypt::Cracklib!");
+        } else {
+            my $crackres = fascist_check($password);
+
+            $failures -> {"policy_use_cracklib"} = [1, $crackres]
+                if($crackres ne "ok");
+        }
+    }
+
+    return scalar(keys(%$failures)) ? $failures : undef;
 }
 
 1;

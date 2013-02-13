@@ -22,18 +22,18 @@
 # this module involves potentially significant delays in authentication
 # as a result of its reliance on Net::SSH::Expect.
 #
-# This module expects at least the following configuration values
-# to be passed to the constructor.
+# This module supports the following comfiguration variables:
 #
-# * server      - the server to authenticate the user against, can be either
-#                 a hostname or ip address.
+# - `server`  (required) the server to authenticate the user against, can be either
+#              a hostname or ip address.
+# - `timeout` (optional) the conection timeout in seconds. This defaults to 5 if not
+#              specified (values less than 5 are only recommended on fast
+#              networks and when talking to servers that respond rapidly).
+# - `binary`  (optional) the location of the ssh binary. Defaults to `/usr/bin/ssh`.
 #
-# The following configuration options may also be supplied:
-#
-# * timeout - the conection timeout in seconds. This defaults to 5 if not
-#             specified (values less than 5 are only recommended on fast
-#             networks and when talking to servers that respond rapidly).
-# * binary - the location of the ssh binary. Defaults to /usr/bin/ssh.
+# These will generally be provided by supplying the configuration variables
+# in the auth_methods_params table and using Webperl::AuthMethods to load
+# the AuthMethod at runtime.
 package Webperl::AuthMethod::SSH;
 
 use strict;
@@ -55,13 +55,12 @@ use Utils qw(blind_untaint);
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = $class -> SUPER::new(@_);
-
-    # bomb if the parent constructor failed.
-    return $class -> SUPER::get_error() if(!$self);
+    my $self     = $class -> SUPER::new(@_)
+        or return undef;
 
     # check that required settings are set...
-    return "Webperl::AuthMethod::SSH missing 'server' argument in new()" if(!$self -> {"server"});
+    return set_error("Webperl::AuthMethod::SSH missing 'server' argument in new()")
+        if(!$self -> {"server"});
 
     # Check whether the timeout and binary settings are, well, set...
     $self -> {"timeout"} = 5 unless(defined($self -> {"timeout"}));
@@ -95,6 +94,9 @@ sub authenticate {
         my $resp;
 
         eval {
+            # FIXME: This is really godawful ghastly nasty shit that should not exist upon
+            #        the living Earth, but if this is run in tainted mode perl will freak out.
+            #        Fix this by untainting more safely!
             my $ssh = Net::SSH::Expect -> new(host     => blind_untaint($self -> {"server"}),
                                               user     => blind_untaint($username),
                                               password => blind_untaint($password),
@@ -119,7 +121,7 @@ sub authenticate {
         return 0;
     }
 
-    return $auth -> self_error("SSH login failed: username and password are required.");
+    return $auth -> self_error("SSL Login failed: Username and password are required.");
 }
 
 1;

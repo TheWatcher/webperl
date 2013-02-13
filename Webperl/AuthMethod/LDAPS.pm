@@ -21,21 +21,21 @@
 # users to be authenticated against most LDAPS servers, provided that
 # it is configured with the appropriate incantations to talk to it.
 #
-# This module will expect at least the following configuration values
-# to be passed to the constructor.
+# This module supports the following comfiguration variables:
 #
-# * server      - the server to authenticate the user against, can be either
-#                 a hostname, IP address, or URI.
-# * base        - the base dn to use when searching for the user's dn.
-# * searchfield - the field to use when searching for the user dn.
+# - `server`      (required) the server to authenticate the user against, can be either
+#                  a hostname, IP address, or URI.
+# - `base`        (required) the base dn to use when searching for the user's dn.
+# - `searchfield` (required) the field to use when searching for the user dn.
+# - `adminuser`   (optional) if specified, searching for the user's DN will be done
+#                  using this user rather than anonymously.
+# - `adminpass`   (optional) The password to use when logging in as the admin user.
+# - `reuseconn`   (optional) If set to a true value, the connection to the LDAPS is reused
+#                  for authentication after finding the user's dn.
 #
-# The following arguments may be provided:
-#
-# * adminuser - if specified, searching for the user's DN will be done
-#               using this user rather than anonymously.
-# * adminpass - The password to use when logging in as the admin user.
-# * reuseconn - If set to a true value, the connection to the LDAPS is reused
-#               for authentication after finding the user's dn.
+# These will generally be provided by supplying the configuration variables
+# in the auth_methods_params table and using Webperl::AuthMethods to load
+# the AuthMethod at runtime.
 package Webperl::AuthMethod::LDAPS;
 
 use strict;
@@ -53,15 +53,13 @@ use Net::LDAPS;
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = $class -> SUPER::new(@_);
-
-    # bomb if the parent constructor failed.
-    return $class -> SUPER::get_error() if(!$self);
+    my $self     = $class -> SUPER::new(@_)
+        or return undef;
 
     # check that required settings are set...
-    return "Webperl::AuthMethod::LDAPS missing 'server' argument in new()" if(!$self -> {"server"});
-    return "Webperl::AuthMethod::LDAPS missing 'base' argument in new()" if(!$self -> {"base"});
-    return "Webperl::AuthMethod::LDAPS missing 'searchfield' argument in new()" if(!$self -> {"searchfield"});
+    return set_error("Webperl::AuthMethod::LDAPS missing 'server' argument in new()")      if(!$self -> {"server"});
+    return set_error("Webperl::AuthMethod::LDAPS missing 'base' argument in new()")        if(!$self -> {"base"});
+    return set_error("Webperl::AuthMethod::LDAPS missing 'searchfield' argument in new()") if(!$self -> {"searchfield"});
 
     return $self;
 }

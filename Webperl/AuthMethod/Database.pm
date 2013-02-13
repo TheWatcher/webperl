@@ -22,26 +22,25 @@
 # The users' passwords are never stored as plain text - this uses a
 # salted, hashed storage mechanism for passwords.
 #
-# This module will expect at least the following configuration values
-# to be passed to the constructor.
+# This module supports the following comfiguration variables:
 #
-# * table     - The name of the database table to authenticate against.
-#               This must be accessible to the system-wide dbh object.
-# * userfield - The name of the column in the table that stores usernames.
-# * passfield - The password column in the table. The field in the table
-#               must be able to store a 59 character hashed password.
+# - table       (required) The name of the database table to authenticate against.
+#                This table must be accessible to the system-wide dbh object.
+# - bcrypt_cost (optional) the number of iterations of hashing to perform. This
+#                defaults to Webperl::AuthMethod::Database::COST_DEFAULT if not
+#                specified.
 #
-# The following arguments may also be provided to the module constructor:
-#
-# * bcrypt_cost - the number of iterations of hashing to perform. This
-#                 defaults to COST_DEFAULT if not specified.
+# These will generally be provided by supplying the configuration variables
+# in the auth_methods_params table and using Webperl::AuthMethods to load
+# the AuthMethod at runtime.
 package Webperl::AuthMethod::Database;
 
 use strict;
 use base qw(Webperl::AuthMethod); # This class extends AuthMethod
 use Crypt::Eksblowfish::Bcrypt qw(bcrypt en_base64);
 
-use constant COST_DEFAULT => 14; # The default cost to use if bcrypt_cost is not set.
+## The default cost to use if bcrypt_cost is not passed to the constructor.
+use constant COST_DEFAULT => 14;
 
 
 # ============================================================================
@@ -58,19 +57,27 @@ use constant COST_DEFAULT => 14; # The default cost to use if bcrypt_cost is not
 sub new {
     my $invocant = shift;
     my $class    = ref($invocant) || $invocant;
-    my $self     = $class -> SUPER::new(@_);
-
-    # bomb if the parent constructor failed.
-    return $class -> SUPER::get_error() if(!$self);
-
-    # Set default values as needed
-    $self -> {"bcrypt_cost"} = COST_DEFAULT;
+    my $self     = $class -> SUPER::new(@_)
+        or return undef;
 
     # check that required settings are set...
-    return "Webperl::AuthMethod::Database missing 'table' argument in new()" if(!$self -> {"table"});
-    return "Webperl::AuthMethod::Database missing 'userfield' argument in new()" if(!$self -> {"userfield"});
-    return "Webperl::AuthMethod::Database missing 'passfield' argument in new()" if(!$self -> {"passfield"});
+    return set_error("Webperl::AuthMethod::Database missing 'table' argument in new()")
+        if(!$self -> {"table"});
 
+    # Set default values as needed
+    $self -> {"bcrypt_cost"} = COST_DEFAULT
+        unless($self -> {"bcrypt_cost"});
+
+    # replace the stock capabilities
+    $self -> {"capabilities"} = {"activate"           => 1,
+                                 "activate_message"   => '',
+                                 "recover"            => 1,
+                                 "recover_message"    => '',
+                                 "passchange"         => 1,
+                                 "passchange_message" => '',
+                                 "failcount"          => 1,
+                                 "failcount_message"  => '',
+                                };
     return $self;
 }
 
@@ -130,8 +137,8 @@ sub create_user {
 
     # Do the insert
     my $userh = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"settings"} -> {"database"} -> {"users"}."
-                                             (user_auth, username, password, email, created, act_code)
-                                             VALUES(?, ?, ?, ?, UNIX_TIMESTAMP(), ?)");
+                                             (user_auth, username, password, password_set, force_change, email, created, act_code)
+                                             VALUES(?, ?, ?, UNIX_TIMESTAMP(), 1, ?, UNIX_TIMESTAMP(), ?)");
     my $rows = $userh -> execute($authmethod, $username, $cryptpass, $email, $actcode);
     return $self -> self_error("Unable to perform user insert: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("User insert failed, no rows added.") if($rows eq "0E0");
@@ -166,10 +173,13 @@ sub authenticate {
     my $password = shift;
     my $auth     = shift;
 
-    my $userh = $self -> {"dbh"} -> prepare("SELECT ".$self -> {"passfield"}." FROM ".$self -> {"table"}."
-                                             WHERE ".$self -> {"userfield"}." LIKE ?");
+    return $auth -> self_error("Database login failed: Username and password are required.")
+        if(!$username || !$password);
+
+    my $userh = $self -> {"dbh"} -> prepare("SELECT password FROM ".$self -> {"table"}."
+                                             WHERE username LIKE ?");
     $userh -> execute($username)
-        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to execute user lookup query: ".$self -> {"dbh"} -> errstr);
+        or return $auth -> self_error("Database login failed: Unable to execute user lookup query: ".$self -> {"dbh"} -> errstr);
 
     # If a user has been found with the specified username, check the password...
     my $user = $userh -> fetchrow_arrayref();
@@ -181,18 +191,6 @@ sub authenticate {
     }
 
     return 0;
-}
-
-
-## @method $ require_activate()
-# Determine whether the AuthMethod module requires that user accounts
-# be activated before they can be used.
-#
-# @return true if the AuthMethod requires activation, false if it does not.
-sub require_activate {
-    my $self = shift;
-
-    return 1;
 }
 
 
@@ -232,23 +230,11 @@ sub activate_user {
     $self -> clear_error();
 
     my $activate = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"users"}."
-                                                SET activated = UNIX_TIMESTAMP(), act_code = NULL
+                                                SET activated = UNIX_TIMESTAMP(), act_code = NULL, fail_count = 0
                                                 WHERE user_id = ?");
     my $rows = $activate -> execute($userid);
     return $self -> self_error("Unable to perform user update: ". $self -> {"dbh"} -> errstr) if(!$rows);
     return $self -> self_error("User update failed, no rows modified - bad userid?") if($rows eq "0E0");
-
-    return 1;
-}
-
-
-## @method $ supports_recovery()
-# Determine whether the AuthMethod allows users to recover their account details
-# within the system.
-#
-# @return True if the AuthMethod supports in-system account recovery, false if it does not.
-sub supports_recovery {
-    my $self = shift;
 
     return 1;
 }
@@ -270,7 +256,7 @@ sub reset_password_actcode {
     my $cryptpass = $self -> hash_password($password);
 
     my $reseth = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"users"}."
-                                              SET password = ?, act_code = ?
+                                              SET password = ?, act_code = ?, password_set = UNIX_TIMESTAMP(), force_change = 1, activated = NULL
                                               WHERE user_id = ?");
     my $rows = $reseth -> execute($cryptpass, $actcode, $userid);
     return $self -> self_error("Unable to perform user update: ". $self -> {"dbh"} -> errstr) if(!$rows);
@@ -295,7 +281,7 @@ sub reset_password {
     my $cryptpass = $self -> hash_password($password);
 
     my $reseth = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"users"}."
-                                              SET password = ?
+                                              SET password = ?, password_set = UNIX_TIMESTAMP(), force_change = 1
                                               WHERE user_id = ?");
     my $rows = $reseth -> execute($cryptpass, $userid);
     return $self -> self_error("Unable to perform user update: ". $self -> {"dbh"} -> errstr) if(!$rows);
@@ -320,7 +306,7 @@ sub set_password {
     my $cryptpass = $self -> hash_password($password);
 
     my $reseth = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"users"}."
-                                              SET password = ?
+                                              SET password = ?, password_set = UNIX_TIMESTAMP()
                                               WHERE user_id = ?");
     my $rows = $reseth -> execute($cryptpass, $userid);
     return $self -> self_error("Unable to perform user update: ". $self -> {"dbh"} -> errstr) if(!$rows);
@@ -349,6 +335,93 @@ sub generate_actcode {
     return $self -> self_error("User update failed, no rows changed.") if($rows eq "0E0");
 
     return $actcode;
+}
+
+
+## @method @ mark_loginfail($userid)
+# Increment the login failure count for the specified user. The following configuration
+# parameter (which should be set for each applicable authmethod in the auth_method_params
+# table) is used to control the login failure marking process:
+#
+# - `policy_max_loginfail`, the number of login failures a user may have before their
+#   account is deactivated.
+#
+# @warning Login failure limiting should not be performed unless account activation
+#          and password changes are supported. Otherwise the system has no means of
+#          preventing attempts to log in past the limit.
+#
+# @param userid The ID of the user to increment the login failure counter for.
+# @return An array containing two values: The first is the number of login failures
+#         recorded for the user, the second is the number of allowed failures. If
+#         the second value is zero, no failure limiting is being performed. If an error
+#         occurs or the user does not exist, both values are undef.
+sub mark_loginfail {
+    my $self   = shift;
+    my $userid = shift;
+
+    my $userh = $self -> {"dbh"} -> prepare("SELECT fail_count
+                                             FROM ".$self -> {"settings"} -> {"database"} -> {"users"}."
+                                             WHERE user_id = ?");
+    $userh -> execute($userid)
+        or return $self -> self_error("Unable to perform user lookup: ". $self -> {"dbh"} -> errstr);
+
+    my $failcount = $userh -> fetchrow_arrayref();
+
+    # Halt if the user does not exist
+    return (undef, undef) unless($failcount);
+
+    # Do nothing if limiting is not enabled
+    return (0, 0) unless($self -> {"policy_max_loginfail"});
+
+    ++$failcount;
+
+    # update the login fail counter
+    $userh = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"users"}."
+                                          SET fail_count = ?
+                                          WHERE user_id = ?");
+    my $rows = $userh -> execute($failcount, $userid);
+    return $self -> self_error("Unable to perform user failcount update: ". $self -> {"dbh"} -> errstr) if(!$rows);
+    return $self -> self_error("Unable to perform user failcount update: no rows changed") if($rows eq "0E0");
+
+    return ($failcount, $self -> {"policy_max_loginfail"});
+}
+
+
+## @method $ force_passchange($userid)
+# Determine whether the user needs to reset their password (either because they are
+# using a temporary system-allocated password, or the password policy requires it).
+#
+# If a password expiration policy is in use, `policy_max_passwordage` should be set
+# in the auth_method_params for the applicable authmethods. The parameter should contain
+# the maximum age of any given password in seconds. If not set, expiration is not
+# enforced.
+#
+# @param userid The ID of the user to check for password change requirement.
+# @return 'temporary' if the user must change their password because it is a
+#         temporary one, 'expired' if the password has expired, the empty string if
+#         the password does not need to be changed, undef on error.
+sub force_passchange {
+    my $self   = shift;
+    my $userid = shift;
+
+    my $passh = $self -> {"dbh"} -> prepare("SELECT force_change, password_set
+                                             FROM ".$self -> {"settings"} -> {"database"} -> {"users"}."
+                                             WHERE user_id = ?");
+    $passh -> execute($userid)
+        or return $self -> self_error("Unable to perform passchange check: ". $self -> {"dbh"} -> errstr);
+
+    my $pass_data = $passh -> fetchrow_hashref()
+        or return ''; # Unknown user? Can't change the password even if we'd like to.
+
+    # Check for password expiration based on policy settings
+    my $age = time() - ($pass_data -> {"password_set"} || 0); # Handle NULL password_set's sanely
+    return 'expired' if($self -> {"policy_max_passwordage"} && ($age > $self -> {"policy_max_passwordage"}));
+
+    # Check for temporary passwords
+    return 'temporary' if($pass_data -> {"force_change"});
+
+    # Otherwise, no need to change the password
+    return '';
 }
 
 

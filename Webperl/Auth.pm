@@ -235,15 +235,15 @@ sub valid_user {
             or return undef;
 
         # Check whether the user can authenticate if the implementation was found
-        $valid = $methodimpl -> authenticate($username, $password, $self)
-            if($methodimpl);
+        $valid = $methodimpl -> authenticate($username, $password, $self);
+
+        # errors should halt auth attempts
+        return undef if(!defined($valid));
     }
 
     # If no authmethod was found for the user, or the auth failed and fallback is enabled,
-    # all the available auth methods should be checked. Note that !$methodimpl is here so
-    # that, if an auth method is removed for some reason, the system will try other auth
-    # methods instead.
-    if(!$valid && (!$authmethod || !$methodimpl || $self -> {"settings"} -> {"Auth:enable_fallback"})) {
+    # all the available auth methods should be checked.
+    if(!$valid && (!$authmethod || $self -> {"settings"} -> {"Auth:enable_fallback"})) {
         foreach my $trymethod (@{$methods}) {
             my $methodimpl = $self -> get_authmethod_module($trymethod)
                 or return undef;
@@ -265,7 +265,7 @@ sub valid_user {
         if($valid);
 
     # Authentication failed.
-    return $self -> self_error("Invalid username or password specified.");
+    return undef;
 }
 
 
@@ -279,6 +279,8 @@ sub valid_user {
 sub get_user_authmethod_module {
     my $self     = shift;
     my $username = shift;
+
+    $self -> clear_error();
 
     # Does the user have an authmethod set?
     my $authmethod = $self -> {"app"} -> get_user_authmethod($username);
@@ -321,38 +323,30 @@ sub get_authmethod_module {
 # Note that this doesn't cover user creation, as these can not establish
 # which authmodule to use until the user has been created...
 
-## @method $ require_activate($username)
-# Determine whether the user's AuthMethod module requires that user accounts
-# be activated before they can be used.
+
+## @method $ capabilities($username, $capability)
+# Interrogate the capabilities of the authentication method. This will either
+# return a reference to a hash containing the capability information for the
+# auth method or, if a valid capability argument is specified, this returns
+# the value for that capability.
 #
-# @param username The name of the user to check for authentication requirement.
-# @return true if the AuthMethod requires activation, false if it does not.
-sub require_activate {
-    my $self     = shift;
-    my $username = shift;
+# @param username The name of the user to check
+# @param capability The optional name of the capability to obtain the value for.
+# @return If no 'capabilities' argument is provided, a reference to a hash
+#         containing all of the authmethod's capabilities. If a capability is
+#         specified, this returns the value for it, or undef if the requested
+#         capability is unknown.
+sub capabilities {
+    my $self       = shift;
+    my $username   = shift;
+    my $capability = shift;
+
+    $self -> clear_error();
 
     my $methodimpl = $self -> get_user_authmethod_module($username)
         or return undef;
 
-    return $methodimpl -> require_activate()
-        or return $self -> self_error($methodimpl -> errstr());
-}
-
-
-## @method $ noactivate_message($username)
-# Generate a message (or, better yet, a language variable marker) to show to users
-# who attempt to activate an account that uses an AuthMethod that does not require it.
-#
-# @param username The name of the user trying to activate
-# @return A message to show to the user when redundantly attempting to activate.
-sub noactivate_message {
-    my $self     = shift;
-    my $username = shift;
-
-    my $methodimpl = $self -> get_user_authmethod_module($username)
-        or return undef;
-
-    return $methodimpl -> noactivate_message();
+    return $methodimpl -> capabilities($capability);
 }
 
 
@@ -366,6 +360,8 @@ sub noactivate_message {
 sub activated {
     my $self     = shift;
     my $username = shift;
+
+    $self -> clear_error();
 
     my $methodimpl = $self -> get_user_authmethod_module($username)
         or return undef;
@@ -404,42 +400,6 @@ sub activate_user {
 }
 
 
-## @method $ supports_recovery($username)
-# Determine whether the user's AuthMethod allows users to recover their account details
-# within the system.
-#
-# @param username The name of the user to check for recovery support for.
-# @return True if the AuthMethod supports in-system account recovery, false if it does not.
-sub supports_recovery {
-    my $self = shift;
-    my $username = shift;
-
-    my $methodimpl = $self -> get_user_authmethod_module($username)
-        or return undef;
-
-    return $methodimpl -> supports_recovery()
-        or return $self -> self_error($methodimpl -> errstr());
-}
-
-
-## @method $ norecover_message($username)
-# Generate a message to show users who attempt to recover their account using an AuthMethod
-# that does not support in-system recovery.
-#
-# @param username The name of the user to obtain the 'recovery unsupported' message for
-# @return A message to show to the user attempting an unsupported recovery operation.
-sub norecover_message {
-    my $self     = shift;
-    my $username = shift;
-
-    my $methodimpl = $self -> get_user_authmethod_module($username)
-        or return undef;
-
-    return $methodimpl -> norecover_message()
-        or return $self -> self_error($methodimpl -> errstr());
-}
-
-
 ## @method @ reset_password_actcode($username)
 # Forcibly reset the user's password and activation code to new random values.
 #
@@ -448,6 +408,8 @@ sub norecover_message {
 sub reset_password_actcode {
     my $self     = shift;
     my $username = shift;
+
+    $self -> clear_error();
 
     my $methodimpl = $self -> get_user_authmethod_module($username)
         or return undef;
@@ -469,6 +431,8 @@ sub reset_password {
     my $self     = shift;
     my $username = shift;
 
+    $self -> clear_error();
+
     my $methodimpl = $self -> get_user_authmethod_module($username)
         or return undef;
 
@@ -483,13 +447,15 @@ sub reset_password {
 ## @method $ set_password($username, $password)
 # Set the user's password to the specified value.
 #
-# @param username   The ID of the user to set the password for
+# @param username The ID of the user to set the password for
 # @param password The password to set for the user.
 # @return True on success, undef on error.
 sub set_password {
     my $self     = shift;
     my $username = shift;
     my $password = shift;
+
+    $self -> clear_error();
 
     my $methodimpl = $self -> get_user_authmethod_module($username)
         or return undef;
@@ -511,6 +477,8 @@ sub generate_actcode {
     my $self   = shift;
     my $username = shift;
 
+    $self -> clear_error();
+
     my $methodimpl = $self -> get_user_authmethod_module($username)
         or return undef;
 
@@ -518,6 +486,101 @@ sub generate_actcode {
         or return undef;
 
     return $methodimpl -> generate_actcode($user -> {"user_id"})
+        or return $self -> self_error($methodimpl -> errstr());
+}
+
+
+## @method $ force_passchange($username)
+# Determine whether the user needs to reset their password (either because they are
+# using a temporary system-allocated password, or the password policy requires it).
+#
+# @param username The name of the user who to check password status for.
+# @return 'temporary' if the user must change their password because it is a
+#         temporary one, 'expired' if the password has expired, the empty string if
+#         the password does not need to be changed, undef on error.
+sub force_passchange {
+    my $self     = shift;
+    my $username = shift;
+
+    $self -> clear_error();
+
+    my $methodimpl = $self -> get_user_authmethod_module($username)
+        or return undef;
+
+    my $user = $self -> get_user($username)
+        or return undef;
+
+    return $methodimpl -> force_passchange($user -> {"user_id"})
+        or return $self -> self_error($methodimpl -> errstr());
+}
+
+
+## @method @ mark_loginfail($username)
+# For method implementations that support it, mark the user as failing a login.
+# Some authmethods may limit user login failures and deactivate accounts that
+# have failed repeatedly.
+#
+# @param username The name of the user who failed to log in. If this user does
+#                 not exist, this returns undef.
+# @return An array containing two values: The first is the number of login failures
+#         recorded for the user, the second is the number of allowed failures. If
+#         the second value is zero, no failure limiting is being performed. If an error
+#         occurs, both values are undef.
+sub mark_loginfail {
+    my $self     = shift;
+    my $username = shift;
+
+    $self -> clear_error();
+
+    my $methodimpl = $self -> get_user_authmethod_module($username)
+        or return (undef, undef);
+
+    my $user = $self -> get_user($username)
+        or return (undef, undef);
+
+    # Don't actually need to check $methodimpl -> capabilities("failcount") here, as
+    # the default implementation returns usably sane values.
+    my ($failcount, $limit) = $methodimpl -> mark_loginfail($user -> {"user_id"});
+    return ($self -> self_error($methodimpl -> errstr()), undef)
+        unless(defined($failcount));
+
+    return ($failcount, $limit);
+}
+
+
+## @method $ apply_policy($username, $password)
+# Apply the configured password policy to the specified password string.
+# The following configuration parameters (which should be set for each applicable
+# authmethod in the auth_method_params table) are used to control the policy. If
+# no value is set for a given parameter, the policy is assumed to not care about
+# the parameter:
+#
+# - `policy_min_length`, passwords must be at least this number of characters long.
+# - `policy_min_lowercase`, at least this number of lowercase characters must be present.
+# - `policy_min_uppercase`, at least this many uppercase characters must be included.
+# - `policy_min_digits`, the minimum number of digits that must be used.
+# - `policy_min_other`, the number of non-alphanumeric characters that must be present.
+# - `policy_min_entropy`, the minimum password entropy (as calculated by Data::Password::Entropy)
+#                         to allow for passwords. See
+# - `policy_use_cracklib`, if true, passwords are checked using cracklib.
+#
+# @param username The name of the user to check the password for.
+# @param password The password string to check against the password policy.
+# @return undef if the password passes the password policy, otherwise a reference to
+#         a hash, the keys forming the names of the policy rules failed, and the values
+#         being array references containing the settings for the policy rule and the value
+#         detected.
+sub apply_policy {
+    my $self     = shift;
+    my $username = shift;
+    my $password = shift;
+
+    $self -> clear_error();
+
+    my $methodimpl = $self -> get_user_authmethod_module($username)
+        or return undef;
+
+    return $methodimpl -> apply_policy($password)
         or return $self -> self_error($methodimpl -> errstr());
 }
 
