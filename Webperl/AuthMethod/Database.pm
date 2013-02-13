@@ -393,7 +393,7 @@ sub mark_loginfail {
 #
 # If a password expiration policy is in use, `policy_max_passwordage` should be set
 # in the auth_method_params for the applicable authmethods. The parameter should contain
-# the maximum age of any given password in seconds. If not set, expiration is not
+# the maximum age of any given password in days. If not set, expiration is not
 # enforced.
 #
 # @param userid The ID of the user to check for password change requirement.
@@ -415,7 +415,7 @@ sub force_passchange {
 
     # Check for password expiration based on policy settings
     my $age = time() - ($pass_data -> {"password_set"} || 0); # Handle NULL password_set's sanely
-    return 'expired' if($self -> {"policy_max_passwordage"} && ($age > $self -> {"policy_max_passwordage"}));
+    return 'expired' if($self -> {"policy_max_passwordage"} && ($age > ($self -> {"policy_max_passwordage"} * 86400)));
 
     # Check for temporary passwords
     return 'temporary' if($pass_data -> {"force_change"});
