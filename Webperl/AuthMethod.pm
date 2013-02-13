@@ -355,4 +355,26 @@ sub apply_policy {
     return scalar(keys(%$failures)) ? $failures : undef;
 }
 
+
+## @method $ get_policy()
+# Obtain a hash containing the password policy settings. This generates a hash containing
+# the details of the password policy (effectively, all 'policy_*' values set for the
+# current AuthMethod) and returns a reference to it.
+#
+# @return A reference to a hash containing the AuthMethod's policy settings, if no
+#         policy is currently in place, this returns undef.
+sub get_policy {
+    my $self = shift;
+    my %policy;
+
+    # Get the list of keys that start 'policy_'
+    my @policy_keys = grep {/^policy_/} keys %{$self};
+
+    # And a hash slice from those keys.
+    @policy{@policy_keys} = @$self{@policy_keys};
+
+    return scalar(%policy) ? \%policy : undef;
+}
+
+
 1;

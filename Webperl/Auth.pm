@@ -585,4 +585,26 @@ sub apply_policy {
 }
 
 
+## @method $ get_policy($username)
+# Obtain a hash containing the password policy settings. This generates a hash containing
+# the details of the password policy (effectively, all 'policy_*' values set for the
+# current AuthMethod) and returns a reference to it.
+#
+# @param username The name of the user to obtain the password policy for.
+# @return A reference to a hash containing the policy settings for the user's AuthMethod,
+#         if no policy is currently in place, this returns undef.
+sub get_policy {
+    my $self     = shift;
+    my $username = shift;
+
+    $self -> clear_error();
+
+    my $methodimpl = $self -> get_user_authmethod_module($username)
+        or return undef;
+
+    return $methodimpl -> get_policy()
+        or return $self -> self_error($methodimpl -> errstr());
+}
+
+
 1;
