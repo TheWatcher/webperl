@@ -395,7 +395,8 @@ sub log {
 #         user. If there is no policy in place, or the user is not logged in,
 #         this returns an empty string.
 sub build_password_policy {
-    my $self = shift;
+    my $self     = shift;
+    my $template = shift;
 
     # Anonymous user can have no policy
     return '' if($self -> {"session"} -> anonymous_session());
