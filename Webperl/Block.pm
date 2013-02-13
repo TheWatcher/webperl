@@ -401,8 +401,11 @@ sub build_password_policy {
     # Anonymous user can have no policy
     return '' if($self -> {"session"} -> anonymous_session());
 
+    my $user = $self -> {"session"} -> get_user_byid()
+        or return '';
+
     # Fetch the policy, and give up if there isn't one.
-    my $policy = $self -> {"session"} -> {"auth"} -> get_policy()
+    my $policy = $self -> {"session"} -> {"auth"} -> get_policy($user -> {"username"})
         or return '';
 
     my $policystr = "";
