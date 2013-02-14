@@ -337,11 +337,8 @@ sub post_authenticate {
         if(!$user);
 
     # Touch the user's record...
-    my $pokeh = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"users"}."
-                                             SET last_login = UNIX_TIMESTAMP()
-                                             WHERE user_id = ?");
-    $pokeh -> execute($user -> {"user_id"})
-        or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "FATAL: Unable to update user record: ".$self -> {"dbh"} -> errstr);
+    $methodimpl -> mark_login($user -> {"userid"})
+        or return $self -> self_error($methodimpl -> errstr());
 
     # All done...
     return $user;

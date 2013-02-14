@@ -254,6 +254,26 @@ sub force_passchange {
 }
 
 
+## @method $ mark_login($userid)
+# Update a user's internal record to reflect the fact that they have successfully
+# logged in.
+#
+# @param userid The ID of the user who has successfully logged in.
+# @return true on success, undef on error.
+sub mark_login {
+    my $self   = shift;
+    my $userid = shift;
+
+    my $pokeh = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"users"}."
+                                             SET last_login = UNIX_TIMESTAMP()
+                                             WHERE user_id = ?");
+    $pokeh -> execute($userid)
+        or return $self -> self_error("Unable to update user record: ".$self -> {"dbh"} -> errstr);
+
+    return 1;
+}
+
+
 ## @method @ mark_loginfail($userid)
 # Increment the login failure count for the specified user. The following configuration
 # parameter (which should be set for each applicable authmethod in the auth_method_params
