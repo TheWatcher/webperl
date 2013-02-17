@@ -395,7 +395,13 @@ sub apply_policy {
 
                 # If mapres is the same as crackres (ie: mapping to a localisable string ID failed),
                 # try to at least make it more readable
-                $mapres =~ s/^it/The password/ if($mapres eq $crackres);
+                if($mapres eq $crackres) {
+                    $mapres =~ s/^it/The password/;
+
+                # Otherwise, wrap in langvar marker stuff
+                } else {
+                    $mapres = "{L_".$mapres."}";
+                }
 
                 $failures -> {"policy_use_cracklib"} = [1, $mapres]
             }
