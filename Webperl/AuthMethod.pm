@@ -62,6 +62,17 @@ sub new {
                                      'policy_max_passwordage',
                                      'policy_max_loginfail' ];
 
+    # Map cracklib responses to localisable strings
+    $self -> {"cracklib_stirngs"} = { "it is WAY too short"                             => "LOGIN_CRACKLIB_WAYSHORT",
+                                      "it is too short"                                 => "LOGIN_CRACKLIB_TOOSHORT",
+                                      "it does not contain enough DIFFERENT characters" => "LOGIN_CRACKLIB_MORECHARS",
+                                      "it is all whitespace"                            => "LOGIN_CRACKLIB_WHITESPACE",
+                                      "it is too simplistic/systematic"                 => "LOGIN_CRACKLIB_SIMPLISTIC",
+                                      "it looks like a National Insurance number"       => "LOGIN_CRACKLIB_NINUMBER",
+                                      "it is based on a dictionary word"                => "LOGIN_CRACKLIB_DICTWORD",
+                                      "it is based on a (reversed) dictionary word"     => "LOGIN_CRACKLIB_DICTBACK",
+    };
+
     return $self;
 }
 
@@ -378,12 +389,24 @@ sub apply_policy {
         } else {
             my $crackres = fascist_check($password);
 
-            $failures -> {"policy_use_cracklib"} = [1, $crackres]
-                if($crackres ne "ok");
+            if(lc($crackres) ne "ok") {
+                # Cracklib is unlocalised and returns pretty lousy fedback strings, try to map them to something useful
+                my $mapres = $self -> {"cracklib_stirngs"} -> {$crackres} || $crackres;
+
+                # If mapres is the same as crackres (ie: mapping to a localisable string ID failed),
+                # try to at least make it more readable
+                $mapres =~ s/^it/The password/ if($mapres eq $crackres);
+
+                $failures -> {"policy_use_cracklib"} = [1, $mapres]
+            }
         }
     }
 
-    return scalar(keys(%$failures)) ? $failures : undef;
+    if(scalar(%policy)) {
+        $policy{"policy_order"} = $self -> {"set_policy_order"};
+        return \%policy;
+    }
+    return undef;
 }
 
 
