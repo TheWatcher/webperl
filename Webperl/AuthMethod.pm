@@ -402,9 +402,9 @@ sub apply_policy {
         }
     }
 
-    if(scalar(%policy)) {
-        $policy{"policy_order"} = $self -> {"set_policy_order"};
-        return \%policy;
+    if(scalar(%{$failures})) {
+        $failures -> {"policy_order"} = $self -> {"set_policy_order"};
+        return $failures;
     }
     return undef;
 }
