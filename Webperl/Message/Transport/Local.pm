@@ -28,12 +28,13 @@ use base qw(Webperl::Message::Transport);
 # ============================================================================
 #  Delivery
 
-## @method $ deliver($message)
+## @method $ deliver($message, $force)
 # Attempt to deliver the specified message to its recipients. This function
 # is always successful - it is impossible for local delivery to fail, as the
 # message is already there!
 #
 # @param message A reference to hash containing the message data.
+# @param force   Send messages via this transport even if the user has disabled it.
 # @return Always returns true.
 sub deliver {
     my $self    = shift;

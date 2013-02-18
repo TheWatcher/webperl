@@ -102,17 +102,18 @@ sub allow_disable {
 }
 
 
-## @method $ deliver($message)
+## @method $ deliver($message, $force)
 # Attempt to deliver the specified message to its recipients.
 #
 # @param message A reference to hash containing the message data.
+# @param force   Send messages via this transport even if the user has disabled it.
 # @return True on success, undef on failure/error.
 sub deliver {
     my $self    = shift;
     my $message = shift;
+    my $force   = shift;
 
     if(!$self -> {"persist"}) {
-
         eval { $self -> {"smtp"} = Email::Sender::Transport::SMTP -> new($self -> _build_smtp_args()); };
         return $self -> self_error("SMTP Initialisation failed: $@") if($@);
     }
@@ -122,16 +123,16 @@ sub deliver {
     # Work out the the sender if needed...
     if(!$self -> {"force_sender"} && $message -> {"sender"}) {
         $from = $self -> _get_user_email($message -> {"sender"} -> {"sender_id"})
-            or return undef;
+            or return $self -> self_error("Sender email lookup failed: ".$self -> errstr());
     }
 
     # And the recipients
     foreach my $recipient (@{$message -> {"recipients"}}) {
         # Skip users who shouldn't get emails
-        next unless($self -> use_transport($recipient -> {"recipient_id"}));
+        next if(!$force && !$self -> use_transport($recipient -> {"recipient_id"}));
 
         my $recip = $self -> _get_user_email($recipient -> {"recipient_id"})
-            or return undef;
+            or return $self -> self_error("Recipient email lookup failed: ".$self -> errstr());
 
         $to .= "," if($to);
         $to .= $recip;
@@ -146,7 +147,6 @@ sub deliver {
                                       attributes => { charset => 'utf8',
                                                       content_type => "text/plain",
                                                       encoding => 'base64' });
-
     try {
         sendmail($email, { from => $self -> {"env_sender"},
                            transport => $self -> {"smtp"}});

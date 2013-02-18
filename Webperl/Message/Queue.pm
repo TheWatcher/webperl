@@ -140,7 +140,7 @@ sub queue_message {
             # unacceptable delays if there are a lot of recipients and slow transports involved.
             # That doesn't matter with the queue dispatcher, as that will normally be called from
             # a cron job in the background, but this will happen during normal program flow.
-            $self -> deliver_message($msgid)
+            $self -> deliver_message($msgid, $args -> {"force_all_transports"})
                 if($args -> {"send_immediately"});
         }
 
@@ -156,7 +156,7 @@ sub queue_message {
 
         $self -> {"logger"} -> log("messaging", 0, undef, "Queued message $msgid with recipients ".join(",", @{$args -> {"recipients"}}));
 
-        $self -> deliver_message($msgid)
+        $self -> deliver_message($msgid, $args -> {"force_all_transports"})
             if($args -> {"send_immediately"});
     }
 
@@ -421,17 +421,20 @@ sub deliver_queue {
 }
 
 
-## @method $ deliver_message($messageid)
+## @method $ deliver_message($messageid, $force_all)
 # Given a message ID, attempt to send the message via all available transports.
 # This forces immediate delivery of the specified message, if possible, and
 # marks it as either sent or failed.
 #
 # @param messageid The ID of the message to send.
+# @param force_all Force the message to be sent over all available transports, even if
+#                  the user has disabled one.
 # @return The number of transport send failures (0 indicates all transports delivered
 #         the message successfully), undef on error.
 sub deliver_message {
     my $self      = shift;
     my $messageid = shift;
+    my $force_all = shift;
 
     $self -> clear_error();
 
@@ -449,7 +452,7 @@ sub deliver_message {
             or return $self -> self_error("Transport loading failed: ".$self -> errstr());
 
         # Tru to send the message through this transport
-        my $sent = $transport -> {"module"} -> deliver($message);
+        my $sent = $transport -> {"module"} -> deliver($message, $force_all);
 
         ++$failures if(!$sent);
 
