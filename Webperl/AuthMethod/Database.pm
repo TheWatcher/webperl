@@ -306,7 +306,7 @@ sub set_password {
     my $cryptpass = $self -> hash_password($password);
 
     my $reseth = $self -> {"dbh"} -> prepare("UPDATE ".$self -> {"settings"} -> {"database"} -> {"users"}."
-                                              SET password = ?, password_set = UNIX_TIMESTAMP()
+                                              SET password = ?, password_set = UNIX_TIMESTAMP(), force_change = 0
                                               WHERE user_id = ?");
     my $rows = $reseth -> execute($cryptpass, $userid);
     return $self -> self_error("Unable to perform user update: ". $self -> {"dbh"} -> errstr) if(!$rows);
@@ -393,6 +393,8 @@ sub mark_loginfail {
     # Do nothing if limiting is not enabled
     return (0, 0) unless($self -> {"policy_max_loginfail"});
 
+    # Get and increment the fail counter.
+    $failcount = $failcount -> [0] || 0;
     ++$failcount;
 
     # update the login fail counter
