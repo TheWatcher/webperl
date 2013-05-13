@@ -122,7 +122,7 @@ sub get_enum_values {
 #  Parameter validation support functions
 
 ## @method @ validate_string($param, $settings)
-# Determine whether the string in the namedcgi parameter is set, clean it
+# Determine whether the string in the named cgi parameter is set, clean it
 # up, and apply various tests specified in the settings. The settings are
 # stored in a hash, the recognised contents are as below, and all are optional
 # unless noted otherwise:
@@ -142,7 +142,7 @@ sub get_enum_values {
 # formatdesc - Must be provided if formattest is provided. A description of why not
 #              matching formattest fails the validation.
 #
-# @param param    The name of the cgi parameter to check/
+# @param param    The name of the cgi parameter to check.
 # @param settings A reference to a hash of settings to control the validation
 #                 done to the string.
 # @return An array of two values: the first contains the text in the parameter, or
@@ -161,7 +161,7 @@ sub validate_string {
     if(!defined($text) || $text eq '' || (!$text && $settings -> {"nonzero"})) {
         # If the parameter is required, return empty and an error
         if($settings -> {"required"}) {
-            return ("", $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTSET", "", {"***field***" => $settings -> {"nicename"}}));
+            return ("", $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTSET", {"***field***" => $settings -> {"nicename"}}));
         # Otherwise fall back on the default.
         } else {
             $text = $settings -> {"default"} || "";
@@ -170,14 +170,14 @@ sub validate_string {
 
     # If there's a test regexp provided, apply it
     my $chartest = $settings -> {"chartest"};
-    return ($text, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_BADCHARS", "", {"***field***" => $settings -> {"nicename"},
-                                                                                            "***desc***"  => $settings -> {"chardesc"}}))
+    return ($text, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_BADCHARS", {"***field***" => $settings -> {"nicename"},
+                                                                                        "***desc***"  => $settings -> {"chardesc"}}))
         if($chartest && $text =~ /$chartest/);
 
     # Is there a format check provided, if so apply it
     my $formattest = $settings -> {"formattest"};
-    return ($text, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_BADFORMAT", "", {"***field***" => $settings -> {"nicename"},
-                                                                                             "***desc***"  => $settings -> {"formatdesc"}}))
+    return ($text, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_BADFORMAT", {"***field***" => $settings -> {"nicename"},
+                                                                                         "***desc***"  => $settings -> {"formatdesc"}}))
         if($formattest && $text !~ /$formattest/);
 
     # Convert all characters in the string to safe versions
@@ -195,17 +195,75 @@ sub validate_string {
     # Get here and we have /something/ for the parameter. If the maximum length
     # is specified, does the string fit inside it? If not, return as much of the
     # string as is allowed, and an error
-    return (substr($text, 0, $settings -> {"maxlen"}), $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_TOOLONG", "", {"***field***"  => $settings -> {"nicename"},
+    return (substr($text, 0, $settings -> {"maxlen"}), $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_TOOLONG", {"***field***"  => $settings -> {"nicename"},
                                                                                                                                "***maxlen***" => $settings -> {"maxlen"}}))
         if($settings -> {"maxlen"} && (length($text) > $settings -> {"maxlen"}));
 
     # Is the string too short? If so, store it and return an error.
-    return ($text, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_TOOSHORT", "", {"***field***"  => $settings -> {"nicename"},
-                                                                                            "***minlen***" => $settings -> {"minlen"}}))
+    return ($text, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_TOOSHORT", {"***field***"  => $settings -> {"nicename"},
+                                                                                        "***minlen***" => $settings -> {"minlen"}}))
         if($settings -> {"required"} && $settings -> {"minlen"} && (length($text) < $settings -> {"minlen"}));
 
     # Get here and all the tests have been passed or skipped
     return ($text, undef);
+}
+
+
+## @method @ validate_numeric($param, $settings)
+# Determine whether the number in the named cgi parameter is set, and if so whether
+# it is within the required range. Note that, if specified, min must be less than,
+# or equal to, max: get them the wrong way around, and this will reject all numbers!
+#
+# required   - If true, the value must have been set in the form.
+# default    - The default string to use if the form field is empty. If any errors
+#              are encountered, this is the value returned. If not provided, this
+#              defaults to 0.
+# intonly    - If true, only integer values are supported.
+# nicename   - The required 'human readable' name of the field to show in errors.
+# min        - Optional minimum value allowed for the number (inclusive).
+# max        - Optional maximum value allowed for the number (inclusive).
+#
+# @param param    The name of the cgi parameter to check.
+# @param settings A reference to a hash of settings to control the validation
+#                 done to the number.
+# @return An array of two values: the first contains the number in the parameter, or
+#         as much of it as can be salvaged, while the second contains an error message
+#         or undef if the number passes all checks.
+sub validate_numeric {
+    my $self     = shift;
+    my $param    = shift;
+    my $settings = shift;
+
+    # Force a default in all situations.
+    $settings -> {"default"} = 0
+        if(!defined($settings -> {"default"}));
+
+    # Grab the parameter value, fall back on the default if it hasn't been set.
+    my $value = $self -> {"cgi"} -> param($param);
+    if(!defined($value)) {
+        if($settings -> {"required"}) {
+            return ($settings -> {"default"}, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTSET", {"***field***" => $settings -> {"nicename"}}));
+        } else {
+            return ($settings -> {"default"}, undef);
+        }
+    }
+
+    # Is this really a number?
+    my $pattern = '-?\d+'.($settings -> {"intonly"} ? '' : '(\.\d+)?');
+    return ($settings -> {"default"}, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTNUMBER", {"***field***" => $settings -> {"nicename"}}))
+        unless($value =~ /^$pattern$/);
+
+    # Check minimum and maximum if needed
+    return ($settings -> {"default"}, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_RANGEMIN", {"***field***" => $settings -> {"nicename"},
+                                                                                                           "***min***"   => $settings -> {"min"}}))
+        if(defined($settings -> {"min"}) && $value < $settings -> {"min"});
+
+    return ($settings -> {"default"}, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_RANGEMAX", {"***field***" => $settings -> {"nicename"},
+                                                                                                           "***max***"   => $settings -> {"max"}}))
+        if(defined($settings -> {"max"}) && $value > $settings -> {"max"});
+
+    # Value should be good to go now
+    return ($value, undef);
 }
 
 
@@ -237,7 +295,7 @@ sub validate_options {
     my $value = $self -> {"cgi"} -> param($param);
 
     # Bomb if the value is not set and it is required.
-    return ("", $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTSET", "", {"***field***" => $settings -> {"nicename"}}))
+    return ("", $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTSET", {"***field***" => $settings -> {"nicename"}}))
         if($settings -> {"required"} && (!defined($value) || $value eq ''));
 
     # If the value not specified and not required, we can just return immediately
@@ -260,8 +318,8 @@ sub validate_options {
                                                        ".$settings -> {"where"});
         # Check for the value in the table...
         $checkh -> execute($value)
-            or return (undef, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_DBERR", "", {"***field***" => $settings -> {"nicename"},
-                                                                                                    "***dberr***" => $self -> {"dbh"} -> errstr}));
+            or return (undef, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_DBERR", {"***field***" => $settings -> {"nicename"},
+                                                                                                "***dberr***" => $self -> {"dbh"} -> errstr}));
         my $checkr = $checkh -> fetchrow_arrayref();
 
         # If we have a match, the value is valid
@@ -270,7 +328,7 @@ sub validate_options {
 
     # Get here and validation has failed. We can't rely on the value at all, so return
     # nothing for it, and an error
-    return (undef, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_BADOPT", "", {"***field***" => $settings -> {"nicename"}}));
+    return (undef, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_BADOPT", {"***field***" => $settings -> {"nicename"}}));
 }
 
 
@@ -301,7 +359,7 @@ sub validate_htmlarea {
     if(!defined($nohtml) || !$nohtml) {
         # If the parameter is required, return empty and an error
         if($settings -> {"required"}) {
-            return ("", $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTSET", "", {"***field***" => $settings -> {"nicename"}}));
+            return ("", $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTSET", {"***field***" => $settings -> {"nicename"}}));
         # Otherwise fall back on the default.
         } else {
             $text = $settings -> {"default"} || "";
@@ -311,8 +369,8 @@ sub validate_htmlarea {
     return ("", undef) if(!$text || length($text) == 0);
 
     # Is the string too short? If so, store it and return an error.
-    return ($text, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_TOOSHORT", "", {"***field***"  => $settings -> {"nicename"},
-                                                                                            "***minlen***" => $settings -> {"minlen"}}))
+    return ($text, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_TOOSHORT", {"***field***"  => $settings -> {"nicename"},
+                                                                                        "***minlen***" => $settings -> {"minlen"}}))
         if($settings -> {"required"} && $settings -> {"minlen"} && (length($nohtml) < $settings -> {"minlen"}));
 
     # Now we get to the actual validation and stuff. Begin by scrubbing any tags
@@ -321,7 +379,7 @@ sub validate_htmlarea {
     $text = scrub_html($text);
 
     # ... but check, just in case
-    return ("",  $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_SCRUBFAIL", "", {"***field***" => $settings -> {"nicename"}}))
+    return ("",  $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_SCRUBFAIL", {"***field***" => $settings -> {"nicename"}}))
         if(!defined($text));
 
     # Explicitly nuke any CDATA sections that might have got through, as they have
@@ -335,7 +393,7 @@ sub validate_htmlarea {
     # Throw the xhtml through tidy to make sure it is actually xhtml
     # This will result in undef if tidy failed catastrophically...
     my $tidied = tidy_html($xhtml);
-    return ("", , $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_TIDYFAIL", "", {"***field***" => $settings -> {"nicename"}}))
+    return ("", , $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_TIDYFAIL", {"***field***" => $settings -> {"nicename"}}))
         if(!$tidied);
 
     # Now we can go ahead and check with the validator to see whether the tidied
@@ -352,13 +410,13 @@ sub validate_htmlarea {
     # If the return from check_xhtml is one or more digits, it is an error count
     } elsif($valid =~ /^\d+:/) {
         $valid =~ s/^\d+://;
-        return ($tidied, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_CHKERRS", "", {"***field***" => $settings -> {"nicename"},
-                                                                                                 "***error***" => $valid}));
+        return ($tidied, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_CHKERRS", {"***field***" => $settings -> {"nicename"},
+                                                                                             "***error***" => $valid}));
 
     # Otherwise it should be a failure message
     } else {
-        return ($tidied, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_CHKFAIL", "", {"***field***" => $settings -> {"nicename"},
-                                                                                                 "***error***" => $valid}));
+        return ($tidied, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_CHKFAIL", {"***field***" => $settings -> {"nicename"},
+                                                                                             "***error***" => $valid}));
     }
 }
 
