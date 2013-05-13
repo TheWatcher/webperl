@@ -412,6 +412,9 @@ sub join_complex {
 # Determine whether the specified cgi parameter is purely numeric and return it
 # if it is. If the named parameter is not entirely numeric, this returns undef.
 #
+# @deprecated This function should be considered deprecated, and should not be
+#  used in new code. Instead, use Webperl::Block::validate_numeric().
+#
 # @param cgi   The cgi handle to check the parameter through.
 # @param param The name of the cgi parameter to check.
 # @return The numeric value in the parameter, or undef if it is not purely numeric.
