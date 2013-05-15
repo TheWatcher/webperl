@@ -94,7 +94,7 @@ sub new {
     return $self if($self -> read($filename));
 
     # Get here and things have gone wahoonie-shaped
-    return set_error($self -> {"errstr"});
+    return Webperl::SystemModule::set_error($self -> {"errstr"});
 }
 
 
