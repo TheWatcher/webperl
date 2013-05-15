@@ -256,11 +256,11 @@ sub validate_numeric {
         unless($value =~ /^$pattern$/);
 
     # Check minimum and maximum if needed
-    return ($settings -> {"default"}, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_RANGEMIN", {"***field***" => $settings -> {"nicename"},
+    return ($settings -> {"min"}, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_RANGEMIN", {"***field***" => $settings -> {"nicename"},
                                                                                                            "***min***"   => $settings -> {"min"}}))
         if(defined($settings -> {"min"}) && $value < $settings -> {"min"});
 
-    return ($settings -> {"default"}, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_RANGEMAX", {"***field***" => $settings -> {"nicename"},
+    return ($settings -> {"max"}, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_RANGEMAX", {"***field***" => $settings -> {"nicename"},
                                                                                                            "***max***"   => $settings -> {"max"}}))
         if(defined($settings -> {"max"}) && $value > $settings -> {"max"});
 
@@ -297,7 +297,7 @@ sub validate_options {
     my $value = $self -> {"cgi"} -> param($param);
 
     # Bomb if the value is not set and it is required.
-    return ("", $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTSET", {"***field***" => $settings -> {"nicename"}}))
+    return ($settings -> {"default"}, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTSET", {"***field***" => $settings -> {"nicename"}}))
         if($settings -> {"required"} && (!defined($value) || $value eq ''));
 
     # If the value not specified and not required, we can just return immediately
@@ -320,8 +320,8 @@ sub validate_options {
                                                        ".$settings -> {"where"});
         # Check for the value in the table...
         $checkh -> execute($value)
-            or return (undef, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_DBERR", {"***field***" => $settings -> {"nicename"},
-                                                                                                "***dberr***" => $self -> {"dbh"} -> errstr}));
+            or return ($settings -> {"default"}, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_DBERR", {"***field***" => $settings -> {"nicename"},
+                                                                                                                   "***dberr***" => $self -> {"dbh"} -> errstr}));
         my $checkr = $checkh -> fetchrow_arrayref();
 
         # If we have a match, the value is valid
@@ -329,8 +329,8 @@ sub validate_options {
     }
 
     # Get here and validation has failed. We can't rely on the value at all, so return
-    # nothing for it, and an error
-    return (undef, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_BADOPT", {"***field***" => $settings -> {"nicename"}}));
+    # the default, and an error
+    return ($settings -> {"default"}, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_BADOPT", {"***field***" => $settings -> {"nicename"}}));
 }
 
 
@@ -421,6 +421,7 @@ sub validate_htmlarea {
                                                                                              "***error***" => $valid}));
     }
 }
+
 
 # ============================================================================
 #  Logging functions
