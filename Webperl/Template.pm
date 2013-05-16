@@ -116,6 +116,7 @@
 #    paths inside the common template). This will always have a trailing '/'.
 # - `{V_[sitename]}` is replaced by the name of the site in the 'site_name'
 #    configuration value.
+# - `{V_[admin_email]}` is replaced by the site admin email address.
 package Webperl::Template;
 
 use POSIX qw(strftime);
@@ -540,6 +541,7 @@ sub fix_variables {
     $$textref =~ s/{V_\[templatepath\]}/$self->{templatepath}/g;
     $$textref =~ s/{V_\[commonpath\]}/$self->{commonpath}/g;
     $$textref =~ s/{V_\[sitename\]}/$self->{settings}->{config}->{site_name}/g;
+    $$textref =~ s/{V_\[admin_email\]}/$self->{settings}->{config}->{Core:admin_email}/g;
 
     # Do any module marker replacements if we can
     if($self -> {"modules"}) {
