@@ -537,11 +537,12 @@ sub fix_variables {
     my $textref = shift;
 
     # Fix 'standard' variables
+    my $email = $self->{settings}->{config}->{"Core:admin_email"};
     $$textref =~ s/{V_\[scriptpath\]}/$self->{scriptpath}/g;
     $$textref =~ s/{V_\[templatepath\]}/$self->{templatepath}/g;
     $$textref =~ s/{V_\[commonpath\]}/$self->{commonpath}/g;
     $$textref =~ s/{V_\[sitename\]}/$self->{settings}->{config}->{site_name}/g;
-    $$textref =~ s/{V_\[admin_email\]}/$self->{settings}->{config}->{Core:admin_email}/g;
+    $$textref =~ s/{V_\[admin_email\]}/$email/g;
 
     # Do any module marker replacements if we can
     if($self -> {"modules"}) {
