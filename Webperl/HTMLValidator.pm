@@ -46,7 +46,7 @@ my $default_allow = [
 ];
 
 # Explicit rules for allowed tags, required to provide per-tag tweaks to the filter.
-my $default_rules = {
+my $default_rules = [
     img => {
         src    => qr{^(?:http|https)://}i,
         alt    => 1,
@@ -90,10 +90,10 @@ my $default_rules = {
         title => 1,
         '*'   => 0,
     },
-};
+];
 
 # Default ruleset applied when no explicit rule is found for a tag.
-my $default_default = {
+my $default_default = [
     0   =>    # default rule, deny all tags
     {
         'href'  => qr{^(?:http|https)://[-\w]+(?:\.[-\w]+)/}i, # Force basic URL forms
@@ -102,7 +102,7 @@ my $default_default = {
         'name'  => 1,
         '*'     => 0, # default rule, deny all attributes
     }
-};
+];
 
 
 ## @fn $ scrub_html($html, $allow, $rules, $default)
