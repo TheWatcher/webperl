@@ -38,13 +38,15 @@ our @EXPORT    = qw(scrub_html tidy_html check_xhtml);
 # discussion on  http://wiki.moxiecode.com/index.php/TinyMCE:Security
 # Several tags removed to make xhtml conformance easier and to remove
 # deprecated and eyestabbery.
-my @allow = ("a", "b", "blockquote", "br", "caption", "col", "colgroup", "comment",
-             "em", "h1", "h2", "h3", "h4", "h5", "h6", "hr", "img", "li", "ol", "p",
-             "pre", "small", "span", "strong", "sub", "sup", "table", "tbody", "td",
-             "tfoot", "th", "thead", "tr", "tt", "ul");
+my $default_allow = [
+    "a", "b", "blockquote", "br", "caption", "col", "colgroup", "comment",
+    "em", "h1", "h2", "h3", "h4", "h5", "h6", "hr", "img", "li", "ol", "p",
+    "pre", "small", "span", "strong", "sub", "sup", "table", "tbody", "td",
+    "tfoot", "th", "thead", "tr", "tt", "ul"
+];
 
 # Explicit rules for allowed tags, required to provide per-tag tweaks to the filter.
-my @rules = (
+my $default_rules = {
     img => {
         src    => qr{^(?:http|https)://}i,
         alt    => 1,
@@ -88,10 +90,10 @@ my @rules = (
         title => 1,
         '*'   => 0,
     },
-);
+};
 
 # Default ruleset applied when no explicit rule is found for a tag.
-my @default = (
+my $default_default = {
     0   =>    # default rule, deny all tags
     {
         'href'  => qr{^(?:http|https)://[-\w]+(?:\.[-\w]+)/}i, # Force basic URL forms
@@ -100,29 +102,35 @@ my @default = (
         'name'  => 1,
         '*'     => 0, # default rule, deny all attributes
     }
-);
+};
 
 
-## @fn $ scrub_html($html)
+## @fn $ scrub_html($html, $allow, $rules, $default)
 # Remove dangerous/unwanted elements and attributes from a html document. This will
 # use HTML::Scrubber to remove the elements and attributes from the specified html
 # that could be used maliciously. There is still the potential for a clever attacker
 # to craft a page that bypasses this, but that exists pretty much regardless once
 # html input is permitted...
 #
-# @param html The string containing the html to clean up
+# @param html    The string containing the html to clean up
+# @param allow   An optional reference to an array of allowed tags to pass to HTML::SCrubber -> new()
+# @param rules   An optional reference to a hash of rules to pass to HTML::SCrubber -> new()
+# @param default An optional reference to a hash of defaults to pass to HTML::SCrubber -> new()
 # @return A string containing the scrubbed html.
 sub scrub_html {
-    my $html = shift;
+    my $html    = shift;
+    my $allow   = shift || $default_allow;
+    my $rules   = shift || $default_rules;
+    my $default = shift || $default_default;
 
     # Die immediately if there's a nul character in the string, that should never, ever be there.
     die_log("HACK ATTEMPT", "Hack attempt detected. Sod off.")
         if($html =~ /\0/);
 
     # First, a new scrubber
-    my $scrubber = HTML::Scrubber -> new(allow   => \@allow,
-                                         rules   => \@rules,
-                                         default => \@default,
+    my $scrubber = HTML::Scrubber -> new(allow   => $allow,
+                                         rules   => $rules,
+                                         default => $default,
                                          comment => 0,
                                          process => 0);
 

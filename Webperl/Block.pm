@@ -378,7 +378,7 @@ sub validate_htmlarea {
     # Now we get to the actual validation and stuff. Begin by scrubbing any tags
     # and other crap we don't want out completely. As far as I can tell, this should
     # always generate a result of some kind...
-    $text = scrub_html($text);
+    $text = scrub_html($text, $settings -> {"allow_tags"}, $settings -> {"tag_rules"}, $settings -> {"scrub_defaults"});
 
     # ... but check, just in case
     return ("",  $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_SCRUBFAIL", {"***field***" => $settings -> {"nicename"}}))
