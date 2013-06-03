@@ -100,7 +100,7 @@ sub create_user {
 
     $self -> clear_error();
 
-    my $active = !$self -> require_activate();
+    my $active = !$self -> capabilities("activate");
 
     my $newuser = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"settings"} -> {"database"} -> {"users"}."
                                                (user_auth, activated, username, created, last_login)
