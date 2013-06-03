@@ -100,7 +100,7 @@ sub create_user {
 
     $self -> clear_error();
 
-    my $active = !$self -> capabilities("activate");
+    my $active = $self -> capabilities("activate") ? 0 : time();
 
     my $newuser = $self -> {"dbh"} -> prepare("INSERT INTO ".$self -> {"settings"} -> {"database"} -> {"users"}."
                                                (user_auth, activated, username, created, last_login)
@@ -108,7 +108,17 @@ sub create_user {
     $newuser -> execute($authmethod, $active, $username)
         or $self -> self_error("Unable to create new user record: ".$self -> {"dbh"} -> errstr);
 
-    return $self -> get_user($username);
+    # FIXME: This ties to MySQL, but is more reliable that last_insert_id in general.
+    #        Try to find a decent solution for this mess...
+    my $userid = $self -> {"dbh"} -> {"mysql_insertid"};
+    return $self -> self_error("Unable to obtain id for user '$username'") if(!$userid);
+
+    my $userh = $self -> {"dbh"} -> prepare("SELECT * FROM  ".$self -> {"settings"} -> {"database"} -> {"users"}."
+                                             WHERE user_id = ?");
+    $userh -> execute($userid)
+        or return $self -> self_error("Unable to fetch user record: ".$self -> {"dbh"} -> errstr);
+
+    return $userh -> fetchrow_hashref();
 }
 
 
