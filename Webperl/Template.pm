@@ -158,14 +158,14 @@ BEGIN {
              31 => 'st'
     };
 
-    @timescales = ( { "seconds" => 31557600, "scale" => 31557600, "singular" => "TIMES_YEAR"   , "plural" => "TIMES_YEARS"   },
-                    { "seconds" =>  2629800, "scale" =>  2629800, "singular" => "TIMES_MONTH"  , "plural" => "TIMES_MONTHS"  },
-                    { "seconds" =>   604800, "scale" =>   604800, "singular" => "TIMES_WEEK"   , "plural" => "TIMES_WEEKS"   },
-                    { "seconds" =>    86400, "scale" =>    86400, "singular" => "TIMES_DAY"    , "plural" => "TIMES_DAYS"    },
-                    { "seconds" =>     3600, "scale" =>     3600, "singular" => "TIMES_HOUR"   , "plural" => "TIMES_HOURS"   },
-                    { "seconds" =>       60, "scale" =>       60, "singular" => "TIMES_MINUTE" , "plural" => "TIMES_MINUTES" },
-                    { "seconds" =>       15, "scale" =>        1, "singular" => "TIMES_SECONDS", "plural" => "TIMES_SECONDS" },
-                    { "seconds" =>        0, "scale" =>        1, "singular" => "TIMES_JUSTNOW", "plural" => "TIMES_JUSTNOW" },
+    @timescales = ( { "seconds" => 31557600, "scale" => 31557600, past => {"singular" => "TIMES_YEAR"   , "plural" => "TIMES_YEARS"   }, future => {"singular" => "FUTURE_YEAR"   , "plural" => "FUTURE_YEARS"   }, },
+                    { "seconds" =>  2629800, "scale" =>  2629800, past => {"singular" => "TIMES_MONTH"  , "plural" => "TIMES_MONTHS"  }, future => {"singular" => "FUTURE_MONTH"  , "plural" => "FUTURE_MONTHS"  }, },
+                    { "seconds" =>   604800, "scale" =>   604800, past => {"singular" => "TIMES_WEEK"   , "plural" => "TIMES_WEEKS"   }, future => {"singular" => "FUTURE_WEEK"   , "plural" => "FUTURE_WEEKS"   }, },
+                    { "seconds" =>    86400, "scale" =>    86400, past => {"singular" => "TIMES_DAY"    , "plural" => "TIMES_DAYS"    }, future => {"singular" => "FUTURE_DAY"    , "plural" => "FUTURE_DAYS"    }, },
+                    { "seconds" =>     3600, "scale" =>     3600, past => {"singular" => "TIMES_HOUR"   , "plural" => "TIMES_HOURS"   }, future => {"singular" => "FUTURE_HOUR"   , "plural" => "FUTURE_HOURS"   }, },
+                    { "seconds" =>       60, "scale" =>       60, past => {"singular" => "TIMES_MINUTE" , "plural" => "TIMES_MINUTES" }, future => {"singular" => "FUTURE_MINUTE" , "plural" => "FUTURE_MINUTES" }, },
+                    { "seconds" =>       15, "scale" =>        1, past => {"singular" => "TIMES_SECONDS", "plural" => "TIMES_SECONDS" }, future => {"singular" => "FUTURE_SECONDS", "plural" => "FUTURE_SECONDS" }, },
+                    { "seconds" =>        0, "scale" =>        1, past => {"singular" => "TIMES_JUSTNOW", "plural" => "TIMES_JUSTNOW" }, future => {"singular" => "FUTURE_JUSTNOW", "plural" => "FUTURE_JUSTNOW" }, },
     );
 }
 
@@ -841,7 +841,7 @@ sub format_time {
 }
 
 
-## @method $ fancy_time($time, $nospan)
+## @method $ fancy_time($time, $nospan, $allowfuture)
 # Generate a string containing a 'fancy' representation of the time - rather than
 # explicitly showing the time, this will generate things like "just now", "less
 # than a minute ago", "1 minute ago", "20 minutes ago", etc. The real formatted
@@ -850,29 +850,36 @@ sub format_time {
 # @param time   The time to generate a string for.
 # @param nospan Allow the suppression of span generation, in which case only the
 #               fancy time string is returned.
+# @param allowfuture Support fancy time for future times.
 # @return A string containing a span element representing both the fancy time as
 #         the element content, and the formatted time as the title. The span has
 #         the class 'timestr' for css formatting.
 sub fancy_time {
-    my $self   = shift;
-    my $time   = shift;
-    my $nospan = shift;
-    my $now    = time();
-    my $formatted = $self -> format_time($time);
+    my $self        = shift;
+    my $time        = shift;
+    my $nospan      = shift;
+    my $allowfuture = shift;
     my $fancytime;
+
+    my $now       = time();
+    my $formatted = $self -> format_time($time);
 
     # If the duration is negative (time is in the future), just use format_time
     my $dur = $now - $time;
-    if($dur < 0) {
+    my $isfuture = ($dur < 0) ? "future" : "past";
+
+    if($isfuture eq "future" && !$allowfuture) {
         $fancytime = $formatted;
 
     # Otherwise, find the largest matching time string
     } else {
+        $dur *= -1 if($dur < 0);
+
         foreach my $scale (@timescales) {
             if($dur >= $scale -> {"seconds"}) {
                 $dur = int($dur / $scale -> {"scale"}); # Always going to be positive, so no need for floor() here
 
-                $fancytime = $self -> replace_langvar($dur == 1 ? $scale -> {"singular"} : $scale -> {"plural"}, {"%t" => $dur});
+                $fancytime = $self -> replace_langvar($dur == 1 ? $scale -> {$isfuture} -> {"singular"} : $scale -> {$isfuture} -> {"plural"}, {"%t" => $dur});
                 last;
             }
         }
