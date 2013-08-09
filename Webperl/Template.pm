@@ -913,6 +913,28 @@ sub html_clean {
 }
 
 
+## @method $ html_strip($html)
+# Strip the html from the specified string, returning the plain text content.
+#
+# @param html A string containing the HTML to strip the tags from
+# @return A string containing the pla
+sub html_strip {
+    my $self = shift;
+    my $html = shift;
+
+    require HTML::TokeParser::Simple;
+    my $tokparser = HTML::TokeParser::Simple -> new(string => $html);
+
+    my $text = "";
+    while(my $token = $tokparser -> get_token()) {
+        next unless $token->is_text();
+        $text .= $token -> as_is();
+    }
+
+    return $html;
+}
+
+
 ## @method $ bytes_to_human($bytes, $long)
 # Convenience wrappper around humanise_bytes for backwards compatibility.
 #
