@@ -931,7 +931,7 @@ sub html_strip {
         $text .= $token -> as_is();
     }
 
-    return $html;
+    return $text;
 }
 
 
