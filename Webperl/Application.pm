@@ -263,7 +263,9 @@ sub run {
     my $content = $pageobj -> page_display();
 
     print $self -> {"cgi"} -> header(-charset => 'utf-8',
-                                     -cookie  => $self -> {"session"} -> session_cookies());
+                                     -cookie  => $self -> {"session"} -> session_cookies(),
+                                     -expires => "now",
+                                     -Cache_Control => "no-cache");
 
     $self -> {"endtime"} = time();
     my ($user, $system, $cuser, $csystem) = times();
