@@ -90,10 +90,10 @@ sub authenticate {
     if($username && $password) {
         # First obtain the user dn
         my $userdn;
-        my $ldap = Net::LDAP -> new($self -> {"server"});
+        my $ldap = Net::LDAP -> new($self -> {"server"}, version => 3);
 
         if($ldap) {
-            $ldap -> start_tls('none') if($self -> {"usetls"});
+            $ldap -> start_tls(verify => 'none') if($self -> {"usetls"});
 
             # Bind for the search - if the object has adminuser and password, bind with them,
             # otherwise fall back on using an anonymous bind.
@@ -120,7 +120,7 @@ sub authenticate {
                 if(!$self -> {"reuseconn"}) {
                     $ldap = Net::LDAP -> new($self -> {"server"});
 
-                    $ldap -> start_tls('none')
+                    $ldap -> start_tls(verify => 'none')
                         if($ldap && $self -> {"usetls"});
                 }
 
