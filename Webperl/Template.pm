@@ -357,7 +357,7 @@ sub set_template_dir {
     $self -> {"templatepath"} .= "/" unless($self -> {"templatepath"} =~ m|/$|); # templatepath must have trailing slash
 
     # The URL...
-    $self -> {"templateurl"} = path_join($self -> {"cgi"} -> url(-base => 1), $self -> {"templatepath"})
+    $self -> {"templateurl"} = path_join($self -> {"cgi"} -> url(-base => 1), $self -> {"templatepath"})."/"
         if($self -> {"cgi"});
 
     # And the common path, if possible
