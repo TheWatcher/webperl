@@ -111,6 +111,7 @@
 # - `{V_[templatepath]}` is replaced by the path from the base of the web
 #    application to the template directory (useful for image and other resource
 #    paths inside the template). This will always have a trailing '/'.
+# - `{V_[templateurl]}` like templatepath, but including the full URL.
 # - `{V_[commonpath]}` is replaced by the path from the base of the web
 #    application to the common template directory (useful for image and other resource
 #    paths inside the common template). This will always have a trailing '/'.
@@ -354,6 +355,9 @@ sub set_template_dir {
     # work out the current template path
     $self -> {"templatepath"} = path_join($self -> {"scriptpath"}, $self -> {"basedir"}, $self -> {"theme"});
     $self -> {"templatepath"} .= "/" unless($self -> {"templatepath"} =~ m|/$|); # templatepath must have trailing slash
+
+    # The URL...
+    $self -> {"templateurl"} = path_join($self -> {"cgi"} -> url(-base => 1), $self -> {"templatepath"});
 
     # And the common path, if possible
     if($self -> {"fallback"}) {
