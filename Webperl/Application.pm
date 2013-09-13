@@ -160,6 +160,7 @@ sub run {
     # Create the template handler object
     $self -> {"template"} = Webperl::Template -> new(logger    => $self -> {"logger"},
                                                      dbh       => $self -> {"dbh"},
+                                                     cgi       => $self -> {"cgi"},
                                                      basedir   => $self -> {"settings"} -> {"config"} -> {"template_dir"} || "templates",
                                                      timefmt   => $self -> {"settings"} -> {"config"} -> {"timefmt"},
                                                      blockname => 1,
