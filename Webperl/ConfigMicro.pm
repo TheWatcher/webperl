@@ -143,12 +143,12 @@ sub read {
 			$self -> {$section} -> {$1} = $2;
 
         # Handle attributes without quoted values - # or ; at any point will mark comments
-		} elsif(!$self -> {"inline_comments"} && $line =~ /^\s*((.*?\w))\s*=\s*(.+)$/ ) {
+		} elsif(!$self -> {"inline_comments"} && $line =~ /^\s*(.*?\w)\s*=\s*(.+)$/ ) {
             my $key = $1;
 			$self -> {$section} -> {$key} = $2;
             $self -> {$section} -> {$key} =~ s/^\s*(.*?)\s*$/$1/;
 
-		} elsif($self -> {"inline_comments"} && $line =~ /^\s*((.*?\w))\s*=\s*([^;#]+)/ ) {
+		} elsif($self -> {"inline_comments"} && $line =~ /^\s*(.*?\w)\s*=\s*([^;#]+)/ ) {
             my $key = $1;
 			$self -> {$section} -> {$key} = $2;
             $self -> {$section} -> {$key} =~ s/^\s*(.*?)\s*$/$1/;
