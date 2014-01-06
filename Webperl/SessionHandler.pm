@@ -662,6 +662,34 @@ sub get_variable {
 }
 
 
+## @method $ is_variable_set($name)
+# Determine whether a variable with the specified name has been set for the
+# current session user.
+#
+# @param name    The name of the session variable to check. Variable names must be 80
+#                characters or less, but are otherwise unconstrained.
+# @return true if the variable is set, false if it is not. Note that this will
+#         return true if /any/ value is recorded for the variable, including when
+#         it is set to the empty string. Only when the variable is completely
+#         unset for the user, or has somehow been set to NULL, will this return false.
+sub is_variable_set {
+    my $self = shift;
+    my $name = shift;
+
+    $self -> self_error("");
+
+    my $geth = $self -> {"dbh"} -> prepare("SELECT var_value FROM ".$self -> {"settings"} -> {"database"} -> {"session_variables"}."
+                                            WHERE session_id = ?
+                                            AND var_name LIKE ?");
+    $geth -> execute($self -> {"sessid"}, $name)
+        or return $self -> self_error("Unable to look up session variable\nError was: ".$self -> {"dbh"} -> errstr);
+
+    my $valrow = $geth -> fetchrow_arrayref();
+
+    return $valrow && defined($valrow -> [0]);
+}
+
+
 # ==============================================================================
 # Theoretically internal stuff
 
