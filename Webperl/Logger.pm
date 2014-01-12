@@ -87,6 +87,8 @@ sub new {
         if($@) {
             $obj -> {"syslog"} = 0;
             $obj -> warn_log(undef, "Unable to conenct to syslog: $@");
+        } else {
+            syslog(LOG_INFO, "Syslog started");
         }
     }
 
