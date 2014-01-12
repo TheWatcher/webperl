@@ -83,7 +83,7 @@ sub new {
 
     # Set up syslog if needed. If open fails, disable syslog again
     if($obj -> {"syslog"}) {
-        eval { openlog($$, "ndelay,pid", LOG_DAEMON); }
+        eval { openlog($$, "ndelay,pid", LOG_DAEMON); };
         if($@) {
             $obj -> {"syslog"} = 0;
             $obj -> warn_log(undef, "Unable to conenct to syslog: $@");
