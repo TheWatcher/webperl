@@ -73,7 +73,6 @@ sub new {
         "fatalblargh" => 0,
         "outlevels"   => [ "WARNING", "NOTICE", "DEBUG" ],
         "syslog"      => 0,
-        "syslog_levs" => [ LOG_WARNING, LOG_NOTICE, LOG_DEBUG ],
         @_,
     };
 
@@ -271,7 +270,7 @@ sub print {
         print $self -> {"outlevels"} -> [$level],": $message",($newline ? "\n" : "");
         print $logfile $self -> {"outlevels"} -> [$level],": $message",($newline ? "\n" : "") if($logfile);
 
-        syslog($self -> {"syslog_levs"} -> [$level], $message)
+        syslog(lc($self {"outlevels"} -> [$level]), $message)
             if(!$self -> {"syslog"});
 
         # flush stdout if needed to avoid log update delays
