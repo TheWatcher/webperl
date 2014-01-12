@@ -25,6 +25,7 @@
 package Webperl::Logger;
 
 use strict;
+use Sys::Syslog qw(:standard :macros);
 require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw(warn_log die_log);
@@ -59,6 +60,7 @@ BEGIN {
 #               Defaults to false.
 # logname     - If set, messages sent to warn_log and die_log will be appended
 #               to the specified log file. See start_log below for more details.
+# syslog      - If set to true, messages are copied into syslog.
 #
 # @param args A hash of key, value pairs with which to initialise the object.
 # @return A new Logging object.
@@ -70,12 +72,23 @@ sub new {
         "verbosity"   => DEBUG,
         "fatalblargh" => 0,
         "outlevels"   => [ "WARNING", "NOTICE", "DEBUG" ],
+        "syslog"      => 0,
+        "syslog_levs" => [ LOG_WARNING, LOG_NOTICE, LOG_DEBUG ],
         @_,
     };
 
     my $obj = bless $self, $class;
 
     $obj -> start_log($self -> {"logname"}) if($self -> {"logname"});
+
+    # Set up syslog if needed. If open fails, disable syslog again
+    if($obj -> {"syslog"}) {
+        eval { openlog($$, "ndelay,pid", LOG_DAEMON); }
+        if($@) {
+            $obj -> {"syslog"} = 0;
+            $obj -> warn_log(undef, "Unable to conenct to syslog: $@");
+        }
+    }
 
     # Store as the singleton, just in case
     $log_singleton = $obj;
@@ -256,6 +269,9 @@ sub print {
         print $self -> {"outlevels"} -> [$level],": $message",($newline ? "\n" : "");
         print $logfile $self -> {"outlevels"} -> [$level],": $message",($newline ? "\n" : "") if($logfile);
 
+        syslog($self -> {"syslog_levs"} -> [$level], $message)
+            if(!$self -> {"syslog"});
+
         # flush stdout if needed to avoid log update delays
         select((select(STDOUT), $| = 1)[0]) if($newline);
     }
@@ -299,6 +315,11 @@ sub warn_log {
     print $logfile scalar(localtime)," [$$:$ip]: $message\n"
         if($logfile);
 
+    syslog(LOG_WARNING, $message)
+        if(!$self -> {"syslog"});
+
+    $self -> log("warning", 0, $ip, $message);
+
     warn "[$$:$ip]: $message\n";
 }
 
@@ -322,6 +343,9 @@ sub die_log {
 
     print $logfile scalar(localtime)," [$$:$ip]: $message\n"
         if($logfile);
+
+    syslog(LOG_ERR, $message)
+        if(!$self -> {"syslog"});
 
     $self -> log("fatal", 0, $ip, $message);
 
