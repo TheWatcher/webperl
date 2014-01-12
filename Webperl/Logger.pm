@@ -271,7 +271,7 @@ sub print {
         print $logfile $self -> {"outlevels"} -> [$level],": $message",($newline ? "\n" : "") if($logfile);
 
         syslog(lc($self -> {"outlevels"} -> [$level]), $message)
-            if(!$self -> {"syslog"});
+            if($self -> {"syslog"});
 
         # flush stdout if needed to avoid log update delays
         select((select(STDOUT), $| = 1)[0]) if($newline);
