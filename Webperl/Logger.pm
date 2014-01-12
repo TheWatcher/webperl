@@ -60,7 +60,8 @@ BEGIN {
 #               Defaults to false.
 # logname     - If set, messages sent to warn_log and die_log will be appended
 #               to the specified log file. See start_log below for more details.
-# syslog      - If set to true, messages are copied into syslog.
+# syslog      - If set then messages are written to syslog prefixed with this
+#               string.
 #
 # @param args A hash of key, value pairs with which to initialise the object.
 # @return A new Logging object.
@@ -82,7 +83,7 @@ sub new {
 
     # Set up syslog if needed. If open fails, disable syslog again
     if($obj -> {"syslog"}) {
-        eval { openlog($$, "ndelay,pid", LOG_DAEMON); };
+        eval { openlog($obj -> {"syslog"}, "ndelay,pid", LOG_DAEMON); };
         if($@) {
             $obj -> {"syslog"} = 0;
             $obj -> warn_log(undef, "Unable to conenct to syslog: $@");
