@@ -566,6 +566,7 @@ sub write_pid {
 
     open(PIDFILE, "> $filename")
         or croak "FATAL: Unable to open PID file for writing: $!";
+    flock(PIDFILE, 2);
 
     print PIDFILE $$;
 
@@ -584,6 +585,7 @@ sub read_pid {
 
     open(PIDFILE, "< $filename")
         or croak "FATAL: Unable to open PID file for reading: $!";
+    flock(PIDFILE, 1);
 
     my $pid = <PIDFILE>;
     close(PIDFILE);
