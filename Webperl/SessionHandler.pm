@@ -359,6 +359,14 @@ sub delete_session {
     $nukesess -> execute($self -> {"sessid"}, $self -> {"sessuser"})
         or return set_error("Unable to remove session\nError was: ".$self -> {"dbh"} -> errstr);
 
+    # Remove any variables associated with the session
+    if($self -> {"settings"} -> {"database"} -> {"session_variables"}) {
+        my $nukevars = $self -> {"dbh"} -> prepare("DELETE FROM ".$self -> {"settings"} -> {"database"} -> {"session_variables"}.
+                                                   " WHERE session_id = ?");
+        $nukevars -> execute($self -> {"sessid"})
+            or return set_error("Unable to remove session variables\nError was: ".$self -> {"dbh"} -> errstr);
+    }
+
     # If we're not dealing with anonymous, we need to store the visit time,
     # and nuke any autologin key for the now defunct session
     if($self -> {"sessuser"} != $self -> {"auth"} -> {"ANONYMOUS"}) {
