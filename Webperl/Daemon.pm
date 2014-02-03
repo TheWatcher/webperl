@@ -163,8 +163,11 @@ sub detach {
 sub running {
     my $self = shift;
 
-    my $pid = eval { read_pid($self -> {"pidfile"}) };
-    print $@ if($@);
+    my $pid;
+    if(-f $self -> {"pidfile"}) {
+        eval { $pid = read_pid($self -> {"pidfile"}) };
+        print $@ if($@);
+    }
     return 0 if(!$pid);
 
     my $signalled = kill 0,$pid;
