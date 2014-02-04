@@ -36,6 +36,7 @@ use constant STATE_OK               => 0;
 use constant STATE_DEAD_PID_EXISTS  => 1;
 use constant STATE_NOT_RUNNING      => 3;
 use constant STATE_ALREADY_RUNNING  => 100;
+use constant STATE_SIGNAL_ERROR     => 101;
 
 # ============================================================================
 #  Constructor
@@ -206,6 +207,26 @@ sub kill {
     }
 
     return STATE_DEAD_PID_EXISTS;
+}
+
+
+## @method $ signal($signal)
+# Signal the running daemon with the specified signal.
+#
+# @param signal The signal to send to the daemon
+# @return STATE_OK on success, STATE_NOT_RUNNING if the daemon is
+#         not running, otherwise STATE_SIGNAL_ERROR.
+sub signal {
+    my $self   = shift;
+    my $signal = shift;
+    my $pid    = $self -> running();
+
+    return STATE_NOT_RUNNING if(!$pid);
+
+    my $sent = kill($signal, $pid);
+    return STATE_OK if($sent);
+
+    return STATE_SIGNAL_ERROR;
 }
 
 1;
