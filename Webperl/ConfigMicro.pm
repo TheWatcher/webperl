@@ -116,7 +116,7 @@ sub new {
 #         this returns false, $obj -> {"errstr"} will contain the reason why.
 sub read {
     my $self     = shift;
-    my $filename = shift or return set_error("No file name provided");
+    my $filename = shift or return $self -> self_error("No file name provided");
 
     # The current section, default it to '_' in case there is no leading [section]
     my $section = "_";
@@ -161,6 +161,9 @@ sub read {
 	}
 
     close(CFILE);
+
+    # Store the filename for later use
+    $self -> {"filename"} = $filename;
 
     return 1;
 }
@@ -219,13 +222,17 @@ sub as_text {
 #         occurred.
 sub write {
     my $self     = shift;
-    my $filename = shift or return set_error("No file name provided");
+    my $filename = shift || $self -> {"filename"};
     my @skip     = @_;
 
-    return $self -> self_error("Failed to save '$filename': $!")
+    return $self -> self_error("Write failed: no filename available.")
+        if(!$filename);
+
+    return $self -> self_error("Failed to open '$filename' for writing: $!")
         if(!open(CFILE, ">:utf8", $filename));
 
-    print CFILE $self -> as_text(@skip);
+    print CFILE $self -> as_text(@skip)
+        or return $self -> self_error("Write to '$filename' failed: $!")
 
     close(CFILE);
 
