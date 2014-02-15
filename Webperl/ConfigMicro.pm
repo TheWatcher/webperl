@@ -232,7 +232,7 @@ sub write {
         if(!open(CFILE, ">:utf8", $filename));
 
     print CFILE $self -> as_text(@skip)
-        or return $self -> self_error("Write to '$filename' failed: $!")
+        or return $self -> self_error("Write to '$filename' failed: $!");
 
     close(CFILE);
 
