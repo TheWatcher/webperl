@@ -69,7 +69,7 @@ sub new {
     # Nuke any attempt at using Proc::Daemon's pid and command code
     $self -> {"pid_file"} = $self -> {"exec_command"} = undef;
 
-    ($self -> {"script"}) = basename($0) =~ /^([\w-.]+)$/;
+    ($self -> {"script"}) = basename($0) =~ /^([-\w.]+)$/;
     return Webperl::SystemModule::set_error("Unable to determine script name")
         if(!$self -> {"script"});
 
@@ -116,7 +116,7 @@ sub run {
 
             # Try to kill the deamon, and if something goes wrong, or stop has been
             # requested directly, return the status code.
-            my $state = $self -> kill();
+            my $state = $self -> kill_daemon();
             return $state if($action eq "stop" || $state != STATE_OK);
         }
     }
@@ -186,13 +186,13 @@ sub running {
 }
 
 
-## @method $ kill()
+## @method $ kill_daemon()
 # Halt the daemon process if it is currently running.
 #
 # @return STATE_OK if the daemon has been stopped (or was never running),
 #         STATE_DEAD_PID_EXISTS if the process is still running but the
 #         kill signal failed.
-sub kill {
+sub kill_daemon {
     my $self = shift;
     my $pid  = $self -> running();
 
@@ -210,13 +210,13 @@ sub kill {
 }
 
 
-## @method $ signal($signal)
+## @method $ send_signal($signal)
 # Signal the running daemon with the specified signal.
 #
 # @param signal The signal to send to the daemon
 # @return STATE_OK on success, STATE_NOT_RUNNING if the daemon is
 #         not running, otherwise STATE_SIGNAL_ERROR.
-sub signal {
+sub send_signal {
     my $self   = shift;
     my $signal = shift;
     my $pid    = $self -> running();
