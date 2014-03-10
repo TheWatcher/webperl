@@ -242,6 +242,7 @@ sub validate_numeric {
 
     # Grab the parameter value, fall back on the default if it hasn't been set.
     my $value = $self -> {"cgi"} -> param($param);
+    $value = Encode::decode("utf8", $value) if(!Encode::is_utf8($value));
     if(!defined($value)) {
         if($settings -> {"required"}) {
             return ($settings -> {"default"}, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTSET", {"***field***" => $settings -> {"nicename"}}));
@@ -295,6 +296,7 @@ sub validate_options {
     my $settings = shift;
 
     my $value = $self -> {"cgi"} -> param($param);
+    $value = Encode::decode("utf8", $value) if(!Encode::is_utf8($value));
 
     # Bomb if the value is not set and it is required.
     return ($settings -> {"default"}, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTSET", {"***field***" => $settings -> {"nicename"}}))
@@ -350,6 +352,7 @@ sub validate_htmlarea {
 
     # first we need the textarea contents...
     my $text = $self -> {"cgi"} -> param($param);
+    $text = Encode::decode("utf8", $text) if(!Encode::is_utf8($text));
 
     # Get a copy of the input with no tags at all so that it can be checked for length
     my $scrubber = HTML::Scrubber -> new();

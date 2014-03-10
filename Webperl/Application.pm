@@ -320,14 +320,14 @@ sub load_cgi {
     # If the user isn't forcing uncompressed cgi, try to load the compressed version
     if(!$no_compression) {
         # If loading the compressed version of CGI works, use it...
-        eval { load CGI::Compress::Gzip, '-utf8' };
+        eval { load CGI::Compress::Gzip };
         $cgi = CGI::Compress::Gzip -> new()
             if(!$@);
     }
 
     # If the cgi object has not been created yet, try straight CGI
     if(!$cgi) {
-        load CGI, '-utf8';
+        load CGI;
         $cgi = CGI -> new();
     }
 
