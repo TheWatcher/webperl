@@ -354,6 +354,9 @@ sub validate_htmlarea {
     my $text = $self -> {"cgi"} -> param($param);
     $text = Encode::decode("utf8", $text) if(!Encode::is_utf8($text));
 
+    # Convert anything that might cause problems to html entities.
+    encode_entities($text, '^\n\x20-\x7e');
+
     # Get a copy of the input with no tags at all so that it can be checked for length
     my $scrubber = HTML::Scrubber -> new();
     my $nohtml = $scrubber -> scrub($text);
