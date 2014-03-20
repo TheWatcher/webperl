@@ -404,6 +404,9 @@ sub validate_htmlarea {
     return ("", , $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_TIDYFAIL", {"***field***" => $settings -> {"nicename"}}))
         if(!$tidied);
 
+    # Tidy will stick in spurious list elements, remove them
+    $tidied =~ s|<li style="list-style: none"></li>\n||g;
+
     # Now we can go ahead and check with the validator to see whether the tidied
     # code is valid xhtml
     my $valid = check_xhtml($tidied);
