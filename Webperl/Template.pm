@@ -356,6 +356,11 @@ sub set_template_dir {
     $self -> {"templatepath"} = path_join($self -> {"scriptpath"}, $self -> {"basedir"}, $self -> {"theme"});
     $self -> {"templatepath"} .= "/" unless($self -> {"templatepath"} =~ m|/$|); # templatepath must have trailing slash
 
+    # work out the javascript path
+    my $jsdir = "js";
+    $jsdir .= "_".$self -> {"settings"} -> {"config"} -> {"jsdirid"} if($self -> {"settings"} -> {"config"} -> {"jsdirid"});
+    $self -> {"jspath"} = path_join($self -> {"templatepath"}, $jsdir);
+
     # The URL...
     $self -> {"templateurl"} = path_join($self -> {"cgi"} -> url(-base => 1), $self -> {"templatepath"})."/"
         if($self -> {"cgi"});
@@ -546,6 +551,7 @@ sub fix_variables {
     $$textref =~ s/{V_\[scriptpath\]}/$self->{scriptpath}/g;
     $$textref =~ s/{V_\[templatepath\]}/$self->{templatepath}/g;
     $$textref =~ s/{V_\[templateurl\]}/$self->{templateurl}/g;
+    $$textref =~ s/{V_\[jspath\]}/$self->{jspath}/g;
     $$textref =~ s/{V_\[commonpath\]}/$self->{commonpath}/g;
     $$textref =~ s/{V_\[sitename\]}/$self->{settings}->{config}->{site_name}/g;
     $$textref =~ s/{V_\[admin_email\]}/$email/g;
