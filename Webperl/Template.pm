@@ -431,7 +431,7 @@ sub load_template {
 
         # Don't bother even attempting to open the file if it doesn't exist or isn't readable.
         if(!-f $filename || !-r $filename) {
-            $errs = " ".path_join($theme, $name).": does not exist.";
+            $errs .= " ".path_join($theme, $name).": does not exist.";
             next;
         }
 
