@@ -34,6 +34,10 @@
 #                  for authentication after finding the user's dn.
 # - `usetls`      (optional) If set to true, start_tls is called on the conntection.
 #                 Otherwise *no TLS is used and the server connection is not encrypted*
+# - `fnfield`     (optional) If set, this contains the name of the field that contains
+#                 the user's full name.
+# - `emailfield`  (optional) If set, this contains the name of the field that contains
+#                 the user's email address
 #
 # These will generally be provided by supplying the configuration variables
 # in the auth_methods_params table and using Webperl::AuthMethods to load
@@ -81,11 +85,12 @@ sub new {
 #                 authentication, they will be set in $auth -> {"errstr"}.
 # @return true if the user's credentials are valid, false otherwise.
 sub authenticate {
-    my $self     = shift;
-    my $username = shift;
-    my $password = shift;
-    my $auth     = shift;
-    my $valid    = 0;
+    my $self      = shift;
+    my $username  = shift;
+    my $password  = shift;
+    my $auth      = shift;
+    my $valid     = 0;
+    my $extradata;
 
     if($username && $password) {
         # First obtain the user dn
@@ -108,8 +113,16 @@ sub authenticate {
 
                 # Fetch the user's dn out of the response if possible.
                 my $entry = $result -> shift_entry;
-                $userdn = $entry -> dn
-                    if($entry);
+                if($entry) {
+                    $userdn = $entry -> dn;
+
+                    # And may as well fetch the extra data while the data is available if needed
+                    $extradata -> {"fullname"} = $entry -> get_value($self -> {"fnfield"})
+                        if($self -> {"fnfield"});
+
+                    $extradata -> {"email"}    = $entry -> get_value($self -> {"emailfield"})
+                        if($self -> {"emailfield"});
+                }
             }
 
             $ldap -> unbind();
@@ -139,7 +152,7 @@ sub authenticate {
             return $auth -> self_error("Unable to connect to LDAP server: $@");
         }
 
-        return $valid;
+        return ($valid, $extradata);
     }
 
     return $auth -> self_error("LDAP login failed: username and password are required");
