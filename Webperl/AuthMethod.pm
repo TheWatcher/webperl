@@ -122,7 +122,7 @@ sub create_user {
 }
 
 
-## @method $ authenticate($username, $password, $auth)
+## @method @ authenticate($username, $password, $auth)
 # Authenticate a user based on the credentials supplied. This will attempt
 # to determine whether the user's credentials are valid, and will return
 # true if they are, or false if they are not or a problem occured while
@@ -133,7 +133,11 @@ sub create_user {
 # @param auth     A reference to the Auth object calling this function,
 #                 if any errors are encountered while performing the
 #                 authentication, they will be set in $auth -> {"errstr"}.
-# @return true if the user's credentials are valid, false otherwise.
+# @return true if the user's credentials are valid, false otherwise. Some
+#         AuthMethods may also return an additional value: a reference to a
+#         hash containing values to set for the user. Keys may be system-specific,
+#         and may require a custom AppUser implementation to use properly, but
+#         recommended keys are "email" and "realname", but other fields may be included.
 sub authenticate {
     my $self     = shift;
     my $username = shift;

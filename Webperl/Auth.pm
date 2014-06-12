@@ -210,6 +210,7 @@ sub valid_user {
     my $username   = shift;
     my $password   = shift;
     my $valid      = 0;
+    my $extradata;
     my $methodimpl;
 
     # clean up the password
@@ -235,7 +236,7 @@ sub valid_user {
             or return undef;
 
         # Check whether the user can authenticate if the implementation was found
-        $valid = $methodimpl -> authenticate($username, $password, $self);
+        ($valid, $extradata) = $methodimpl -> authenticate($username, $password, $self);
 
         # errors should halt auth attempts
         return undef if(!defined($valid));
@@ -248,7 +249,7 @@ sub valid_user {
             my $methodimpl = $self -> get_authmethod_module($trymethod)
                 or return undef;
 
-            $valid = $methodimpl -> authenticate($username, $password, $self);
+            ($valid, $extradata) = $methodimpl -> authenticate($username, $password, $self);
 
             # If this method worked, record it.
             $authmethod = $trymethod if($valid);
@@ -261,7 +262,7 @@ sub valid_user {
     # If one of the auth methods succeeded in validating the user, record it
     # invoke the app standard post-auth for the user, and return the user's
     # database record.
-    return $self -> {"app"} -> post_authenticate($username, $password, $self, $authmethod)
+    return $self -> {"app"} -> post_authenticate($username, $password, $self, $authmethod, $extradata)
         if($valid);
 
     # Authentication failed.

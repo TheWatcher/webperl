@@ -294,7 +294,7 @@ sub pre_authenticate {
 }
 
 
-## @method $ post_authenticate($username, $password, $auth, $authmethod)
+## @method $ post_authenticate($username, $password, $auth, $authmethod, $extradata)
 # Perform any system-specific post-authentication tasks on the specified
 # user's data. This function allows each system to tailor post-auth tasks
 # to the requirements of the system. This function is only called if
@@ -313,6 +313,7 @@ sub pre_authenticate {
 # @param password   The password the user authenticated with.
 # @param auth       A reference to the auth object calling this.
 # @param authmethod The id of the authmethod to set for the user.
+# @param extradata  An optional reference to a hash containin extra data to set.
 # @return A reference to a hash containing the user's data on success,
 #         undef otherwise. If this returns undef, an error message will be
 #         set in the specified auth's errstr field.
@@ -322,6 +323,7 @@ sub post_authenticate {
     my $password   = shift;
     my $auth       = shift;
     my $authmethod = shift;
+    my $extradata  = shift;
 
     $self -> clear_error();
 
