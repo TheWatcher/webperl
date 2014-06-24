@@ -380,6 +380,7 @@ sub join_complex {
 
     } elsif(ref($value) eq "ARRAY") {
         croak "join_complex not given a joinstr when joining an array" unless(defined($settings{"joinstr"}));
+        croak "join_complex not given any content when joining an array" unless(scalar(@{$value}));
 
         return join($settings{"joinstr"}, @{$value});
     } elsif(ref($value) eq "HASH") {
