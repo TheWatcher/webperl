@@ -174,12 +174,13 @@ sub running {
     my $signalled = kill 0,$pid;
     $signalled ||= $!; # will either be 1 or an error code
 
-    given($signalled) {
-        # process signalled successfully
-        when(1) { return $pid; }
+    # process signalled successfully
+    if($signalled == 1) {
+        return $pid;
 
-        # exists, but no permissions to signal it
-        when(EPERM) { return -1 * $pid }
+    # exists, but no permissions to signal it
+    } elsif($signalled == EPERM) {
+        return -1 * $pid;
     }
 
     return 0;
