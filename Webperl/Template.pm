@@ -210,6 +210,7 @@ sub new {
                  "utfentities"  => $utfentities,
                  "blockname"    => 0,
                  "usecache"     => 1,
+                 "replacelimit" => 5,
                  @_,
     };
 
@@ -505,6 +506,7 @@ sub process_template {
 
     # replace all the keys in the text with the appropriate value.
     my ($key, $value, $count);
+    my $limit = 0;
     do {
         $count = 0;
 
@@ -516,7 +518,12 @@ sub process_template {
 
         # Do any language marker replacements
         $count += $$textref =~ s/{L_(\w+?)}/$self->replace_langvar($1)/ge;
-    } while($count);
+
+        ++$limit;
+    } while($count && $limit < $self -> {"replacelimit"});
+
+    warn "process_template aborted template replace after $limit passes.\nContent:$$textref\n"
+        if($limit == $self -> {"replacelimit"});
 
     $self -> fix_variables($textref);
 
