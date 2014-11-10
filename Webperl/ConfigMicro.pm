@@ -106,6 +106,61 @@ sub new {
 }
 
 
+## @method $ get_value($section, $name)
+# Obtain the value for the given key in the specified section.
+#
+# @param section The section in which the key can be found.
+# @param name    The name of the key to obtain.
+# @return The value of the key, or "" if the key is empty
+sub get_value {
+    my $self    = shift;
+    my $section = shift;
+    my $name    = shift;
+
+    return $self -> {$section} -> {$name} || "";
+}
+
+
+## @method void set_value($section, $name, $value)
+# Set the value for the given key in the specified section.
+#
+# @param section The section in which the key can be found.
+# @param name    The name of the key to set.
+# @param value   The value to set for the key.
+sub set_value {
+    my $self    = shift;
+    my $section = shift;
+    my $name    = shift;
+    my $value   = shift;
+
+    $self -> {$section} -> {$name} = $value;
+}
+
+
+## @method void replace_vars()
+# Replace all variables in the configuration with the value they correspond to.
+# This will traverse all sections and variables in the configuration, looking for
+# $[section,name] markers and replacing them as needed. Note that this is a very
+# simplistic system, only doing one pass and not attempting to check dependencies
+# have been resolved, so if variables reference other variables, there's no
+# guarantee that they will be correctly resolved.
+sub replace_vars {
+    my $self = shift;
+
+    # Process all the sections...
+    foreach my $section (keys(%$self)) {
+        # Only process sections, not values
+        next unless(ref($self -> {$section}));
+
+        # And all key-value pairs in the section
+        foreach my $key (keys(%{$self -> {$section}})) {
+            # If the value contains a variable, replace it
+            $self -> {$section} -> {$key} =~ s/\$\[([-\w]+),([-\w]+)\]/$self->get_value($1,$2)/ge;
+        }
+    }
+}
+
+
 ## @method $ read($filename)
 # Read a configuration file into a hash. This will process the file identified by
 # the specified filename, attempting to load its contents into a hash. Any key/value
@@ -161,6 +216,9 @@ sub read {
 	}
 
     close(CFILE);
+
+    # replace any internal variables
+    $self -> replace_vars();
 
     # Store the filename for later use
     $self -> {"filename"} = $filename;
