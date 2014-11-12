@@ -476,7 +476,7 @@ sub session_cookies {
 sub get_session_userid {
     my $self = shift;
 
-    return $self -> {"sessuser"};
+    return $self -> {"sessuser"} || 0;
 }
 
 
