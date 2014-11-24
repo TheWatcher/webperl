@@ -165,8 +165,10 @@ sub validate_string {
         if($settings -> {"required"}) {
             return ("", $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTSET", {"***field***" => $settings -> {"nicename"}}));
         # Otherwise fall back on the default.
+        } elsif(!$settings -> {"default"}) {
+            return ("", undef);
         } else {
-            $text = $settings -> {"default"} || "";
+            $text = $settings -> {"default"};
         }
     }
 
