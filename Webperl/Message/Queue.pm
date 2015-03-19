@@ -588,24 +588,35 @@ sub _queue_message {
 }
 
 
-## @method private $ _add_recipient($messageid, $recipientid)
+## @method private $ _add_recipient($messageid, $recipient)
 # Add a message recipient. This creates a new recipient row, associating the
-# specified recipient userid with a message.
+# specified recipient with a message.
 #
-# @param messageid   The ID of the message to add a recipient to.
-# @param recipientid The ID of the user who should recieve the message.
+# @param messageid The ID of the message to add a recipient to.
+# @param recipient The ID of the user who should recieve the message, or an email
+#                  address to use as the recipient.
 # @return true on success, undef on error.
 sub _add_recipient {
-    my $self        = shift;
-    my $messageid   = shift;
-    my $recipientid = shift;
+    my $self      = shift;
+    my $messageid = shift;
+    my $recipient = shift;
+    my ($recipid, $email);
 
     $self -> clear_error();
 
+    # int value indicate the recipient is a userid, otherwise check for email
+    if($recipient =~ /^\d+$/) {
+        $recipid = $recipient;
+    } elsif($recipient =~ /^[\w.+-]+\@([\w-]+\.)+\w+$/) {
+        $email = $recipient;
+    } else {
+        return $self -> self_error("Invalid recipient '$recipient' specified for message $messageid");
+    }
+
     my $newh = $self -> {"dbh"} -> prepare("INSERT INTO `".$self -> {"settings"} -> {"database"} -> {"message_recipients"}."`
-                                            (message_id, recipient_id)
-                                            VALUES(?, ?)");
-    my $result = $newh -> execute($messageid, $recipientid);
+                                            (message_id, recipient_id, email)
+                                            VALUES(?, ?, ?)");
+    my $result = $newh -> execute($messageid, $recipid, $email);
     return $self -> self_error("Unable to perform recipient addition: ". $self -> {"dbh"} -> errstr) if(!$result);
     return $self -> self_error("Recipient addition failed, no rows inserted") if($result eq "0E0");
 
