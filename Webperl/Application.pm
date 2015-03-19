@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses/.
 
-## @class
+## @class Webperl::Application
 # Provide the core functionality required to initialise and run a web application
 # based on the webperl framework. This class is effectively a bootstrapper,
 # allowing the core of a web application to be created with minimal code - all
