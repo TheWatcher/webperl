@@ -25,6 +25,7 @@
 package Webperl::Daemon;
 
 use v5.12;
+use experimental qw(smartmatch);
 use base qw(Webperl::SystemModule);
 use Carp qw(carp);
 use File::Basename;
