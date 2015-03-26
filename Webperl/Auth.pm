@@ -370,8 +370,7 @@ sub activated {
     my $user = $self -> get_user($username)
         or return undef;
 
-    return $methodimpl -> activated($user -> {"user_id"})
-        or return $self -> self_error($methodimpl -> errstr());
+    return ($methodimpl -> activated($user -> {"user_id"}) || $self -> self_error($methodimpl -> errstr()));
 }
 
 
@@ -418,8 +417,7 @@ sub reset_password_actcode {
     my $user = $self -> get_user($username)
         or return undef;
 
-    return $methodimpl -> reset_password_actcode($user -> {"user_id"})
-        or return $self -> self_error($methodimpl -> errstr());
+    return ($methodimpl -> reset_password_actcode($user -> {"user_id"}) || $self -> self_error($methodimpl -> errstr()));
 }
 
 
@@ -440,8 +438,7 @@ sub reset_password {
     my $user = $self -> get_user($username)
         or return undef;
 
-    return $methodimpl -> reset_password($user -> {"user_id"})
-        or return $self -> self_error($methodimpl -> errstr());
+    return ($methodimpl -> reset_password($user -> {"user_id"}) || $self -> self_error($methodimpl -> errstr()));
 }
 
 
@@ -464,8 +461,7 @@ sub set_password {
     my $user = $self -> get_user($username)
         or return undef;
 
-    return $methodimpl -> set_password($user -> {"user_id"}, $password)
-        or return $self -> self_error($methodimpl -> errstr());
+    return ($methodimpl -> set_password($user -> {"user_id"}, $password) || $self -> self_error($methodimpl -> errstr()));
 }
 
 
@@ -486,8 +482,7 @@ sub generate_actcode {
     my $user = $self -> get_user($username)
         or return undef;
 
-    return $methodimpl -> generate_actcode($user -> {"user_id"})
-        or return $self -> self_error($methodimpl -> errstr());
+    return ($methodimpl -> generate_actcode($user -> {"user_id"}) || $self -> self_error($methodimpl -> errstr()));
 }
 
 
@@ -511,8 +506,7 @@ sub force_passchange {
     my $user = $self -> get_user($username)
         or return undef;
 
-    return $methodimpl -> force_passchange($user -> {"user_id"})
-        or return $self -> self_error($methodimpl -> errstr());
+    return ($methodimpl -> force_passchange($user -> {"user_id"}) || $self -> self_error($methodimpl -> errstr()));
 }
 
 
@@ -581,8 +575,7 @@ sub apply_policy {
     my $methodimpl = $self -> get_user_authmethod_module($username)
         or return undef;
 
-    return $methodimpl -> apply_policy($password)
-        or return $self -> self_error($methodimpl -> errstr());
+    return ($methodimpl -> apply_policy($password) || $self -> self_error($methodimpl -> errstr()));
 }
 
 
@@ -603,8 +596,7 @@ sub get_policy {
     my $methodimpl = $self -> get_user_authmethod_module($username)
         or return undef;
 
-    return $methodimpl -> get_policy()
-        or return $self -> self_error($methodimpl -> errstr());
+    return ($methodimpl -> get_policy() || $self -> self_error($methodimpl -> errstr()));
 }
 
 
