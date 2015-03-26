@@ -306,7 +306,7 @@ sub get_authmethod_module {
 
     $self -> clear_error();
 
-    return ($self -> {"methods"} -> load_method($moduleid) || $self -> self_error("Auth implementation load failed: ".$self -> {"methods"} -> errstr())));
+    return ($self -> {"methods"} -> load_method($moduleid) || $self -> self_error("Auth implementation load failed: ".$self -> {"methods"} -> errstr()));
 }
 
 
