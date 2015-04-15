@@ -21,6 +21,7 @@
 #
 package Webperl::Message::Transport::Email;
 
+use utf8;
 use strict;
 use base qw(Webperl::Message::Transport);
 use Encode;
@@ -128,11 +129,25 @@ sub deliver {
 
     # And the recipients
     foreach my $recipient (@{$message -> {"recipients"}}) {
-        # Skip users who shouldn't get emails
-        next if(!$force && !$self -> use_transport($recipient -> {"recipient_id"}));
+        my $recip;
 
-        my $recip = $self -> _get_user_email($recipient -> {"recipient_id"})
-            or return $self -> self_error("Recipient email lookup failed: ".$self -> errstr());
+        # Is the recipient identified by an ID number? If so, map to an email address
+        if($recipient -> {"recipient_id"}) {
+            # Skip users who shouldn't get emails
+            next if(!$force && !$self -> use_transport($recipient -> {"recipient_id"}));
+
+            $recip = $self -> _get_user_email($recipient -> {"recipient_id"})
+                or return $self -> self_error("Recipient email lookup failed: ".$self -> errstr());
+
+        # Is an email address specified directly? Use it if so.
+        } elsif($recipient -> {"email"}) {
+            $recip = $recipient -> {"email"};
+
+        # This should never happen.
+        } else {
+            # IMPOSSIBRU!
+            return $self -> self_error("עזרה, אני נאלצת לעמול במכרות של קידוד");
+        }
 
         $to .= "," if($to);
         $to .= $recip;
