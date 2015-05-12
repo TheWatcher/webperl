@@ -25,6 +25,7 @@
 package Webperl::SystemModule;
 
 use strict;
+use Scalar::Util 'blessed';
 
 our $errstr;
 
@@ -32,8 +33,9 @@ BEGIN {
     $errstr = '';
 }
 
+
 # ============================================================================
-#  Constructor
+#  Constructor and destructor
 
 ## @cmethod $ new(%args)
 # Create a new SystemModule object. The minimum values you need to provide are:
@@ -64,6 +66,50 @@ sub new {
     return set_error("No logger object available.") if(!$self -> {"logger"} && !$self -> {"minimal"});
 
     return bless $self, $class;
+}
+
+
+## @method void DESTROY()
+# Destroy the SystemModule object, safely removing any potential circular
+# references.
+#
+sub DESTROY {
+    my $self = shift;
+
+    # Attempt to avoid referential loops that break garbage collection
+    $self -> {"dbh"} = undef;
+}
+
+
+# ============================================================================
+#  DBH lookup utility
+
+## @method $ dbh()
+# A utility method to allow the dbh specified in the constructor to be either
+# a reference to a DBI object, or reference to an object with a dbh() function
+# that will return a DBI object.
+#
+# @return A reference to a DBI object on success, undef on error.
+sub dbh {
+    my $self = shift;
+
+    return $self -> self_error("No database handle available")
+        if(!$self -> {"dbh"});
+
+    # Is the dbh a blessed reference? If not, it can't work
+    my $brian = blessed($self -> {"dbh"});
+    return $self -> self_error("THIS IS NOT A BLESSED REFERENCE")
+        if(!ref($self -> {"dbh"}) || !$brian);
+
+    # Is the reference blessed as a database object?
+    return ($self -> {"dbh"})
+        if($brian eq "DBI::db");
+
+    # Okay, not a database object reference, how about something that might return one?
+    return ($self -> {"dbh"} -> dbh())
+        if($self -> {"dbh"} -> can('dbh'));
+
+    return $self -> self_error("Invalid database object specified");
 }
 
 
