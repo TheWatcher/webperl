@@ -29,7 +29,7 @@ use Sys::Syslog qw(:standard :macros);
 require Exporter;
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw(warn_log die_log);
-our @EXPORT_OK = qw(start_log end_log);
+our @EXPORT_OK = qw(start_log end_log WARNING NOTICE DEBUG);
 
 use constant WARNING       => 0;
 use constant NOTICE        => 1;
