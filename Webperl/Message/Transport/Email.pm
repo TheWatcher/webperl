@@ -26,6 +26,7 @@ use strict;
 use base qw(Webperl::Message::Transport);
 use Encode;
 use Email::MIME;
+use Email::MIME::CreateHTML;
 use Email::Sender::Simple qw(sendmail);
 use Email::Sender::Transport::SMTP;
 use Email::Sender::Transport::SMTP::Persistent;
@@ -154,14 +155,32 @@ sub deliver {
     }
     return 1 if(!$to); # Nothing to do if there are no recipients.
 
-    my $email = Email::MIME -> create(header_str => [ From => $from,
-                                                      To   => $to,
-                                                      Subject => $message -> {"subject"}
-                                                      ],
-                                      body_str   => Encode::encode_utf8($message -> {"body"}),
-                                      attributes => { charset => 'utf8',
-                                                      content_type => "text/plain",
-                                                      encoding => 'base64' });
+    my $email;
+
+    if($message -> {"format"} eq "text") {
+        $email = Email::MIME -> create(header_str => [ From => $from,
+                                                       To   => $to,
+                                                       Subject => Encode::encode("iso-8859-1", decode_entities($message -> {"subject"})),
+                                       ],
+                                       body_str   => Encode::encode_utf8($message -> {"body"}),
+                                       attributes => { charset => 'utf8',
+                                                       content_type => "text/plain",
+                                                       encoding => 'base64' });
+    } elsif($message -> {"format"} eq "html") {
+        my $html_body = Encode::encode("iso-8859-1", $message -> {"body"});
+        my $text_body = Encode::encode("iso-8859-1", $self -> {"template"} -> html_to_markdown(Encode::encode_utf8($html), [], {"image"    => "email/md_image.tem",
+                                                                                                                                "images"   => "email/md_images.tem",
+                                                                                                                                "markdown" => "email/markdown.tem"}));
+
+        $email = Email::MIME -> create_html(header_str => [ From => $from,
+                                                            To   => $to,
+                                                            Subject => Encode::encode("iso-8859-1", decode_entities($message -> {"subject"})),
+                                            ],
+                                            embed     => 0,
+                                            body      => $html_body,
+                                            text_body => $text_body);
+    }
+
     try {
         sendmail($email, { from => $self -> {"env_sender"},
                            transport => $self -> {"smtp"}});

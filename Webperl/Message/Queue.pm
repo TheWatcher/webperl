@@ -101,6 +101,8 @@ sub new {
 #       be extremely careful using this if a message has more than one recipient
 #       and `unique_recip` is set, as this function may take a long time to return in
 #       that situation.
+# - `format` (optional) Allow the format of the message to be specified. This defaults
+#       to 'text', but other formats may be suppported by transports.
 #
 # @param args A hash, or a reference to a hash, of arguments defining the message.
 # @return true on success, undef on error.
@@ -116,7 +118,7 @@ sub queue_message {
     $args -> {"send_after"} += $args -> {"delay"} if($args -> {"delay"});
 
     # FUTURE: potentially support other formats here. See also: https://www.youtube.com/watch?v=JENdgiAPD6c however.
-    $args -> {"format"} = "text";
+    $args -> {"format"} = $args -> {"format"} || "text";
 
     # Force required fields
     return $self -> self_error("Email subject not specified") unless($args -> {"subject"});
