@@ -120,13 +120,17 @@
 # - `{V_[admin_email]}` is replaced by the site admin email address.
 package Webperl::Template;
 
+use experimental qw(smartmatch);
 use POSIX qw(strftime);
 use Webperl::Utils qw(path_join superchomp);
 use Carp qw(longmess);
+use HTML::WikiConverter;
+use HTML::Entities;
+use v5.12;
 
 use strict;
 
-our ($errstr, $utfentities, $entities, $ords, @timescales);
+our ($errstr, $utfentities, $entities, $entitymap, $ords, @timescales);
 
 BEGIN {
 	$errstr = '';
@@ -148,6 +152,23 @@ BEGIN {
                  '\x96' => '&ndash;',  # 0x96 (150) and 0x97 (151) are en and emdashes
                  '\x97' => '&mdash;',
                  '\x88' => '&hellip;', # 0x88 (133) is an ellisis
+    };
+
+    $entitymap = { '&ndash;'  => '-',
+                   '&mdash;'  => '-',
+                   '&rsquo;'  => "'",
+                   '&lsquo;'  => "'",
+                   '&ldquo;'  => '"',
+                   '&rdquo;'  => '"',
+                   '&hellip;' => '...',
+                   '&gt;'     => '>',
+                   '&lt;'     => '<',
+                   '&amp;'    => '&',
+                   '&nbsp;'   => ' ',
+                   '&#x200B;' => '',
+                   '\xE2\x80\x93' => '-',
+                   '\xE2\x80\x94' => '-',
+                   '\xE2\x80\xA6' => '...'
     };
 
     $ords = {1 => "st",
@@ -208,6 +229,7 @@ sub new {
                  "mailcmd"      => '/usr/sbin/sendmail -t -f chris@starforge.co.uk',#pevesupport@cs.man.ac.uk', # Change -f as needed!
                  "entities"     => $entities,
                  "utfentities"  => $utfentities,
+                 "entitymap"    => $entitymap,
                  "blockname"    => 0,
                  "usecache"     => 1,
                  "replacelimit" => 5,
@@ -956,6 +978,102 @@ sub html_strip {
     }
 
     return $text;
+}
+
+
+## @method $ html_to_markdown($html, $images, $tmplnames, $extramode)
+# Convert the specified html into markdown text.
+#
+# @param html      The HTML to convert to markdown.
+# @param images    An optional reference to an array of images.
+# @param tmplnames A reference to a hash containing template names.
+# @param extramode If true, turn on support for Markdown Extra mode.
+# @return The markdown version of the text.
+sub html_to_markdown {
+    my $self      = shift;
+    my $html      = shift;
+    my $images    = shift;
+    my $tmplnames = shift;
+    my $extramode = shift || 0;
+
+    # Handle html entities that are going to break...
+    foreach my $entity (keys(%{$self -> {"entitymap"}})) {
+        $html =~ s/$entity/$self->{entitymap}->{$entity}/g;
+    }
+
+    # Strip gravatar links
+    $html =~ s|<img[^>]+src="https://gravatar.com/[^>]+> ||g;
+
+    my $converter = new HTML::WikiConverter(dialect => 'Markdown',
+                                            link_style => 'inline',
+                                            image_tag_fallback => 0,
+                                            md_extra => $extramode,
+                                            encoding => 'utf8');
+    my $body = $converter -> html2wiki($html);
+
+    # Clean up html the converter misses consistently
+    $body =~ s|<br\s*/>|\n|g;
+    $body =~ s|&gt;|>|g;
+
+    # WikiConverter's markdown converter knows not about tables
+    $body =~ s{</?(table|tr|td)>}{}g;
+
+    # fix title links
+    $body =~ s|^(#+\s+)\[ \[.*?\]\(.*?\) \]<>|$1|mg;
+    $body =~ s|^(#+\s+)<>|$1|mg;
+
+    # Strip anchors
+    $body =~ s|\t\{#.*?\}||g;
+    $body =~ s|\[([^\]]+)\]\(#.*?\)|$1|g;
+
+    # Convert titles
+    $body =~ s|^(#+)\s+(.*?)$|_markdown_underline($1, $2)|gem;
+
+    # Sometimes there are bizarre <>s left in the content, dunno why...
+    $body =~ s|<>||g;
+
+    $body =~ s|\n\n+|\n\n|g;
+
+    my $imglist = "";
+    for(my $i = 0; $i < 3; ++$i) {
+        next unless($images -> [$i] -> {"location"});
+
+        $imglist .= $self -> load_template($tmplnames -> {"image"}, {"***url***" => $images -> [$i] -> {"location"}});
+    }
+
+    my $imageblock = $self -> load_template($tmplnames -> {"images"}, {"***images***" => $imglist})
+        if($imglist);
+
+    return $self -> load_template($tmplnames -> {"markdown"}, {"***text***"   => $body,
+                                                               "***images***" => $imageblock});
+}
+
+
+## @sub private $ _markdown_underline($level, $title)
+# Given a markdown underline level and matching title, generate a
+# replacement that uses underscores rather than #, ##, ###, etc
+#
+# @param level The markdown '#'-style underline level
+# @param title The text of the title
+# @return A new string containing the title with underscores.
+sub _markdown_underline {
+    my $level = shift;
+    my $title = shift;
+    my $type;
+
+    given($level) {
+        when("#")   { $type = "-="; }
+        when("##")  { $type = "="; }
+        when("###") { $type = "-"; }
+    }
+    return $title if(!$type);
+
+    # Build the underscores - may need additional trimming as 'type' can be multichar
+    my $underscore = $type x length($title);
+    $underscore = substr($underscore, 0, length($title))
+        if(length($underscore) > length($title));
+
+    return $title."\n".$underscore;
 }
 
 
