@@ -30,6 +30,8 @@ use Email::MIME::CreateHTML;
 use Email::Sender::Simple qw(sendmail);
 use Email::Sender::Transport::SMTP;
 use Email::Sender::Transport::SMTP::Persistent;
+use HTML::Entities;
+use HTML::WikiConverter;
 use Try::Tiny;
 
 # ============================================================================
