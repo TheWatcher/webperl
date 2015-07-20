@@ -174,9 +174,9 @@ sub deliver {
                                                                                                                                      "images"   => "email/md_images.tem",
                                                                                                                                      "markdown" => "email/markdown.tem"}));
 
-        $email = Email::MIME -> create_html(header_str => [ From => $from,
-                                                            To   => $to,
-                                                            Subject => Encode::encode("iso-8859-1", decode_entities($message -> {"subject"})),
+        $email = Email::MIME -> create_html(header => [ From => $from,
+                                                        To   => $to,
+                                                        Subject => Encode::encode("iso-8859-1", decode_entities($message -> {"subject"})),
                                             ],
                                             embed     => 0,
                                             body      => $html_body,
