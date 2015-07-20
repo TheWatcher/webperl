@@ -168,9 +168,9 @@ sub deliver {
                                                        encoding => 'base64' });
     } elsif($message -> {"format"} eq "html") {
         my $html_body = Encode::encode("iso-8859-1", $message -> {"body"});
-        my $text_body = Encode::encode("iso-8859-1", $self -> {"template"} -> html_to_markdown(Encode::encode_utf8($html), [], {"image"    => "email/md_image.tem",
-                                                                                                                                "images"   => "email/md_images.tem",
-                                                                                                                                "markdown" => "email/markdown.tem"}));
+        my $text_body = Encode::encode("iso-8859-1", $self -> {"template"} -> html_to_markdown(Encode::encode_utf8($html_body), [], {"image"    => "email/md_image.tem",
+                                                                                                                                     "images"   => "email/md_images.tem",
+                                                                                                                                     "markdown" => "email/markdown.tem"}));
 
         $email = Email::MIME -> create_html(header_str => [ From => $from,
                                                             To   => $to,
