@@ -884,7 +884,7 @@ sub format_time {
     $datestr =~ s/(\d+)\s*%o/ordinal($1)/ge;
 
     # Trim leading zeros, as they are pointless
-    $datestr =~ s/0+([1-9])/$1/g;
+    $datestr =~ s/(\A|\D)0+([1-9])/$1$2/g;
 
     return $datestr;
 }
