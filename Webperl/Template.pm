@@ -1087,7 +1087,7 @@ sub _fix_link_underscores {
     my $text = shift;
 
     $text =~ s/\\_/_/g;
-    return $text;
+    return "[".$text."]";
 }
 
 
