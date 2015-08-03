@@ -1036,7 +1036,7 @@ sub html_to_markdown {
     $body =~ s|<>||g;
 
     # Fix underscores in links
-    $body =~ s|\[([^\]+)\]|_fix_link_underscores($1)|g;
+    $body =~ s|\[([^\]]+)\]|_fix_link_underscores($1)|g;
 
     $body =~ s|\n\n+|\n\n|g;
 
