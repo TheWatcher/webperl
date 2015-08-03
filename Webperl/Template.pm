@@ -884,7 +884,7 @@ sub format_time {
     $datestr =~ s/(\d+)\s*%o/ordinal($1)/ge;
 
     # Trim leading zeros, as they are pointless
-    $datestr =~ s/(\A|\D)0+([1-9])/$1$2/g;
+    $datestr =~ s/(\A|\b)0+([1-9])/$1$2/g;
 
     return $datestr;
 }
@@ -1035,6 +1035,9 @@ sub html_to_markdown {
     # Sometimes there are bizarre <>s left in the content, dunno why...
     $body =~ s|<>||g;
 
+    # Fix underscores in links
+    $body =~ s|\[([^\]+)\]|_fix_link_underscores($1)|g;
+
     $body =~ s|\n\n+|\n\n|g;
 
     my $imglist = "";
@@ -1077,6 +1080,14 @@ sub _markdown_underline {
         if(length($underscore) > length($title));
 
     return $title."\n".$underscore;
+}
+
+
+sub _fix_link_underscores {
+    my $text = shift;
+
+    $text =~ s/\\_/_/g;
+    return $text;
 }
 
 
