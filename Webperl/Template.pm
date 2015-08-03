@@ -130,7 +130,7 @@ use v5.12;
 
 use strict;
 
-our ($errstr, $utfentities, $entities, $entitymap, $ords, @timescales);
+our ($errstr, $utfentities, $entities, $entitymap, @timescales);
 
 BEGIN {
 	$errstr = '';
@@ -169,15 +169,6 @@ BEGIN {
                    '\xE2\x80\x93' => '-',
                    '\xE2\x80\x94' => '-',
                    '\xE2\x80\xA6' => '...'
-    };
-
-    $ords = {1 => "st",
-             2 => "nd",
-             3 => "rd",
-             21 => 'st',
-             22 => 'nd',
-             23 => 'rd',
-             31 => 'st'
     };
 
     @timescales = ( { "seconds" => 31557600, "scale" => 31557600, past => {"singular" => "TIMES_YEAR"   , "plural" => "TIMES_YEARS"   }, future => {"singular" => "FUTURE_YEAR"   , "plural" => "FUTURE_YEARS"   }, },
@@ -862,7 +853,15 @@ sub get_bbcode_path {
 sub ordinal {
     my $val = shift;
 
-    return $val.($ords -> {$val} ? $ords -> {$val} : "th");
+    my ($key) = $val =~ /(\d)$/;
+    my $ext = "th";
+    given($key) {
+        when("1") { $ext = "st"; }
+        when("2") { $ext = "nd"; }
+        when("3") { $ext = "rd"; }
+    };
+
+    return $val.$ext;
 }
 
 
