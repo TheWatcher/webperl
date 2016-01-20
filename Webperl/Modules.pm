@@ -138,7 +138,7 @@ sub new_module {
         $mode = "id = ?";
 
     # names are just alphanumerics
-    } elsif($arg =~ /^[a-zA-Z0-9]+$/) {
+    } elsif($arg =~ /^[a-zA-Z0-9.]+$/) {
         $mode = "name LIKE ?";
     }
 
