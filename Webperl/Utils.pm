@@ -33,7 +33,7 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join resolve_path check_directory load_file save_file superchomp trimspace lead_zero string_in_array blind_untaint title_case sentence_case is_defined_numeric rfc822_date get_proc_size find_bin untaint_path read_pid write_pid hash_or_hashref join_complex);
+our @EXPORT_OK = qw(path_join resolve_path check_directory load_file save_file superchomp trimspace lead_zero string_in_array blind_untaint title_case sentence_case is_defined_numeric rfc822_date get_proc_size find_bin untaint_path read_pid write_pid hash_or_hashref array_or_arrayref join_complex);
 
 
 # ============================================================================
@@ -482,6 +482,32 @@ sub hash_or_hashref {
     return {};
 }
 
+## @fn $ array_or_arrayref(@args)
+# Given a list of arguments, produce a reference to an array containing the
+# arguments. If multiple values are present in @args, this returns a reference
+# to the array of values. If only a single value is provided in the
+# arguments, and it is an arrayref, that arrayref is returned 'as is',
+# otherwise the single argument is wrapped in an arrayref and returned.
+#
+# @param An array of values, or a reference to an array of values
+# @return A reference to an array (which may be empty!)
+sub array_or_arrayref {
+    my @args = @_;
+
+    # Empty array in, empty array out
+    return []
+        unless(scalar(@args));
+
+    if(scalar(@args) > 1) {
+        return \@args;
+    } else(scalar(@args) == 1) {
+        if(ref($args[0]) eq "ARRAY") {
+            return $args[0];
+        } else {
+            return [ $args[0] ];
+        }
+    }
+}
 
 # ============================================================================
 #  OS specific functions
