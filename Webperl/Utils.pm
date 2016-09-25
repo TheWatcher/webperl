@@ -500,12 +500,10 @@ sub array_or_arrayref {
 
     if(scalar(@args) > 1) {
         return \@args;
-    } else(scalar(@args) == 1) {
-        if(ref($args[0]) eq "ARRAY") {
-            return $args[0];
-        } else {
-            return [ $args[0] ];
-        }
+    } elsif(ref($args[0]) eq "ARRAY") {
+        return $args[0];
+    } else {
+        return [ $args[0] ];
     }
 }
 
