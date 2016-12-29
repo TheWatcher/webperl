@@ -25,6 +25,7 @@ package Webperl::System;
 
 use strict;
 use base qw(Webperl::SystemModule);
+use Scalar::Utils qw(blessed);
 
 # ============================================================================
 #  Constructor and initialiser
@@ -89,7 +90,7 @@ sub clear {
     foreach my $key (keys %{$self}) {
         next if(!defined($self -> {$key})); # skip undefined refs
 
-        $self -> {$key} -> clear() if($self -> {$key} -> can("clear"));
+        $self -> {$key} -> clear() if(blessed($self -> {$key}) && $self -> {$key} -> can("clear"));
         delete $self -> {$key};
     }
 }
