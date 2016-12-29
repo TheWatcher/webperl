@@ -25,7 +25,7 @@ package Webperl::System;
 
 use strict;
 use base qw(Webperl::SystemModule);
-use Scalar::Utils qw(blessed);
+use Scalar::Util qw(blessed);
 
 # ============================================================================
 #  Constructor and initialiser
