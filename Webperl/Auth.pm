@@ -416,7 +416,13 @@ sub reset_password_actcode {
     my $user = $self -> get_user($username)
         or return undef;
 
-    return ($methodimpl -> reset_password_actcode($user -> {"user_id"}) || $self -> self_error($methodimpl -> errstr()));
+    my ($pass, $code) = $methodimpl -> reset_password_actcode($user -> {"user_id"});
+
+    if($pass && $code) {
+        return ($pass, $code);
+    } else {
+        return $self -> self_error($methodimpl -> errstr());
+    }
 }
 
 
