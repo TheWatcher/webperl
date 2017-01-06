@@ -67,7 +67,7 @@ sub path_join {
         $bit =~ s|^/*||; $bit =~ s|/*$||;
 
         # If the fragment was nothing more than slashes, ignore it
-        next unless($bit);
+        next unless($bit =~ /\S/);
 
         # Store for joining
         push(@parts, $bit);
