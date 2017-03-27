@@ -883,9 +883,6 @@ sub format_time {
     my $datestr = strftime($format, localtime($time));
     $datestr =~ s/(\d+)\s*%o/ordinal($1)/ge;
 
-    # Trim leading zeros, as they are pointless
-    $datestr =~ s/(\A|\b)0+([1-9])/$1$2/g;
-
     return $datestr;
 }
 
