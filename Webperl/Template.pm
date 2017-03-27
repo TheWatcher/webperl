@@ -123,7 +123,7 @@ package Webperl::Template;
 use experimental qw(smartmatch);
 use POSIX qw(strftime);
 use Webperl::Utils qw(path_join superchomp);
-use Carp qw(longmess);
+use Carp qw(longmess carp);
 use HTML::WikiConverter;
 use HTML::Entities;
 use v5.12;
@@ -516,9 +516,15 @@ sub process_template {
     my $varmap    = shift;
     my $nocharfix = shift;
 
+    carp("No text passed to process_template")
+        unless($text);
+
     # If text is a reference already, we can just use it. Otherwise we need
     # to make a reference to the text to simplify the code in the loop below.
     my $textref = ref($text) ? $text : \$text;
+
+    carp("No text passed to process_template")
+        unless($$textref);
 
     # replace all the keys in the text with the appropriate value.
     my ($key, $value, $count);
@@ -551,6 +557,9 @@ sub process_template {
 
         # Convert horrible smart quote crap from windows
         foreach my $char (keys(%$entities)) {
+            carp("Error replacing entitiy: $char, no replacement.")
+                if(!$char || !$entities -> {$char});
+
             $$textref =~ s/$char/$entities->{$char}/g;
         }
     }
