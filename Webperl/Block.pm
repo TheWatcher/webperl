@@ -143,6 +143,8 @@ sub get_enum_values {
 #              string <b>does not</b> match the regexp, validation fails.
 # formatdesc - Must be provided if formattest is provided. A description of why not
 #              matching formattest fails the validation.
+# encode     - if set to true, html characters are escaped, otherwise they are passed
+#              back 'as is'. Defaults to true
 #
 # @param param    The name of the cgi parameter to check.
 # @param settings A reference to a hash of settings to control the validation
@@ -185,7 +187,8 @@ sub validate_string {
         if($formattest && $text !~ /$formattest/);
 
     # Convert all characters in the string to safe versions
-    $text = encode_entities($text);
+    $text = encode_entities($text)
+        unless(defined($settings -> {"encode"}) && !$settings -> {"encode"});
 
     # Convert horrible smart quote crap from windows
     foreach my $char (keys(%{$self -> {"template"} ->{"entities"}})) {
