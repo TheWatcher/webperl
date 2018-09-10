@@ -144,7 +144,9 @@ sub get_enum_values {
 # formatdesc - Must be provided if formattest is provided. A description of why not
 #              matching formattest fails the validation.
 # encode     - if set to true, html characters are escaped, otherwise they are passed
-#              back 'as is'. Defaults to true
+#              back 'as is'. Defaults to true. DO NOT set this to false without a
+#              very good reason and without taking care to escape anything that might
+#              be sent back to the browser.
 #
 # @param param    The name of the cgi parameter to check.
 # @param settings A reference to a hash of settings to control the validation
@@ -158,7 +160,7 @@ sub validate_string {
     my $settings = shift;
 
     # Grab the parameter value, fall back on the default if it hasn't been set.
-    my $text = $self -> {"cgi"} -> param($param);
+    my $text = $self -> {"cgi"} -> param($param) // $self -> {"cgi"} -> url_param($param);
     $text = Encode::decode("utf8", $text) if(!Encode::is_utf8($text));
 
     # Handle the situation where the parameter has not been provided at all
@@ -246,7 +248,7 @@ sub validate_numeric {
         if(!defined($settings -> {"default"}));
 
     # Grab the parameter value, fall back on the default if it hasn't been set.
-    my $value = $self -> {"cgi"} -> param($param);
+    my $value = $self -> {"cgi"} -> param($param) // $self -> {"cgi"} -> url_param($param);
     $value = Encode::decode("utf8", $value) if(!Encode::is_utf8($value));
     if(!defined($value)) {
         if($settings -> {"required"}) {
@@ -300,7 +302,7 @@ sub validate_options {
     my $param    = shift;
     my $settings = shift;
 
-    my $value = $self -> {"cgi"} -> param($param);
+    my $value = $self -> {"cgi"} -> param($param) // $self -> {"cgi"} -> url_param($param);
     $value = Encode::decode("utf8", $value) if(!Encode::is_utf8($value));
 
     # Bomb if the value is not set and it is required.
@@ -356,7 +358,7 @@ sub validate_htmlarea {
     my $settings = shift;
 
     # first we need the textarea contents...
-    my $text = $self -> {"cgi"} -> param($param);
+    my $text = $self -> {"cgi"} -> param($param) // $self -> {"cgi"} -> url_param($param);
     $text = Encode::decode("utf8", $text) if(!Encode::is_utf8($text));
 
     # Convert anything that might cause problems to html entities.
