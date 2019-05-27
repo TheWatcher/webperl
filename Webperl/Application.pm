@@ -76,12 +76,10 @@ BEGIN {
 #   If a relative path is provided, it is assumed to be relative to the index.cgi
 # - `scriptpath`, the path to the directory containing index.cgi. This is needed for
 #   scripts running inside mod_perl that may not have cwd set correctly.
-# - `use_phpbb`, if set, the phpBB3 support module is loaded (and takes over auth: the
-#   `auth` argument is ignored if `use_phpbb` is set).
 # - `appuser`, a reference to a Webperl::AppUser subclass object to do application-specific
-#   user tasks during auth. Can be omitted if use_phpbb is set.
-# - `auth`, an optional reference to an auth object. If not specified, and `use_phpbb`
-#   is not set, a Webperl::Auth object is made for you.
+#   user tasks during auth.
+# - `auth`, an optional reference to an auth object. If not specified, a Webperl::Auth
+#    object is made for you.
 # - `block_selector`, an optional reference to a Webperl::BlockSelector subclass. If not
 #   specified, the default Webperl::BlockSelector is used instead to provide standard
 #   block selection behaviour.
@@ -99,7 +97,6 @@ sub new {
     my $class    = ref($invocant) || $invocant;
     my $self     = {
         config    => "config/site.cfg",
-        use_phpbb => 0,
         post_max  => 128,
         @_,
     };
@@ -168,32 +165,14 @@ sub run {
                                                      settings  => $self -> {"settings"})
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create template handling object: ".$Webperl::Template::errstr);
 
-    # If phpbb mode is enabled, it takes over auth.
-    if($self -> {"use_phpbb"}) {
-        load Webperl::phpBB3;
-        $self -> {"phpbb"} = Webperl::phpBB3 -> new(logger   => $self -> {"logger"},
-                                                    prefix   => $self -> {"settings"} -> {"database"} -> {"phpbb_prefix"},
-                                                    cgi      => $self -> {"cgi"},
-                                                    data_src => $self -> {"settings"} -> {"database"} -> {"phpbb_database"},
-                                                    username => $self -> {"settings"} -> {"database"} -> {"phpbb_username"},
-                                                    password => $self -> {"settings"} -> {"database"} -> {"phpbb_password"},
-                                                    codepath => path_join($self -> {"settings"} -> {"config"} -> {"base"}, "templates", "default"),
-                                                    url      => $self -> {"settings"} -> {"config"} -> {"forumurl"})
-            or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Unable to create phpbb object: ".$Webperl::phpBB3::errstr);
+    # Initialise the appuser object
+    $self -> {"appuser"} -> init($self -> {"cgi"}, $self -> {"dbh"}, $self -> {"settings"}, $self -> {"logger"});
 
-        $self -> {"auth"} = $self -> {"phpbb"};
+    # If the auth object is not set, make one
+    $self -> {"auth"} = Webperl::Auth -> new() if(!$self -> {"auth"});
 
-    # phpBB3 is not enabled, initialise the auth modules.
-    } else {
-        # Initialise the appuser object
-        $self -> {"appuser"} -> init($self -> {"cgi"}, $self -> {"dbh"}, $self -> {"settings"}, $self -> {"logger"});
-
-        # If the auth object is not set, make one
-        $self -> {"auth"} = Webperl::Auth -> new() if(!$self -> {"auth"});
-
-        # Initialise the auth object
-        $self -> {"auth"} -> init($self -> {"cgi"}, $self -> {"dbh"}, $self -> {"appuser"}, $self -> {"settings"}, $self -> {"logger"});
-    }
+    # Initialise the auth object
+    $self -> {"auth"} -> init($self -> {"cgi"}, $self -> {"dbh"}, $self -> {"appuser"}, $self -> {"settings"}, $self -> {"logger"});
 
     # Start the session engine...
     $self -> {"session"} = Webperl::SessionHandler -> new(logger   => $self -> {"logger"},
@@ -225,7 +204,6 @@ sub run {
                                                    settings => $self -> {"settings"},
                                                    template => $self -> {"template"},
                                                    session  => $self -> {"session"},
-                                                   phpbb    => $self -> {"phpbb"}, # this will handily be undef if phpbb mode is disabled
                                                    blockdir => $self -> {"settings"} -> {"paths"} -> {"blocks"} || "blocks",
                                                    system   => $self -> {"system"},
                                                    messages => $self -> {"messages"})
@@ -240,7 +218,6 @@ sub run {
                                     settings => $self -> {"settings"},
                                     template => $self -> {"template"},
                                     session  => $self -> {"session"},
-                                    phpbb    => $self -> {"phpbb"},
                                     modules  => $self -> {"modules"},
                                     messages => $self -> {"messages"})
             or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to create system object: ".$self -> {"system"} -> errstr());

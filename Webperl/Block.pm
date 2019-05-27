@@ -51,7 +51,6 @@ use HTML::Entities;
 # - `args`     Any arguments passed to the plugin at runtime, usually pulled from the database.
 # - `cgi`      A reference to the script's CGI object.
 # - `dbh`      A database handle to talk to the database through.
-# - `phpbb`    A phpbb3 handle object used to perform operations on a phpbb3 database.
 # - `template` A template engine module object to load templates through.
 # - `settings` The global configuration hashref.
 # - `session`  A reference to the current session object

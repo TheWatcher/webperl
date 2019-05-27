@@ -80,10 +80,6 @@
 #   from the point of view of using the id as part of session id calculation. The extra
 #   argument allows the addition of an arbitrary string to the seed used to create the id.
 #
-# This code is heavily based around the session code used by phpBB3, with
-# features removed or added to fit the different requirements of the
-# framework.
-#
 # This class requires three database tables: one for sessions, one for session keys (used
 # for autologin), and one for session variables. If autologins are permanently disabled
 # (that is, you can guarantee that `get_config("allow_autologin")` always returns false)
