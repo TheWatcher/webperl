@@ -135,7 +135,7 @@ sub run {
     $self -> {"dbh"} = DBI->connect($self -> {"settings"} -> {"database"} -> {"database"},
                                     $self -> {"settings"} -> {"database"} -> {"username"},
                                     $self -> {"settings"} -> {"database"} -> {"password"},
-                                    { RaiseError => 0, AutoCommit => 1, mysql_enable_utf8 => 1 })
+                                    { RaiseError => 0, AutoCommit => 1, mysql_enable_utf8mb4 => 1 })
         or $self -> {"logger"} -> die_log($self -> {"cgi"} -> remote_host(), "Application: Unable to connect to database: ".$DBI::errstr);
 
     # Pull configuration data out of the database into the settings hash
