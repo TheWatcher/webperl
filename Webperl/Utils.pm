@@ -33,7 +33,7 @@ use strict;
 
 our @ISA       = qw(Exporter);
 our @EXPORT    = qw();
-our @EXPORT_OK = qw(path_join resolve_path check_directory load_file save_file superchomp trimspace lead_zero string_in_array blind_untaint title_case sentence_case is_defined_numeric rfc822_date get_proc_size find_bin untaint_path read_pid write_pid hash_or_hashref array_or_arrayref join_complex);
+our @EXPORT_OK = qw(path_join resolve_path check_directory load_file save_file superchomp trimspace lead_zero string_in_array blind_untaint title_case sentence_case is_defined_numeric rfc822_date get_proc_size find_bin untaint_path read_pid write_pid hash_or_hashref array_or_arrayref force_arrayref join_complex);
 
 
 # ============================================================================
@@ -482,6 +482,7 @@ sub hash_or_hashref {
     return {};
 }
 
+
 ## @fn $ array_or_arrayref(@args)
 # Given a list of arguments, produce a reference to an array containing the
 # arguments. If multiple values are present in @args, this returns a reference
@@ -506,6 +507,23 @@ sub array_or_arrayref {
         return [ $args[0] ];
     }
 }
+
+
+## @method $ force_arrayref($arg)
+# Given either a scalar or an arrayref, convert ensure that the result is always
+# an arrayref.
+#
+# @param arg Either a scalar or an arrayref
+# @return Either the arrayref passed in, or an arrayref containing the argument.
+sub force_arrayref {
+    my $arg = shift;
+
+    $arg = [ $arg ]
+        unless(ref $arg eq "ARRAY");
+
+    return $arg;
+}
+
 
 # ============================================================================
 #  OS specific functions
