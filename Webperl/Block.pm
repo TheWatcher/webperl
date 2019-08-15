@@ -313,12 +313,16 @@ sub validate_options {
 
     # Determine how we will check it. If the source is an array reference, we do an array check
     if(ref($settings -> {"source"}) eq "ARRAY") {
+        # Fix to lowercase if case sensitivity is off
+        $value = lc($value) if($settings -> {"nocase"});
+
         foreach my $check (@{$settings -> {"source"}}) {
-            if(ref($check) eq "HASH") {
-                return ($value, undef) if($check -> {"value"} eq $value);
-            } else {
-                return ($value, undef) if($check eq $value);
-            }
+            $check = $check-> {"value"} if(ref($check) eq "HASH");
+
+            # Fix to lowercase if case sensitivity is off
+            $check = lc($check) if($settings -> {"nocase"});
+
+            return ($value, undef) if($check eq $value);
         }
 
     # If the source is not a reference, we assue it is the table name to check
