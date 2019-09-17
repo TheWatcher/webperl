@@ -317,12 +317,13 @@ sub validate_options {
         $value = lc($value) if($settings -> {"nocase"});
 
         foreach my $check (@{$settings -> {"source"}}) {
-            $check = $check-> {"value"} if(ref($check) eq "HASH");
+            my $val = $check;
+            $val = $check -> {"value"} if(ref($check) eq "HASH");
 
             # Fix to lowercase if case sensitivity is off
-            $check = lc($check) if($settings -> {"nocase"});
+            $val = lc($val) if($settings -> {"nocase"});
 
-            return ($value, undef) if($check eq $value);
+            return ($value, undef) if($val eq $value);
         }
 
     # If the source is not a reference, we assue it is the table name to check
