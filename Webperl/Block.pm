@@ -249,7 +249,7 @@ sub validate_numeric {
     # Grab the parameter value, fall back on the default if it hasn't been set.
     my $value = $self -> {"cgi"} -> param($param) // $self -> {"cgi"} -> url_param($param);
     $value = Encode::decode("utf8", $value) if(!Encode::is_utf8($value));
-    if(!defined($value)) {
+    if(!defined($value) || $value eq "") {
         if($settings -> {"required"}) {
             return ($settings -> {"default"}, $self -> {"template"} -> replace_langvar("BLOCK_VALIDATE_NOTSET", {"***field***" => $settings -> {"nicename"}}));
         } else {
