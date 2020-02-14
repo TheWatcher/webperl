@@ -1,5 +1,3 @@
-*~
-docs/
 Makefile
 Makefile.old
 Build

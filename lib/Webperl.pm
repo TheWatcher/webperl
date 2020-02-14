@@ -24,6 +24,8 @@ package Webperl;
 use strict;
 use Webperl::Application;
 
+our $VERSION = "3.11";
+
 # ============================================================================
 #  Constructor
 
