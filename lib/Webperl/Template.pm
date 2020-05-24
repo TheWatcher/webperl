@@ -707,7 +707,8 @@ sub wizard_box {
 #                   at least two keys: name and value, corresponding to the option
 #                   name and value. You may also optionally include a 'title' in the
 #                   hash to use as the option title.
-# @param default    The default *value* to select in the list.
+# @param default    The default *value* to select in the list. This can either be a
+#                   single scalar, or a reference to an array of selected values.
 # @param selectopts Options to set on the select element. If not provided, no select
 #                   element is generated. If provided, this should be a reference to
 #                   a hash containing select options (supported: name, id, multiple,
@@ -724,12 +725,20 @@ sub build_optionlist {
     # May as well hard-code the option template.
     my $opttem = "<option value=\"***value***\"***sel******title***>***name***</option>\n";
 
+    # Force arrayref for default
+    $default = [ $default ] unless($default && ref($default) eq "ARRAY");
+
+    # Convert default to a hash for faster lookup
+    my %selected = map { $_ => 1 } @{$default};
+
     # Now build up the option string
     my $optstr = "";
     foreach my $option (@{$options}) {
+        my $sel = $selected{$option -> {"value"}} ? ' selected="selected"' : '';
+
         $optstr .= $self -> process_template($opttem, {"***name***"  => $option -> {"name"},
                                                        "***value***" => $option -> {"value"},
-                                                       "***sel***"   => (defined($default) && $default eq $option -> {"value"}) ? ' selected="selected"' : '',
+                                                       "***sel***"   => $sel,
                                                        "***title***" => defined($option -> {"title"}) ? ' title="'.$option -> {"title"}.'"' : ''});
     }
 
