@@ -729,7 +729,14 @@ sub build_optionlist {
     $default = [ $default ] unless($default && ref($default) eq "ARRAY");
 
     # Convert default to a hash for faster lookup
-    my %selected = map { $_ => 1 } @{$default};
+    my %selected = ();
+    foreach my $val (@{$default}) {
+        if(!defined($val)) {
+            carp "Undefined value in default list.";
+            next;
+        }
+        $selected{$val} = 1;
+    }
 
     # Now build up the option string
     my $optstr = "";
