@@ -719,7 +719,7 @@ sub wizard_box {
 sub build_optionlist {
     my $self       = shift;
     my $options    = shift;
-    my $default    = shift;
+    my $default    = shift // [];
     my $selectopts = shift;
 
     # May as well hard-code the option template.
