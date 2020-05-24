@@ -726,7 +726,7 @@ sub build_optionlist {
     my $opttem = "<option value=\"***value***\"***sel******title***>***name***</option>\n";
 
     # Force arrayref for default
-    $default = [ $default ] unless($default && ref($default) eq "ARRAY");
+    $default = [ $default ] if($default && ref($default) ne "ARRAY");
 
     # Convert default to a hash for faster lookup
     my %selected = ();
