@@ -743,10 +743,10 @@ sub build_optionlist {
     foreach my $option (@{$options}) {
         my $sel = $selected{$option -> {"value"}} ? ' selected="selected"' : '';
 
-        $optstr .= $self -> process_template($opttem, {"***name***"  => $option -> {"name"},
-                                                       "***value***" => $option -> {"value"},
+        $optstr .= $self -> process_template($opttem, {"***name***"  => encode_entities($option -> {"name"}),
+                                                       "***value***" => encode_entities($option -> {"value"}),
                                                        "***sel***"   => $sel,
-                                                       "***title***" => defined($option -> {"title"}) ? ' title="'.$option -> {"title"}.'"' : ''});
+                                                       "***title***" => defined($option -> {"title"}) ? ' title="'.encode_entities($option -> {"title"}).'"' : ''});
     }
 
     # Handle select options, if any.
